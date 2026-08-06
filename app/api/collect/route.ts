@@ -2,7 +2,10 @@ import { NextResponse } from "next/server";
 import { collect } from "@/lib/collect";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 300;
+// Vercel's Hobby plan caps a function at 60s, so the button runs the same
+// narrow band the background loop uses (tier 0 + outlets, ~30s) rather than a
+// full sweep. The scheduled GitHub Action does the wide passes.
+export const maxDuration = 60;
 
 /**
  * Collect on demand, from the button in the header.
@@ -22,7 +25,8 @@ export async function POST(req: Request) {
 
   try {
     const stats = await collect({
-      maxTier: Number.isFinite(tier) ? tier : 0,
+      // Never widen past tier 0 here: anything more overruns the 60s ceiling.
+      maxTier: Number.isFinite(tier) ? Math.min(tier, 0) : 0,
       skipOutlets: url.searchParams.get("outlets") === "0",
     });
 
