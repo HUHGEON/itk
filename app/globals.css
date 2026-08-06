@@ -1,26 +1,74 @@
 @import "tailwindcss";
 
+/* Dark is the default — FotMob's feed reads as a dark, dense board. */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --bg: #0e0f12;
+  --surface: #17191e;
+  --surface-2: #1e2127;
+  --surface-3: #262a32;
+  --border: #2a2e36;
+  --text: #e9ecf1;
+  --muted: #9198a5;
+  --accent: #00b86b;
+
+  /* Tier identity: gold at the top, fading to grey at the bottom. */
+  --tier-0: #ffb020;
+  --tier-1: #2fcf7a;
+  --tier-15: #35b7d8;
+  --tier-2: #8b95a5;
+  --tier-3: #5c6470;
+
+  color-scheme: dark;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
+@media (prefers-color-scheme: light) {
   :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+    --bg: #f2f4f7;
+    --surface: #ffffff;
+    --surface-2: #f6f8fa;
+    --surface-3: #eceff3;
+    --border: #dfe3e9;
+    --text: #12151a;
+    --muted: #5c6673;
+    --tier-2: #6b7583;
+    --tier-3: #8892a0;
+
+    color-scheme: light;
   }
 }
 
+@theme inline {
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-surface-3: var(--surface-3);
+  --color-border: var(--border);
+  --color-text: var(--text);
+  --color-muted: var(--muted);
+  --color-accent: var(--accent);
+
+  --color-tier-0: var(--tier-0);
+  --color-tier-1: var(--tier-1);
+  --color-tier-15: var(--tier-15);
+  --color-tier-2: var(--tier-2);
+  --color-tier-3: var(--tier-3);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, "Apple SD Gothic Neo",
+    "Pretendard", sans-serif;
+}
+
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, "Apple SD Gothic Neo",
+    "Pretendard", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Chip rails scroll horizontally without showing a bar. */
+.no-scrollbar {
+  scrollbar-width: none;
+}
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
 }

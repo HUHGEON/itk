@@ -1,0 +1,210 @@
+[
+  {
+    "slug": "chelsea",
+    "ko": "첼시",
+    "en": "Chelsea",
+    "league": "EPL",
+    "aliases": [
+      "Chelsea",
+      "Blues"
+    ],
+    "crest": "https://www.thesportsdb.com/images/media/team/badge/pbf4ul1782638263.png"
+  },
+  {
+    "slug": "man-utd",
+    "ko": "맨체스터 유나이티드",
+    "en": "Manchester United",
+    "league": "EPL",
+    "aliases": [
+      "Manchester United",
+      "Man United",
+      "Man Utd",
+      "United",
+      "MUFC"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/xzqdr11517660252.png"
+  },
+  {
+    "slug": "man-city",
+    "ko": "맨체스터 시티",
+    "en": "Manchester City",
+    "league": "EPL",
+    "aliases": [
+      "Manchester City",
+      "Man City",
+      "City",
+      "MCFC"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/vwpvry1467462651.png"
+  },
+  {
+    "slug": "arsenal",
+    "ko": "아스날",
+    "en": "Arsenal",
+    "league": "EPL",
+    "aliases": [
+      "Arsenal",
+      "Gunners",
+      "AFC"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png"
+  },
+  {
+    "slug": "liverpool",
+    "ko": "리버풀",
+    "en": "Liverpool",
+    "league": "EPL",
+    "aliases": [
+      "Liverpool",
+      "Reds",
+      "LFC"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/kfaher1737969724.png"
+  },
+  {
+    "slug": "tottenham",
+    "ko": "토트넘",
+    "en": "Tottenham Hotspur",
+    "league": "EPL",
+    "aliases": [
+      "Tottenham",
+      "Spurs",
+      "Tottenham Hotspur",
+      "THFC"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/dfyfhl1604094109.png"
+  },
+  {
+    "slug": "aston-villa",
+    "ko": "아스톤 빌라",
+    "en": "Aston Villa",
+    "league": "EPL",
+    "aliases": [
+      "Aston Villa",
+      "Villa"
+    ],
+    "crest": "https://www.thesportsdb.com/images/media/team/badge/97mehy1784645865.png"
+  },
+  {
+    "slug": "newcastle",
+    "ko": "뉴캐슬",
+    "en": "Newcastle United",
+    "league": "EPL",
+    "aliases": [
+      "Newcastle",
+      "Newcastle United",
+      "Magpies"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/lhwuiz1621593302.png"
+  },
+  {
+    "slug": "real-madrid",
+    "ko": "레알 마드리드",
+    "en": "Real Madrid",
+    "league": "LaLiga",
+    "aliases": [
+      "Real Madrid",
+      "Madrid",
+      "Los Blancos"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/vwvwrw1473502969.png"
+  },
+  {
+    "slug": "barcelona",
+    "ko": "바르셀로나",
+    "en": "Barcelona",
+    "league": "LaLiga",
+    "aliases": [
+      "Barcelona",
+      "Barca",
+      "Barça",
+      "FC Barcelona"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png"
+  },
+  {
+    "slug": "atletico-madrid",
+    "ko": "아틀레티코 마드리드",
+    "en": "Atletico Madrid",
+    "league": "LaLiga",
+    "aliases": [
+      "Atletico Madrid",
+      "Atlético Madrid",
+      "Atleti",
+      "Atletico"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/0ulh3q1719984315.png"
+  },
+  {
+    "slug": "psg",
+    "ko": "파리 생제르맹",
+    "en": "Paris Saint-Germain",
+    "league": "Ligue1",
+    "aliases": [
+      "PSG",
+      "Paris Saint-Germain",
+      "Paris SG"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/26f50y1705434178.png"
+  },
+  {
+    "slug": "strasbourg",
+    "ko": "스트라스부르",
+    "en": "Strasbourg",
+    "league": "Ligue1",
+    "aliases": [
+      "Strasbourg",
+      "RC Strasbourg",
+      "RC Strasbourg Alsace",
+      "Racing Strasbourg"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/b8k77w1766625501.png"
+  },
+  {
+    "slug": "juventus",
+    "ko": "유벤투스",
+    "en": "Juventus",
+    "league": "SerieA",
+    "aliases": [
+      "Juventus",
+      "Juve"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/uxf0gr1742983727.png"
+  },
+  {
+    "slug": "roma",
+    "ko": "AS 로마",
+    "en": "AS Roma",
+    "league": "SerieA",
+    "aliases": [
+      "Roma",
+      "AS Roma"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/jwro2s1760820674.png"
+  },
+  {
+    "slug": "ac-milan",
+    "ko": "AC 밀란",
+    "en": "AC Milan",
+    "league": "SerieA",
+    "aliases": [
+      "AC Milan",
+      "Milan",
+      "Rossoneri"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/wvspur1448806617.png"
+  },
+  {
+    "slug": "inter",
+    "ko": "인테르",
+    "en": "Inter Milan",
+    "league": "SerieA",
+    "aliases": [
+      "Inter",
+      "Inter Milan",
+      "Internazionale",
+      "Nerazzurri"
+    ],
+    "crest": "https://r2.thesportsdb.com/images/media/team/badge/ryhu6d1617113103.png"
+  }
+]

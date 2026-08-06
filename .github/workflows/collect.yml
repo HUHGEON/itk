@@ -1,0 +1,89 @@
+name: Collect football news
+
+# Vercel Hobby의 cron은 하루 1회 제한이라 스케줄은 여기에 둔다.
+# GitHub Actions는 퍼블릭 저장소 무료 (프라이빗은 월 2,000분).
+#
+# 한 IP에서 244명을 20분마다 전부 조회하면 Google News에 429를 맞는다.
+# 그래서 신뢰도에 따라 조회 주기를 나눈다:
+#   hot  (20분) — 0티어 27명 + 매체 23곳   ≈ 50 요청
+#   warm (1시간) — 1.5티어 이하를 3등분     ≈ 55 요청
+#   cold (6시간) — 전 티어를 4등분          ≈ 61 요청
+on:
+  schedule:
+    - cron: "*/20 * * * *"
+    - cron: "7 * * * *"
+    - cron: "23 */6 * * *"
+  workflow_dispatch:
+    inputs:
+      band:
+        description: "hot | warm | cold"
+        default: hot
+        type: choice
+        options: [hot, warm, cold]
+
+concurrency:
+  group: collect
+  cancel-in-progress: false
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: ${{ vars.NEXT_PUBLIC_SUPABASE_URL }}
+      SUPABASE_SECRET_KEY: ${{ secrets.SUPABASE_SECRET_KEY }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - run: npm ci
+
+      - name: Pick collection band
+        id: band
+        run: |
+          case "${{ github.event.schedule }}" in
+            "7 * * * *")    BAND=warm ;;
+            "23 */6 * * *") BAND=cold ;;
+            "*/20 * * * *") BAND=hot ;;
+            *)              BAND="${{ inputs.band || 'hot' }}" ;;
+          esac
+
+          HOUR=$((10#$(date -u +%H)))
+          case "$BAND" in
+            hot)  ARGS="--tier 0" ;;
+            warm) ARGS="--tier 1.5 --no-outlets --slice $((HOUR % 3))/3" ;;
+            cold) ARGS="--tier 3   --no-outlets --slice $(((HOUR / 6) % 4))/4" ;;
+          esac
+
+          echo "band=$BAND" >> "$GITHUB_OUTPUT"
+          echo "args=$ARGS" >> "$GITHUB_OUTPUT"
+          echo "▶ $BAND: npm run collect -- $ARGS"
+
+      # Registries rarely change; only the cheap hot run needs to re-sync them.
+      - name: Seed registries
+        if: steps.band.outputs.band == 'hot'
+        run: npm run seed
+
+      - name: Collect articles
+        run: npm run collect -- ${{ steps.band.outputs.args }}
+
+      # MyMemory needs no key; ANTHROPIC_API_KEY upgrades the engine if present.
+      - name: Translate headlines
+        run: npm run translate -- --limit 150
+        env:
+          MYMEMORY_EMAIL: ${{ secrets.MYMEMORY_EMAIL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      # Optional — skips itself when no channel is configured.
+      - name: Push team alerts
+        run: npm run notify
+        env:
+          NOTIFY_TEAMS: ${{ vars.NOTIFY_TEAMS }}
+          NOTIFY_MAX_TIER: ${{ vars.NOTIFY_MAX_TIER }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

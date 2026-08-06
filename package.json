@@ -4,24 +4,40 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "next build --turbopack",
+    "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "merge": "tsx scripts/merge-journalists.ts",
+    "db:push": "tsx scripts/db-push.ts",
+    "seed": "tsx scripts/seed.ts",
+    "collect": "tsx scripts/collect.ts",
+    "translate": "tsx scripts/translate.ts",
+    "crests": "tsx scripts/fetch-crests.ts",
+    "notify": "tsx scripts/notify.ts",
+    "watch": "tsx scripts/watch.ts",
+    "bluesky": "tsx scripts/discover-bluesky.ts",
+    "query": "tsx scripts/query.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.115.0",
+    "@supabase/supabase-js": "^2.111.0",
+    "next": "15.5.22",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "next": "15.5.22"
+    "rss-parser": "^3.13.0",
+    "ws": "^8.21.1"
   },
   "devDependencies": {
-    "typescript": "^5",
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@tailwindcss/postcss": "^4",
-    "tailwindcss": "^4",
+    "@types/ws": "^8.18.1",
     "eslint": "^9",
     "eslint-config-next": "15.5.22",
-    "@eslint/eslintrc": "^3"
+    "tailwindcss": "^4",
+    "tsx": "^4.23.1",
+    "typescript": "^5"
   }
 }

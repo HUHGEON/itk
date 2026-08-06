@@ -1,103 +1,129 @@
-import Image from "next/image";
+import { Suspense } from "react";
+import { getFeed, getTeamActivity, getJournalistActivity } from "@/lib/feed";
+import { loadTeams, loadJournalists } from "@/lib/registry";
+import type { Team } from "@/lib/types";
+import { Filters } from "@/components/Filters";
+import { ArticleCard } from "@/components/ArticleCard";
+import { AlertPanel } from "@/components/AlertPanel";
+import { TranslationProvider, TranslateToggle } from "@/components/TranslationProvider";
+import { CollectButton } from "@/components/CollectButton";
 
-export default function Home() {
+export const dynamic = "force-dynamic";
+
+type SearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+function csv(v: string | string[] | undefined): string[] {
+  if (!v) return [];
+  const s = Array.isArray(v) ? v.join(",") : v;
+  return s.split(",").filter(Boolean);
+}
+
+export default async function Home({ searchParams }: { searchParams: SearchParams }) {
+  const sp = await searchParams;
+
+  const tiers = csv(sp.tier)
+    .map(Number)
+    .filter((n) => !Number.isNaN(n));
+  const teamSlugs = csv(sp.team);
+  const league = typeof sp.league === "string" ? sp.league : undefined;
+  const q = typeof sp.q === "string" ? sp.q : undefined;
+  const who = typeof sp.who === "string" ? sp.who : undefined;
+  // The feed is only what we can attribute to a ranked reporter — outlet churn
+  // with no recognised byline was four in five articles and buried everything
+  // the tier ranking exists to surface. `?feed=all` is the escape hatch.
+  const tieredOnly = sp.feed !== "all";
+
+  const base = { tiers, teams: teamSlugs, league, q, journalistId: who };
+
+  const [rows, activity, journalistActivity] = await Promise.all([
+    getFeed({ ...base, tieredOnly, limit: 80 }),
+    // Counts describe the combination on screen, so each excludes its own
+    // dimension: team badges ignore the team filter, journalist badges ignore
+    // the journalist filter.
+    getTeamActivity({ ...base, tieredOnly }),
+    getJournalistActivity({ teams: teamSlugs, league, q }),
+  ]);
+
+  const teams = loadTeams();
+  const teamMap = new Map<string, Team>(teams.map((t) => [t.slug, t]));
+  const journalists = loadJournalists();
+  const now = Date.now();
+
   return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <TranslationProvider>
+      <div className="min-h-screen bg-bg">
+        {/* Opaque, not translucent: a backdrop-blur header let article text
+            bleed through it while scrolling. */}
+        <header className="sticky top-0 z-30 border-b border-border bg-bg">
+          <div className="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-2.5">
+            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-accent text-[13px] font-black text-black">
+              T
+            </span>
+            <h1 className="text-[14px] font-bold">티어보드</h1>
+            <span className="text-[11px] text-muted">{rows.length}건</span>
+            <div className="ml-auto flex items-center gap-2">
+              <CollectButton />
+              <TranslateToggle />
+            </div>
+          </div>
+        </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+        <div className="mx-auto max-w-5xl gap-4 lg:flex lg:px-4 lg:py-4">
+          <main className="min-w-0 flex-1 overflow-hidden lg:rounded-xl lg:border lg:border-border lg:bg-surface">
+            <Suspense fallback={<div className="p-4 text-muted">필터 불러오는 중…</div>}>
+              <Filters
+                teams={teams}
+                activity={activity}
+                journalists={journalists}
+                journalistActivity={journalistActivity}
+              />
+            </Suspense>
+
+            {rows.length === 0 ? (
+              <EmptyState tieredOnly={tieredOnly} hasJournalists={journalists.length > 0} />
+            ) : (
+              rows.map((row) => (
+                <ArticleCard key={row.id} row={row} teams={teamMap} now={now} />
+              ))
+            )}
+          </main>
+
+          <aside className="hidden w-64 shrink-0 lg:block">
+            <AlertPanel teams={teams} />
+          </aside>
         </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+      </div>
+    </TranslationProvider>
+  );
+}
+
+function EmptyState({
+  tieredOnly,
+  hasJournalists,
+}: {
+  tieredOnly: boolean;
+  hasJournalists: boolean;
+}) {
+  return (
+    <div className="px-6 py-16 text-center">
+      <p className="text-[15px] font-semibold">조건에 맞는 기사가 없습니다</p>
+      <p className="mt-2 text-[13px] leading-relaxed text-muted">
+        {!hasJournalists ? (
+          <>
+            기자 명단이 비어 있습니다.{" "}
+            <code className="rounded bg-surface-3 px-1.5 py-0.5">npm run seed</code> 를 먼저
+            실행하세요.
+          </>
+        ) : tieredOnly ? (
+          <>
+            <b className="text-text">속보</b> 탭은 기자가 확인된 기사만 보여줍니다.
+            <br />
+            필터를 풀거나 <b className="text-text">전체</b> 탭을 눌러보세요.
+          </>
+        ) : (
+          <>필터를 줄여보세요.</>
+        )}
+      </p>
     </div>
   );
 }

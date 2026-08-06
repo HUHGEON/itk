@@ -1,0 +1,3813 @@
+[
+  {
+    "ko": "아란차 로드리게스",
+    "en": "Arancha Rodríguez",
+    "tier": 0,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena COPE",
+    "x": "AranchaMOBILE",
+    "confidence": "high",
+    "note": "Also works for Real Madrid TV.",
+    "id": "arancha-rodriguez",
+    "active": true
+  },
+  {
+    "ko": "벨렌 산체스",
+    "en": "Belén Sánchez",
+    "tier": 0,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "laSexta (Jugones)",
+    "x": "Belen_Boli",
+    "confidence": "medium",
+    "note": "Best match is Belén Sánchez 'Boli' of laSexta/Jugones, who covers Atlético; identity not confirmed beyond that, and the name is common in Spanish media.",
+    "id": "belen-sanchez",
+    "active": true
+  },
+  {
+    "ko": "세자르 루이스 멜로",
+    "en": "César Luis Merlo",
+    "tier": 0,
+    "teams": [],
+    "league": "General",
+    "country": "Argentina",
+    "outlet": "TyC Sports",
+    "x": "CLMerlo",
+    "confidence": "high",
+    "note": "",
+    "id": "cesar-luis-merlo",
+    "active": true
+  },
+  {
+    "ko": "데이비드 온스테인",
+    "en": "David Ornstein",
+    "tier": 0,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "David_Ornstein",
+    "confidence": "high",
+    "note": "",
+    "id": "david-ornstein",
+    "active": true,
+    "bluesky": "david-ornstein.bsky.social"
+  },
+  {
+    "ko": "파브리지오 비아신",
+    "en": "Fabrizio Biasin",
+    "tier": 0,
+    "teams": [
+      "inter"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Libero",
+    "x": "FBiasin",
+    "confidence": "high",
+    "note": "",
+    "id": "fabrizio-biasin",
+    "active": true
+  },
+  {
+    "ko": "헥토르 고메즈",
+    "en": "Héctor Gómez",
+    "tier": 0,
+    "teams": [
+      "valencia"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Radio Esport Valencia / Valencia Plaza",
+    "x": "Generaldepie_",
+    "confidence": "medium",
+    "note": "Valencia CF specialist who runs Tribuna Deportiva; common name, so the handle is the reliable identifier rather than the name itself.",
+    "id": "hector-gomez",
+    "active": true
+  },
+  {
+    "ko": "하이코 오스텐드로프",
+    "en": "Heiko Ostendorp",
+    "tier": 0,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "",
+    "x": "Ozzywessi",
+    "confidence": "medium",
+    "note": "Name and X handle verified, but employer is unclear: long-time RND/Ruhr-area football writer who has reportedly since moved to a club role at VfL Bochum.",
+    "id": "heiko-ostendorp",
+    "active": true
+  },
+  {
+    "ko": "하워드 너스",
+    "en": "Howard Nurse",
+    "tier": 0,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "BBC Sport",
+    "x": "howardnurse",
+    "confidence": "high",
+    "note": "",
+    "id": "howard-nurse",
+    "active": true
+  },
+  {
+    "ko": "호세 루이스 산체스",
+    "en": "José Luis Sánchez",
+    "tier": 0,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "laSexta / El Chiringuito",
+    "x": "JLSanchez78",
+    "confidence": "high",
+    "note": "Very common Spanish name — search with 'El Chiringuito' or the handle to disambiguate.",
+    "id": "jose-luis-sanchez",
+    "active": true,
+    "bluesky": "jlbracamonte.bsky.social"
+  },
+  {
+    "ko": "줄리앙 메이나르",
+    "en": "Julien Maynard",
+    "tier": 0,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "TF1 / Téléfoot",
+    "x": "Ju_Maynard",
+    "confidence": "high",
+    "note": "",
+    "id": "julien-maynard",
+    "active": true
+  },
+  {
+    "ko": "위르겐 쾨르스",
+    "en": "Jürgen Koers",
+    "tier": 0,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Ruhr Nachrichten",
+    "x": "JuergenKoers",
+    "confidence": "high",
+    "note": "Also spelled 'Juergen Koers'.",
+    "id": "jurgen-koers",
+    "active": true
+  },
+  {
+    "ko": "크리스토프 테루어",
+    "en": "Kristof Terreur",
+    "tier": 0,
+    "teams": [],
+    "league": "General",
+    "country": "Belgium",
+    "outlet": "Het Laatste Nieuws (HLN)",
+    "x": "HLNinEngeland",
+    "confidence": "high",
+    "note": "Parenthetical is (벨기에)=Belgium, so league set to General, but his actual beat is English football / Belgian players abroad.",
+    "id": "kristof-terreur",
+    "active": true
+  },
+  {
+    "ko": "로익 탄지",
+    "en": "Loïc Tanzi",
+    "tier": 0,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "L'Équipe",
+    "x": "LoicTanzi",
+    "confidence": "high",
+    "note": "Formerly RMC Sport; now L'Équipe.",
+    "id": "loic-tanzi",
+    "active": true
+  },
+  {
+    "ko": "마리오 토레혼",
+    "en": "Mario Torrejón",
+    "tier": 0,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena SER",
+    "x": "mariotorrejon",
+    "confidence": "high",
+    "note": "Also appears on El Chiringuito / Real Madrid TV.",
+    "id": "mario-torrejon",
+    "active": true
+  },
+  {
+    "ko": "마티아스 데르슈",
+    "en": "Matthias Dersch",
+    "tier": 0,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "kicker",
+    "x": "MatthiasDersch",
+    "confidence": "high",
+    "note": "Covered BVB for the Lensing group (Ruhr Nachrichten) for years before joining kicker.",
+    "id": "matthias-dersch",
+    "active": true
+  },
+  {
+    "ko": "멜초르 루이스",
+    "en": "Melchor Ruiz",
+    "tier": 0,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena COPE",
+    "x": "MelchorRuizCope",
+    "confidence": "high",
+    "note": "",
+    "id": "melchor-ruiz",
+    "active": true
+  },
+  {
+    "ko": "마이크 베르바이",
+    "en": "Mike Verweij",
+    "tier": 0,
+    "teams": [],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "De Telegraaf",
+    "x": "MikeVerweij",
+    "confidence": "high",
+    "note": "Listed as a Netherlands-wide reporter; in practice he is De Telegraaf's chief Ajax correspondent.",
+    "id": "mike-verweij",
+    "active": true
+  },
+  {
+    "ko": "모하메드 부합시",
+    "en": "Mohamed Bouhafsi",
+    "tier": 0,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "France Télévisions",
+    "x": "mohamedbouhafsi",
+    "confidence": "high",
+    "note": "Made his name at RMC Sport before moving to France Télévisions.",
+    "id": "mohamed-bouhafsi",
+    "active": true
+  },
+  {
+    "ko": "로메오 아그레스티",
+    "en": "Romeo Agresti",
+    "tier": 0,
+    "teams": [
+      "juventus"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Goal Italia",
+    "x": "romeoagresti",
+    "confidence": "high",
+    "note": "",
+    "id": "romeo-agresti",
+    "active": true
+  },
+  {
+    "ko": "루벤 우리아",
+    "en": "Rubén Uría",
+    "tier": 0,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Goal España",
+    "x": "rubenuria",
+    "confidence": "high",
+    "note": "",
+    "id": "ruben-uria",
+    "active": true
+  },
+  {
+    "ko": "사베 데파르주",
+    "en": "Saber Desfarges",
+    "tier": 0,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "TF1 / Téléfoot",
+    "x": "SaberDesfa",
+    "confidence": "high",
+    "note": "",
+    "id": "saber-desfarges",
+    "active": true
+  },
+  {
+    "ko": "세바스티안 베쓸링",
+    "en": "Sebastian Weßling",
+    "tier": 0,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Funke Sport (WAZ)",
+    "x": "fluestertweets",
+    "confidence": "high",
+    "note": "Also written 'Sebastian Wessling' (ss) in non-German sources — try both spellings when searching.",
+    "id": "sebastian-we-ling",
+    "active": true,
+    "bluesky": "wessling.bsky.social"
+  },
+  {
+    "ko": "사이먼 피치",
+    "en": "Simon Peach",
+    "tier": 0,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "PA Media",
+    "x": "SimonPeach",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-peach",
+    "active": true
+  },
+  {
+    "ko": "사이먼 스톤",
+    "en": "Simon Stone",
+    "tier": 0,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "BBC Sport",
+    "x": "sistoney67",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-stone",
+    "active": true
+  },
+  {
+    "ko": "토마스 헤네케",
+    "en": "Thomas Hennecke",
+    "tier": 0,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "kicker",
+    "x": "ThomasHennecke",
+    "confidence": "high",
+    "note": "",
+    "id": "thomas-hennecke",
+    "active": true
+  },
+  {
+    "ko": "토마스 히테",
+    "en": "Thomas Hiete",
+    "tier": 0,
+    "teams": [
+      "wolfsburg"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "kicker",
+    "x": "GrafHiete",
+    "confidence": "high",
+    "note": "",
+    "id": "thomas-hiete",
+    "active": true
+  },
+  {
+    "ko": "톰 보거트",
+    "en": "Tom Bogert",
+    "tier": 0,
+    "teams": [],
+    "league": "General",
+    "country": "United States",
+    "outlet": "The Athletic",
+    "x": "tombogert",
+    "confidence": "high",
+    "note": "MLS/USMNT newsbreaker; has moved between The Athletic, GiveMeSport and CBS, so outlet may be out of date.",
+    "id": "tom-bogert",
+    "active": true,
+    "bluesky": "tombogert.bsky.social"
+  },
+  {
+    "ko": "압델라흐 불마",
+    "en": "Abdellah Boulma",
+    "tier": 1,
+    "teams": [
+      "psg"
+    ],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "Independent",
+    "x": "",
+    "confidence": "high",
+    "note": "Independent PSG insider; X handle not verified.",
+    "id": "abdellah-boulma",
+    "active": true
+  },
+  {
+    "ko": "아드리안 알베르토",
+    "en": "Adrián Alberto",
+    "tier": 1,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify. Straight romanization; the Korean may garble a surname such as Albets/Albertos.",
+    "id": "adrian-alberto",
+    "active": true
+  },
+  {
+    "ko": "아흐메드 슈블",
+    "en": "Ahmed Shooble",
+    "tier": 1,
+    "teams": [
+      "bournemouth"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Versus (formerly The Athletic)",
+    "x": "AhmedShooble",
+    "confidence": "high",
+    "note": "Covered Bournemouth (and Fulham) as club reporter for The Athletic until 2023.",
+    "id": "ahmed-shooble",
+    "active": true
+  },
+  {
+    "ko": "알레스데어 골드",
+    "en": "Alasdair Gold",
+    "tier": 1,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "football.london",
+    "x": "AlasdairGold",
+    "confidence": "high",
+    "note": "",
+    "id": "alasdair-gold",
+    "active": true,
+    "bluesky": "alasdairgold.bsky.social"
+  },
+  {
+    "ko": "알베르토 몬테로",
+    "en": "Alberto Montero",
+    "tier": 1,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify — no Spanish football journalist by this name found. Straight romanization of the Korean.",
+    "id": "alberto-montero",
+    "active": true
+  },
+  {
+    "ko": "알렉산드레 자퀸",
+    "en": "Alexandre Jacquin",
+    "tier": 1,
+    "teams": [
+      "marseille"
+    ],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "La Provence",
+    "x": "AJac13",
+    "confidence": "high",
+    "note": "Head of the sports desk at La Provence.",
+    "id": "alexandre-jacquin",
+    "active": true
+  },
+  {
+    "ko": "앤디 네일러",
+    "en": "Andy Naylor",
+    "tier": 1,
+    "teams": [
+      "brighton"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "",
+    "confidence": "high",
+    "note": "Long-time Brighton correspondent (previously The Argus); X handle not verified.",
+    "id": "andy-naylor",
+    "active": true,
+    "bluesky": "andynaylorbrighton.bsky.social"
+  },
+  {
+    "ko": "안토니오 루이스",
+    "en": "Antonio Ruiz",
+    "tier": 1,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify; very common Spanish name. Atlético Madrid beat reporter.",
+    "id": "antonio-ruiz",
+    "active": true
+  },
+  {
+    "ko": "안토니오 비티엘로",
+    "en": "Antonio Vitiello",
+    "tier": 1,
+    "teams": [
+      "ac-milan"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "MilanNews.it",
+    "x": "",
+    "confidence": "high",
+    "note": "X handle not verified.",
+    "id": "antonio-vitiello",
+    "active": true
+  },
+  {
+    "ko": "애슐리 프리스",
+    "en": "Ashley Preece",
+    "tier": 1,
+    "teams": [
+      "aston-villa"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Birmingham Live",
+    "x": "ashpreece",
+    "confidence": "high",
+    "note": "",
+    "id": "ashley-preece",
+    "active": true
+  },
+  {
+    "ko": "브루노 살로몬",
+    "en": "Bruno Salomon",
+    "tier": 1,
+    "teams": [
+      "psg"
+    ],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "ICI Paris Île-de-France (Radio France, ex-France Bleu)",
+    "x": "bruno_salomon",
+    "confidence": "high",
+    "note": "",
+    "id": "bruno-salomon",
+    "active": true
+  },
+  {
+    "ko": "찰스 왓츠",
+    "en": "Charles Watts",
+    "tier": 1,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Independent (formerly GOAL)",
+    "x": "charles_watts",
+    "confidence": "high",
+    "note": "Now works independently (YouTube/Substack) after leaving GOAL.",
+    "id": "charles-watts",
+    "active": true,
+    "bluesky": "charleswatts.bsky.social"
+  },
+  {
+    "ko": "다니엘 테일러",
+    "en": "Daniel Taylor",
+    "tier": 1,
+    "teams": [
+      "nottingham-forest"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "DTathletic",
+    "confidence": "high",
+    "note": "",
+    "id": "daniel-taylor",
+    "active": true
+  },
+  {
+    "ko": "다니엘레 롱고",
+    "en": "Daniele Longo",
+    "tier": 1,
+    "teams": [
+      "ac-milan"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Calciomercato.com",
+    "x": "",
+    "confidence": "high",
+    "note": "X handle not verified.",
+    "id": "daniele-longo",
+    "active": true
+  },
+  {
+    "ko": "데이비드 히트너",
+    "en": "David Hytner",
+    "tier": 1,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Guardian",
+    "x": "davidhytner",
+    "confidence": "high",
+    "note": "",
+    "id": "david-hytner",
+    "active": true
+  },
+  {
+    "ko": "다비드 말박",
+    "en": "David Vinuesa Malbac",
+    "tier": 1,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "esRadio / Libertad Digital",
+    "x": "Dvinuesa",
+    "confidence": "medium",
+    "note": "Korean renders only the second surname 'Malbac'. Matched to the esRadio/Libertad Digital Atlético reporter David Vinuesa Malbac — bylines usually read 'David Vinuesa'.",
+    "id": "david-vinuesa-malbac",
+    "active": true
+  },
+  {
+    "ko": "디르크 슐라르만",
+    "en": "Dirk große Schlarmann",
+    "tier": 1,
+    "teams": [
+      "schalke"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Sky Sport Germany",
+    "x": "",
+    "confidence": "high",
+    "note": "Full byline includes the nobiliary-style particle 'große'; searchable as 'Dirk grosse Schlarmann'.",
+    "id": "dirk-gro-e-schlarmann",
+    "active": true,
+    "bluesky": "skydirk.bsky.social"
+  },
+  {
+    "ko": "엘마어 레데만",
+    "en": "Elmar Redemann",
+    "tier": 1,
+    "teams": [
+      "schalke"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify. 'Elmar Redemann' is a best-guess romanization (Redemann/Rademann/Ledemann are all plausible). Schalke 04 beat reporter.",
+    "id": "elmar-redemann",
+    "active": true
+  },
+  {
+    "ko": "파브리스 호킨스",
+    "en": "Fabrice Hawkins",
+    "tier": 1,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "RMC Sport",
+    "x": "FabriceHawkins",
+    "confidence": "high",
+    "note": "",
+    "id": "fabrice-hawkins",
+    "active": true
+  },
+  {
+    "ko": "페르난도 폴로",
+    "en": "Fernando Polo",
+    "tier": 1,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Diario Sport",
+    "x": "",
+    "confidence": "medium",
+    "note": "Believed to be the Diario Sport editor/director who breaks Barcelona news; not re-verified.",
+    "id": "fernando-polo",
+    "active": true
+  },
+  {
+    "ko": "플로리안 플라텐버그",
+    "en": "Florian Plettenberg",
+    "tier": 1,
+    "teams": [
+      "bayern"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Sky Sport Germany",
+    "x": "Plettigoal",
+    "confidence": "high",
+    "note": "",
+    "id": "florian-plettenberg",
+    "active": true
+  },
+  {
+    "ko": "그렉 에반스",
+    "en": "Gregg Evans",
+    "tier": 1,
+    "teams": [
+      "aston-villa"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "greggevans80",
+    "confidence": "high",
+    "note": "",
+    "id": "gregg-evans",
+    "active": true
+  },
+  {
+    "ko": "귀도 셰퍼",
+    "en": "Guido Schäfer",
+    "tier": 1,
+    "teams": [
+      "leipzig"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Leipziger Volkszeitung (LVZ)",
+    "x": "",
+    "confidence": "medium",
+    "note": "Long-standing RB Leipzig reporter; also written as 'Guido Schaefer'. X handle not verified.",
+    "id": "guido-schafer",
+    "active": true
+  },
+  {
+    "ko": "잭 고헌",
+    "en": "Jack Gaughan",
+    "tier": 1,
+    "teams": [
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "Jack_Gaughan",
+    "confidence": "high",
+    "note": "",
+    "id": "jack-gaughan",
+    "active": true
+  },
+  {
+    "ko": "제이콥 탄스웰",
+    "en": "Jacob Tanswell",
+    "tier": 1,
+    "teams": [
+      "southampton"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "J_Tanswell",
+    "confidence": "high",
+    "note": "",
+    "id": "jacob-tanswell",
+    "active": true,
+    "bluesky": "jacobtanswell.bsky.social"
+  },
+  {
+    "ko": "제임스 피어스",
+    "en": "James Pearce",
+    "tier": 1,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "JamesPearceLFC",
+    "confidence": "high",
+    "note": "",
+    "id": "james-pearce",
+    "active": true
+  },
+  {
+    "ko": "하비 마타",
+    "en": "Javi Mata",
+    "tier": 1,
+    "teams": [
+      "villarreal"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Diario AS / Radio Vila-real",
+    "x": "",
+    "confidence": "high",
+    "note": "25+ years on the Villarreal beat; X handle not verified.",
+    "id": "javi-mata",
+    "active": true
+  },
+  {
+    "ko": "존 퍼시",
+    "en": "John Percy",
+    "tier": 1,
+    "teams": [
+      "wolves",
+      "aston-villa"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "JPercyTelegraph",
+    "confidence": "high",
+    "note": "Midlands correspondent — covers Wolves and Aston Villa.",
+    "id": "john-percy",
+    "active": true
+  },
+  {
+    "ko": "호세 마누엘 가르시아",
+    "en": "José Manuel García",
+    "tier": 1,
+    "teams": [
+      "sevilla"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "medium",
+    "note": "Very common Spanish name; not independently verified. Sevilla FC beat reporter.",
+    "id": "jose-manuel-garcia",
+    "active": true,
+    "bluesky": "josemgarcia77.bsky.social"
+  },
+  {
+    "ko": "후안미 산체스",
+    "en": "Juanmi Sánchez",
+    "tier": 1,
+    "teams": [
+      "mallorca"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "medium",
+    "note": "Romanization is unambiguous but the individual was not independently verified; RCD Mallorca beat reporter.",
+    "id": "juanmi-sanchez",
+    "active": true
+  },
+  {
+    "ko": "유레크 로르베르크",
+    "en": "Jurek Rohrberg",
+    "tier": 1,
+    "teams": [
+      "wolfsburg"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify. 'Jurek Rohrberg' is a best-guess romanization; alternatives include Lohrberg/Lorberg. Likely a Wolfsburger Allgemeine Zeitung / regional VfL Wolfsburg reporter.",
+    "id": "jurek-rohrberg",
+    "active": true
+  },
+  {
+    "ko": "로리 휘트엘",
+    "en": "Laurie Whitwell",
+    "tier": 1,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "lauriewhitwell",
+    "confidence": "high",
+    "note": "",
+    "id": "laurie-whitwell",
+    "active": true
+  },
+  {
+    "ko": "리암 킨",
+    "en": "Liam Keen",
+    "tier": 1,
+    "teams": [
+      "wolves"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Express & Star",
+    "x": "LiamKeenStar",
+    "confidence": "high",
+    "note": "",
+    "id": "liam-keen",
+    "active": true
+  },
+  {
+    "ko": "리알 토마스",
+    "en": "Lyall Thomas",
+    "tier": 1,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance (formerly Sky Sports News)",
+    "x": "lyall_thomas",
+    "confidence": "high",
+    "note": "",
+    "id": "lyall-thomas",
+    "active": true
+  },
+  {
+    "ko": "마르크 베렌베크",
+    "en": "Marc Behrenbeck",
+    "tier": 1,
+    "teams": [],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Sky Sport Germany (until 2023)",
+    "x": "",
+    "confidence": "high",
+    "note": "Former Sky Sport News chief reporter and transfer expert (Germany NT, Bayern, DFB/DFL/FIFA); left Sky in March 2023.",
+    "id": "marc-behrenbeck",
+    "active": true
+  },
+  {
+    "ko": "마르셀 반 더 크란",
+    "en": "Marcel van der Kraan",
+    "tier": 1,
+    "teams": [],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "De Telegraaf",
+    "x": "MarcelvdKraan",
+    "confidence": "high",
+    "note": "Also covers English football extensively.",
+    "id": "marcel-van-der-kraan",
+    "active": true
+  },
+  {
+    "ko": "마르코 팀머",
+    "en": "Marco Timmer",
+    "tier": 1,
+    "teams": [
+      "psv"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "Voetbal International",
+    "x": "marcotimmer",
+    "confidence": "high",
+    "note": "Handed the PSV-watcher role to Tim Reedijk after eight years; now focuses on FC Utrecht and NAC Breda.",
+    "id": "marco-timmer",
+    "active": true
+  },
+  {
+    "ko": "마르타인 크라벤담",
+    "en": "Martijn Krabbendam",
+    "tier": 1,
+    "teams": [
+      "feyenoord"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "Voetbal International",
+    "x": "MKrabbendam",
+    "confidence": "high",
+    "note": "",
+    "id": "martijn-krabbendam",
+    "active": true
+  },
+  {
+    "ko": "마테오 모레노",
+    "en": "Mateo Moreno",
+    "tier": 1,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not verify; straight romanization. Risk of confusion with Matteo Moretto. Atlético Madrid beat reporter.",
+    "id": "mateo-moreno",
+    "active": true
+  },
+  {
+    "ko": "맷 우즈남",
+    "en": "Matt Woosnam",
+    "tier": 1,
+    "teams": [
+      "crystal-palace"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance / The Athletic",
+    "x": "",
+    "confidence": "high",
+    "note": "X handle not verified.",
+    "id": "matt-woosnam",
+    "active": true,
+    "bluesky": "mattwoosie.bsky.social"
+  },
+  {
+    "ko": "마테오 바르자기",
+    "en": "Matteo Barzaghi",
+    "tier": 1,
+    "teams": [
+      "inter"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sky Sport Italia",
+    "x": "MatteBarzaghi",
+    "confidence": "high",
+    "note": "",
+    "id": "matteo-barzaghi",
+    "active": true
+  },
+  {
+    "ko": "마테오 모레토",
+    "en": "Matteo Moretto",
+    "tier": 1,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Marca (formerly Relevo)",
+    "x": "MatteMoretto",
+    "confidence": "high",
+    "note": "Italian-born transfer specialist based in Spain; moved to Marca after Relevo shut down.",
+    "id": "matteo-moretto",
+    "active": true
+  },
+  {
+    "ko": "멜라시 레디",
+    "en": "Melissa Reddy",
+    "tier": 1,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Sky Sports",
+    "x": "MelissaReddy_",
+    "confidence": "high",
+    "note": "Korean transliteration '멜라시' is a slight misrendering of Melissa.",
+    "id": "melissa-reddy",
+    "active": true
+  },
+  {
+    "ko": "미구엘 앙헬 디아즈",
+    "en": "Miguel Ángel Díaz",
+    "tier": 1,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "medium",
+    "note": "Well-known Real Madrid radio reporter (Radio Marca / Onda Cero circuit), but employer not re-verified and the name is common.",
+    "id": "miguel-angel-diaz",
+    "active": true
+  },
+  {
+    "ko": "패트릭 보일랜드",
+    "en": "Patrick Boyland",
+    "tier": 1,
+    "teams": [
+      "everton"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "paddyboyland",
+    "confidence": "high",
+    "note": "",
+    "id": "patrick-boyland",
+    "active": true,
+    "bluesky": "paddyboyland.bsky.social"
+  },
+  {
+    "ko": "패트릭 베르거",
+    "en": "Patrik Berger",
+    "tier": 1,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Sky Sport Germany",
+    "x": "PatrickBergerSky",
+    "confidence": "medium",
+    "note": "Sky Germany BVB reporter; his byline appears as both 'Patrik Berger' and 'Patrick Berger'. Exact X handle not fully verified.",
+    "id": "patrik-berger",
+    "active": true
+  },
+  {
+    "ko": "폴 조이스",
+    "en": "Paul Joyce",
+    "tier": 1,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Times",
+    "x": "_pauljoyce",
+    "confidence": "high",
+    "note": "",
+    "id": "paul-joyce",
+    "active": true
+  },
+  {
+    "ko": "폴 테일러",
+    "en": "Paul Taylor",
+    "tier": 1,
+    "teams": [
+      "nottingham-forest"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Nottingham Post / NottinghamshireLive",
+    "x": "",
+    "confidence": "medium",
+    "note": "Common name; identified as the long-serving Nottingham Forest correspondent. X handle not verified.",
+    "id": "paul-taylor",
+    "active": true
+  },
+  {
+    "ko": "피터 루츨러",
+    "en": "Peter Rutzler",
+    "tier": 1,
+    "teams": [
+      "fulham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "PeterRutzler",
+    "confidence": "high",
+    "note": "",
+    "id": "peter-rutzler",
+    "active": true
+  },
+  {
+    "ko": "필 헤이",
+    "en": "Phil Hay",
+    "tier": 1,
+    "teams": [
+      "leeds"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "PhilHay_",
+    "confidence": "high",
+    "note": "",
+    "id": "phil-hay",
+    "active": true
+  },
+  {
+    "ko": "필립 힌체",
+    "en": "Philipp Hinze",
+    "tier": 1,
+    "teams": [
+      "leipzig"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Sky Sport Germany",
+    "x": "philipphinze24",
+    "confidence": "high",
+    "note": "",
+    "id": "philipp-hinze",
+    "active": true
+  },
+  {
+    "ko": "라파엘 호니그슈테인",
+    "en": "Raphael Honigstein",
+    "tier": 1,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "The Athletic",
+    "x": "honigstein",
+    "confidence": "high",
+    "note": "",
+    "id": "raphael-honigstein",
+    "active": true
+  },
+  {
+    "ko": "레온 보링가",
+    "en": "Reon Boeringa",
+    "tier": 1,
+    "teams": [
+      "ajax"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "Voetbal International",
+    "x": "",
+    "confidence": "medium",
+    "note": "Ajax-watcher at Voetbal International. First name is 'Reon', not 'Leon' as the Korean suggests.",
+    "id": "reon-boeringa",
+    "active": true
+  },
+  {
+    "ko": "릭 엘프링크",
+    "en": "Rik Elfrink",
+    "tier": 1,
+    "teams": [
+      "psv"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "Eindhovens Dagblad",
+    "x": "RikElfrink",
+    "confidence": "high",
+    "note": "",
+    "id": "rik-elfrink",
+    "active": true,
+    "bluesky": "rikelfrink.bsky.social"
+  },
+  {
+    "ko": "롭 태너",
+    "en": "Rob Tanner",
+    "tier": 1,
+    "teams": [
+      "leicester"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "RobTanner_",
+    "confidence": "high",
+    "note": "",
+    "id": "rob-tanner",
+    "active": true
+  },
+  {
+    "ko": "로셰인 토마스",
+    "en": "Roshane Thomas",
+    "tier": 1,
+    "teams": [
+      "west-ham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "",
+    "confidence": "high",
+    "note": "X handle not verified.",
+    "id": "roshane-thomas",
+    "active": true
+  },
+  {
+    "ko": "세르히오 발렌틴",
+    "en": "Sergio Valentín",
+    "tier": 1,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "esRadio / Libertad Digital",
+    "x": "",
+    "confidence": "high",
+    "note": "X handle not verified.",
+    "id": "sergio-valentin",
+    "active": true
+  },
+  {
+    "ko": "샤문 하페즈",
+    "en": "Shamoon Hafez",
+    "tier": 1,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "BBC Sport",
+    "x": "ShamoonHafez",
+    "confidence": "high",
+    "note": "",
+    "id": "shamoon-hafez",
+    "active": true
+  },
+  {
+    "ko": "사이먼 바이코프스키",
+    "en": "Simon Bajkowski",
+    "tier": 1,
+    "teams": [
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Manchester Evening News",
+    "x": "spbajko",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-bajkowski",
+    "active": true
+  },
+  {
+    "ko": "스티브 매들리",
+    "en": "Steve Madeley",
+    "tier": 1,
+    "teams": [
+      "wolves"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "SteveMadeley78",
+    "confidence": "high",
+    "note": "",
+    "id": "steve-madeley",
+    "active": true
+  },
+  {
+    "ko": "스튜어트 브레넌",
+    "en": "Stuart Brennan",
+    "tier": 1,
+    "teams": [
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Manchester Evening News",
+    "x": "StuBrennanMEN",
+    "confidence": "high",
+    "note": "",
+    "id": "stuart-brennan",
+    "active": true
+  },
+  {
+    "ko": "스벤 베스터 슐츠",
+    "en": "Sven Westerschulze",
+    "tier": 1,
+    "teams": [
+      "dortmund"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Borussia Dortmund (formerly Sky Sport Germany)",
+    "x": "",
+    "confidence": "high",
+    "note": "Left journalism in July 2023 to become BVB press spokesman, so he no longer files news.",
+    "id": "sven-westerschulze",
+    "active": true
+  },
+  {
+    "ko": "엘 보블",
+    "en": "The Bobble",
+    "tier": 1,
+    "teams": [
+      "everton"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Independent (anonymous Everton insider)",
+    "x": "ElBobble",
+    "confidence": "medium",
+    "note": "Not a bylined journalist — an anonymous Everton insider account (@ElBobble, 'The Bobble') widely cited for Everton transfer news. No real name is public.",
+    "id": "the-bobble",
+    "active": true
+  },
+  {
+    "ko": "팀 스피어스",
+    "en": "Tim Spiers",
+    "tier": 1,
+    "teams": [
+      "wolves"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "tim_spiers",
+    "confidence": "high",
+    "note": "",
+    "id": "tim-spiers",
+    "active": true
+  },
+  {
+    "ko": "차비 캄포스",
+    "en": "Xavi Campos",
+    "tier": 1,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Catalunya Ràdio",
+    "x": "xavicampos",
+    "confidence": "medium",
+    "note": "Matched to the Catalunya Ràdio sports director who covers Barça; identification not conclusive.",
+    "id": "xavi-campos",
+    "active": true
+  },
+  {
+    "ko": "사비 시드로",
+    "en": "Xavi Sidro",
+    "tier": 1,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Weakly verified. Only match found is a Xavi Sidro at Cadena SER (Castellón) covering Spanish transfer news; may be a different person. 'Xavi/Javi Cidro' is an alternative spelling.",
+    "id": "xavi-sidro",
+    "active": true
+  },
+  {
+    "ko": "아담 크래프튼",
+    "en": "Adam Crafton",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "AdamCrafton_",
+    "confidence": "high",
+    "note": "News/investigations writer; previously a Manchester United and La Liga beat reporter.",
+    "id": "adam-crafton",
+    "active": true,
+    "bluesky": "adamcrafton.bsky.social"
+  },
+  {
+    "ko": "알베르트 로제",
+    "en": "Albert Roge",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Jijantes FC / SPORT",
+    "x": "albert_roge",
+    "confidence": "high",
+    "note": "Catalan spelling: Albert Rogé.",
+    "id": "albert-roge",
+    "active": true
+  },
+  {
+    "ko": "에이미 로렌스",
+    "en": "Amy Lawrence",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "amylawrence71",
+    "confidence": "high",
+    "note": "",
+    "id": "amy-lawrence",
+    "active": true,
+    "bluesky": "amylawrence.bsky.social"
+  },
+  {
+    "ko": "아르투르 페롯",
+    "en": "Arthur Perrot",
+    "tier": 1.5,
+    "teams": [
+      "psg"
+    ],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "RMC Sport",
+    "x": "ArthurPerrot",
+    "confidence": "high",
+    "note": "Covers PSG and the France national team for RMC Sport / BFMTV.",
+    "id": "arthur-perrot",
+    "active": true
+  },
+  {
+    "ko": "벤 디너리",
+    "en": "Ben Dinnery",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Premier Injuries",
+    "x": "BenDinnery",
+    "confidence": "medium",
+    "note": "Injury analyst (founder of PremierInjuries.com) rather than a club beat reporter; the (아스날) tag likely reflects his frequent Arsenal injury updates.",
+    "id": "ben-dinnery",
+    "active": true,
+    "bluesky": "bendinnery.bsky.social"
+  },
+  {
+    "ko": "브루노 안드라데",
+    "en": "Bruno Andrade",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "Brazil",
+    "outlet": "ESPN Brasil",
+    "x": "brunoandrd",
+    "confidence": "medium",
+    "note": "Common name; matched to the ESPN Brasil transfer reporter, which fits the (브라질) tag.",
+    "id": "bruno-andrade",
+    "active": true
+  },
+  {
+    "ko": "카를로스 보쉬",
+    "en": "Carlos Bosch",
+    "tier": 1.5,
+    "teams": [
+      "valencia"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Superdeporte (former director) / independent",
+    "x": "Carlos_bosch",
+    "confidence": "medium",
+    "note": "Valencia CF specialist and former Superdeporte director; now largely independent (Twitch/YouTube).",
+    "id": "carlos-bosch",
+    "active": true
+  },
+  {
+    "ko": "찰리 애클리셰어",
+    "en": "Charlie Eccleshare",
+    "tier": 1.5,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "CDEccleshare",
+    "confidence": "high",
+    "note": "",
+    "id": "charlie-eccleshare",
+    "active": true,
+    "bluesky": "cdeccleshare.bsky.social"
+  },
+  {
+    "ko": "크리스 바스콤",
+    "en": "Chris Bascombe",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "Chris_Bascombe",
+    "confidence": "high",
+    "note": "",
+    "id": "chris-bascombe",
+    "active": true,
+    "bluesky": "chrisbascombe.bsky.social"
+  },
+  {
+    "ko": "크리스 와",
+    "en": "Chris Waugh",
+    "tier": 1.5,
+    "teams": [
+      "newcastle"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "ChrisDHWaugh",
+    "confidence": "high",
+    "note": "",
+    "id": "chris-waugh",
+    "active": true,
+    "bluesky": "chrisdhwaugh.bsky.social"
+  },
+  {
+    "ko": "크리스 휘틀리",
+    "en": "Chris Wheatley",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "TBR Football / freelance",
+    "x": "ChrisWheatley_",
+    "confidence": "high",
+    "note": "",
+    "id": "chris-wheatley",
+    "active": true
+  },
+  {
+    "ko": "크레이그 호프",
+    "en": "Craig Hope",
+    "tier": 1.5,
+    "teams": [
+      "newcastle"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "CraigHope_DM",
+    "confidence": "high",
+    "note": "",
+    "id": "craig-hope",
+    "active": true
+  },
+  {
+    "ko": "댄 킬패트릭",
+    "en": "Dan Kilpatrick",
+    "tier": 1.5,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Evening Standard",
+    "x": "Dan_KP",
+    "confidence": "medium",
+    "note": "Name confident; current outlet not re-verified.",
+    "id": "dan-kilpatrick",
+    "active": true
+  },
+  {
+    "ko": "댄 론",
+    "en": "Dan Roan",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "BBC Sport",
+    "x": "danroan",
+    "confidence": "high",
+    "note": "BBC sports editor; national/off-pitch news rather than a club beat.",
+    "id": "dan-roan",
+    "active": true
+  },
+  {
+    "ko": "댄 셸던",
+    "en": "Dan Sheldon",
+    "tier": 1.5,
+    "teams": [
+      "southampton"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "DanSheldon_",
+    "confidence": "medium",
+    "note": "",
+    "id": "dan-sheldon",
+    "active": true
+  },
+  {
+    "ko": "다니 메로뇨",
+    "en": "Dani Merono",
+    "tier": 1.5,
+    "teams": [
+      "valencia"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "A Punt / Superdeporte",
+    "x": "Dani_Merono",
+    "confidence": "high",
+    "note": "Spanish spelling: Dani Meroño (À Punt Media).",
+    "id": "dani-merono",
+    "active": true
+  },
+  {
+    "ko": "다니엘레 마리",
+    "en": "Daniele Mari",
+    "tier": 1.5,
+    "teams": [
+      "inter"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "FCInter1908",
+    "x": "marifcinter",
+    "confidence": "high",
+    "note": "",
+    "id": "daniele-mari",
+    "active": true
+  },
+  {
+    "ko": "데이브 오콥",
+    "en": "Dave OCKOP",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "Ireland",
+    "outlet": "DaveOCKOP.com",
+    "x": "DaveOCKOP",
+    "confidence": "medium",
+    "note": "Pseudonymous Liverpool content creator/aggregator based in Dublin, not a bylined newspaper reporter; real name not public.",
+    "id": "dave-ockop",
+    "active": true
+  },
+  {
+    "ko": "다비드 메디나",
+    "en": "David G. Medina",
+    "tier": 1.5,
+    "teams": [
+      "atletico-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Marca",
+    "x": "medinamarca",
+    "confidence": "high",
+    "note": "",
+    "id": "david-g-medina",
+    "active": true
+  },
+  {
+    "ko": "데이비드 린치",
+    "en": "David Lynch",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance / This Is Anfield",
+    "x": "davidlynchlfc",
+    "confidence": "high",
+    "note": "",
+    "id": "david-lynch",
+    "active": true,
+    "bluesky": "davidlynchlfc.co.uk"
+  },
+  {
+    "ko": "도미닉 킹",
+    "en": "Dominic King",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "DominicKing_DM",
+    "confidence": "high",
+    "note": "",
+    "id": "dominic-king",
+    "active": true
+  },
+  {
+    "ko": "에두 파달",
+    "en": "Edu Pidal",
+    "tier": 1.5,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Onda Cero",
+    "x": "edupidal",
+    "confidence": "high",
+    "note": "Korean renders the surname as 파달; the actual spelling is Pidal (Eduardo Pidal Otero).",
+    "id": "edu-pidal",
+    "active": true
+  },
+  {
+    "ko": "파브리지오 로마노",
+    "en": "Fabrizio Romano",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "Italy",
+    "outlet": "The Guardian / CBS Sports",
+    "x": "FabrizioRomano",
+    "confidence": "high",
+    "note": "",
+    "id": "fabrizio-romano",
+    "active": true,
+    "feeds": [
+      "https://www.caughtoffside.com/author/fabrizio-romano/feed/"
+    ]
+  },
+  {
+    "ko": "프란체스코 포르지오",
+    "en": "Francesco Porzio",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "Italy",
+    "outlet": "CBS Sports / Here We Go podcast",
+    "x": "fraporzio95",
+    "confidence": "high",
+    "note": "Fabrizio Romano's co-host on the 'Here We Go' podcast.",
+    "id": "francesco-porzio",
+    "active": true
+  },
+  {
+    "ko": "프릭 얀센",
+    "en": "Freek Jansen",
+    "tier": 1.5,
+    "teams": [
+      "ajax"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "Voetbal International",
+    "x": "Freek_JansenVI",
+    "confidence": "high",
+    "note": "Voetbal International editor-in-chief and Ajax watcher.",
+    "id": "freek-jansen",
+    "active": true
+  },
+  {
+    "ko": "제라르 로메로",
+    "en": "Gerard Romero",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Jijantes FC",
+    "x": "gerardromero",
+    "confidence": "high",
+    "note": "",
+    "id": "gerard-romero",
+    "active": true
+  },
+  {
+    "ko": "게르얀 함스텔라르",
+    "en": "Gerjan Hamstelaar",
+    "tier": 1.5,
+    "teams": [
+      "ajax"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "",
+    "x": "Hamstelaar",
+    "confidence": "high",
+    "note": "Pseudonymous Ajax transfer insider on X, not a staff journalist; real identity not public.",
+    "id": "gerjan-hamstelaar",
+    "active": true
+  },
+  {
+    "ko": "지안루카 디 마르지오",
+    "en": "Gianluca Di Marzio",
+    "tier": 1.5,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sky Sport Italia",
+    "x": "DiMarzio",
+    "confidence": "high",
+    "note": "",
+    "id": "gianluca-di-marzio",
+    "active": true
+  },
+  {
+    "ko": "그레이엄 스미스",
+    "en": "Graham Smyth",
+    "tier": 1.5,
+    "teams": [
+      "leeds"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Yorkshire Evening Post",
+    "x": "GrahamSmyth",
+    "confidence": "high",
+    "note": "Surname is Smyth, not Smith.",
+    "id": "graham-smyth",
+    "active": true,
+    "bluesky": "grahamsmyth.bsky.social"
+  },
+  {
+    "ko": "그렉 오키프",
+    "en": "Greg O'Keeffe",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "GregOK",
+    "confidence": "high",
+    "note": "England-based but covers USMNT and American players/owners in Europe, which fits the (미국) tag.",
+    "id": "greg-o-keeffe",
+    "active": true
+  },
+  {
+    "ko": "귈라메",
+    "en": "Guillaume",
+    "tier": 1.5,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not identify. '귈라메' is a best-guess romanisation of 'Guillaume'; no Italian-football journalist by that name could be verified. Listed in the file as an Italy beat writer alongside Di Marzio and Horncastle.",
+    "id": "guillaume",
+    "active": true
+  },
+  {
+    "ko": "길레르모 라이",
+    "en": "Guillermo Rai",
+    "tier": 1.5,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "The Athletic",
+    "x": "GuillermoRai_",
+    "confidence": "high",
+    "note": "Byline name Guillermo Rai; legal name Guillermo García Sánchez.",
+    "id": "guillermo-rai",
+    "active": true
+  },
+  {
+    "ko": "헨리 윈터",
+    "en": "Henry Winter",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Times",
+    "x": "henrywinter",
+    "confidence": "high",
+    "note": "Long-time chief football writer at The Times; has since gone freelance, so outlet may be out of date. Primarily a national/England writer despite the (아스날) tag.",
+    "id": "henry-winter",
+    "active": true
+  },
+  {
+    "ko": "휴고 콘데스",
+    "en": "Hugo Condes",
+    "tier": 1.5,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Onda Cero / DAZN",
+    "x": "HugoCondesM",
+    "confidence": "medium",
+    "note": "Spanish spelling: Hugo Condés. Commentator/reporter for Onda Cero and DAZN; no single club beat identified.",
+    "id": "hugo-condes",
+    "active": true
+  },
+  {
+    "ko": "제이콥 스테인버그",
+    "en": "Jacob Steinberg",
+    "tier": 1.5,
+    "teams": [
+      "west-ham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Guardian",
+    "x": "JacobSteinberg",
+    "confidence": "high",
+    "note": "No parenthetical in source; beat inferred as West Ham / London clubs.",
+    "id": "jacob-steinberg",
+    "active": true
+  },
+  {
+    "ko": "제이콥 화이트헤드",
+    "en": "Jacob Whitehead",
+    "tier": 1.5,
+    "teams": [
+      "newcastle"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "JacobWhitehead_",
+    "confidence": "high",
+    "note": "",
+    "id": "jacob-whitehead",
+    "active": true,
+    "bluesky": "jacobwhitehead.bsky.social"
+  },
+  {
+    "ko": "제임스 더커",
+    "en": "James Ducker",
+    "tier": 1.5,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "TelegraphDucker",
+    "confidence": "high",
+    "note": "",
+    "id": "james-ducker",
+    "active": true
+  },
+  {
+    "ko": "제임스 혼캐슬",
+    "en": "James Horncastle",
+    "tier": 1.5,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "The Athletic",
+    "x": "JamesHorncastle",
+    "confidence": "high",
+    "note": "",
+    "id": "james-horncastle",
+    "active": true
+  },
+  {
+    "ko": "제로엔 카페타인스",
+    "en": "Jeroen Kapteijns",
+    "tier": 1.5,
+    "teams": [
+      "psv"
+    ],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "De Telegraaf",
+    "x": "JeroenKapteijns",
+    "confidence": "high",
+    "note": "De Telegraaf/Telesport's dedicated PSV watcher.",
+    "id": "jeroen-kapteijns",
+    "active": true
+  },
+  {
+    "ko": "존 크로스",
+    "en": "John Cross",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mirror",
+    "x": "johncrossmirror",
+    "confidence": "high",
+    "note": "",
+    "id": "john-cross",
+    "active": true
+  },
+  {
+    "ko": "조던 블랙웰",
+    "en": "Jordan Blackwell",
+    "tier": 1.5,
+    "teams": [
+      "leicester"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Leicester Mercury",
+    "x": "JrdnBlackwell",
+    "confidence": "high",
+    "note": "Reported to have left the Leicester Mercury after relegation; outlet may be out of date.",
+    "id": "jordan-blackwell",
+    "active": true
+  },
+  {
+    "ko": "조셉 카프데빌라",
+    "en": "Josep Capdevila",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "SPORT",
+    "x": "josepcapdevila",
+    "confidence": "high",
+    "note": "Announced he was leaving X in early 2025 (now on Bluesky), so the handle may be dormant.",
+    "id": "josep-capdevila",
+    "active": true
+  },
+  {
+    "ko": "리암 투메이",
+    "en": "Liam Twomey",
+    "tier": 1.5,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "liamtwomey",
+    "confidence": "high",
+    "note": "",
+    "id": "liam-twomey",
+    "active": true,
+    "bluesky": "liamtwomey.bsky.social"
+  },
+  {
+    "ko": "루크 에드워즈",
+    "en": "Luke Edwards",
+    "tier": 1.5,
+    "teams": [
+      "newcastle"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "LukeEdwardsTele",
+    "confidence": "high",
+    "note": "",
+    "id": "luke-edwards",
+    "active": true,
+    "bluesky": "lukeedwardstele.bsky.social"
+  },
+  {
+    "ko": "마누엘 봉케",
+    "en": "Manuel Bonke",
+    "tier": 1.5,
+    "teams": [
+      "bayern"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "tz Munchen / Munchner Merkur",
+    "x": "mano_bonke",
+    "confidence": "high",
+    "note": "Chief sports reporter for tz München / Münchner Merkur covering Bayern and the German national team.",
+    "id": "manuel-bonke",
+    "active": true
+  },
+  {
+    "ko": "마르코 바르자기",
+    "en": "Marco Barzaghi",
+    "tier": 1.5,
+    "teams": [
+      "inter"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sport Mediaset",
+    "x": "marcobarzaghi",
+    "confidence": "high",
+    "note": "",
+    "id": "marco-barzaghi",
+    "active": true
+  },
+  {
+    "ko": "마리오 코르테가나",
+    "en": "Mario Cortegana",
+    "tier": 1.5,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "The Athletic",
+    "x": "MarioCortegana",
+    "confidence": "high",
+    "note": "",
+    "id": "mario-cortegana",
+    "active": true
+  },
+  {
+    "ko": "마크 크리츨리",
+    "en": "Mark Critchley",
+    "tier": 1.5,
+    "teams": [
+      "man-utd",
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "mjcritchley",
+    "confidence": "medium",
+    "note": "Name confident; outlet may be out of date (previously The Independent).",
+    "id": "mark-critchley",
+    "active": true
+  },
+  {
+    "ko": "마크 맨 브라이언스",
+    "en": "Mark Mann-Bryans",
+    "tier": 1.5,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "PA Media",
+    "x": "",
+    "confidence": "medium",
+    "note": "X handle not verified.",
+    "id": "mark-mann-bryans",
+    "active": true
+  },
+  {
+    "ko": "마틴 블랙번",
+    "en": "Martin Blackburn",
+    "tier": 1.5,
+    "teams": [
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Sun",
+    "x": "",
+    "confidence": "medium",
+    "note": "X handle not verified.",
+    "id": "martin-blackburn",
+    "active": true
+  },
+  {
+    "ko": "맷 로",
+    "en": "Matt Law",
+    "tier": 1.5,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "Matt_Law_DT",
+    "confidence": "high",
+    "note": "",
+    "id": "matt-law",
+    "active": true
+  },
+  {
+    "ko": "막시밀리안 코흐",
+    "en": "Maximilian Koch",
+    "tier": 1.5,
+    "teams": [
+      "bayern"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Abendzeitung Munchen",
+    "x": "_kochmaximilian",
+    "confidence": "high",
+    "note": "Abendzeitung München chief reporter for Bayern.",
+    "id": "maximilian-koch",
+    "active": true
+  },
+  {
+    "ko": "모이 요렌스",
+    "en": "Moi Llorens",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "ESPN",
+    "x": "moillorens",
+    "confidence": "high",
+    "note": "Also bylined as Moisés Llorens.",
+    "id": "moi-llorens",
+    "active": true
+  },
+  {
+    "ko": "나초 산체스",
+    "en": "Nacho Sanchis",
+    "tier": 1.5,
+    "teams": [
+      "valencia"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "A Punt (ex-Relevo)",
+    "x": "sanchis14",
+    "confidence": "low",
+    "note": "The Korean reads 'Nacho Sanchez', but no Valencia journalist by that name could be found; the only strong Valencia match is Nacho Sanchis (@sanchis14, ex-Relevo Comunitat Valenciana). Surname may be Sanchez after all.",
+    "id": "nacho-sanchis",
+    "active": true
+  },
+  {
+    "ko": "나단 기싱",
+    "en": "Nathan Gissing",
+    "tier": 1.5,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Gianluca Di Marzio (English site)",
+    "x": "NathGissing",
+    "confidence": "high",
+    "note": "",
+    "id": "nathan-gissing",
+    "active": true
+  },
+  {
+    "ko": "닐 존스",
+    "en": "Neil Jones",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance (ex-Goal.com)",
+    "x": "neiljonesgoal",
+    "confidence": "medium",
+    "note": "Name confident; current employer uncertain since leaving Goal.com.",
+    "id": "neil-jones",
+    "active": true,
+    "bluesky": "ragwortfacts.bsky.social"
+  },
+  {
+    "ko": "폴 고스트",
+    "en": "Paul Gorst",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Liverpool Echo",
+    "x": "ptgorst",
+    "confidence": "high",
+    "note": "",
+    "id": "paul-gorst",
+    "active": true,
+    "bluesky": "ptgorst.bsky.social"
+  },
+  {
+    "ko": "폴 허스트",
+    "en": "Paul Hirst",
+    "tier": 1.5,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Times",
+    "x": "hirstclass",
+    "confidence": "high",
+    "note": "",
+    "id": "paul-hirst",
+    "active": true
+  },
+  {
+    "ko": "폴 테노리오",
+    "en": "Paul Tenorio",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "USA",
+    "outlet": "The Athletic",
+    "x": "PaulTenorio",
+    "confidence": "high",
+    "note": "US soccer / MLS national writer.",
+    "id": "paul-tenorio",
+    "active": true,
+    "bluesky": "paultenorio.bsky.social"
+  },
+  {
+    "ko": "페드로 세풀베다",
+    "en": "Pedro Sepulveda",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "Portugal",
+    "outlet": "CNN Portugal / TVI",
+    "x": "pedrosepulveda",
+    "confidence": "high",
+    "note": "Portuguese spelling: Pedro Sepúlveda.",
+    "id": "pedro-sepulveda",
+    "active": true
+  },
+  {
+    "ko": "필 맥터니",
+    "en": "Phil McTerney",
+    "tier": 1.5,
+    "teams": [
+      "aston-villa",
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not identify. 'Phil McTerney' is a literal romanisation of 맥터니; no Aston Villa/Liverpool journalist with that surname could be verified. Possible mis-transliterations considered and rejected: Phil McNulty (BBC, Liverpool-based but no Villa beat), Phil Hay (Leeds).",
+    "id": "phil-mcterney",
+    "active": true
+  },
+  {
+    "ko": "폴 발루스",
+    "en": "Pol Ballus",
+    "tier": 1.5,
+    "teams": [
+      "man-city",
+      "barcelona"
+    ],
+    "league": "EPL",
+    "country": "Spain",
+    "outlet": "The Athletic",
+    "x": "PolBallus",
+    "confidence": "high",
+    "note": "Catalan spelling: Pol Ballús. Covers Manchester City / Pep Guardiola and Barcelona.",
+    "id": "pol-ballus",
+    "active": true
+  },
+  {
+    "ko": "롭 도르셋",
+    "en": "Rob Dorsett",
+    "tier": 1.5,
+    "teams": [
+      "leicester"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Sky Sports",
+    "x": "RobDorsettSky",
+    "confidence": "high",
+    "note": "Sky Sports' Midlands correspondent (Leicester, Forest, Villa, Wolves).",
+    "id": "rob-dorsett",
+    "active": true
+  },
+  {
+    "ko": "로저 토레요",
+    "en": "Roger Torello",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Mundo Deportivo",
+    "x": "RogerTorello",
+    "confidence": "high",
+    "note": "Catalan spelling: Roger Torelló.",
+    "id": "roger-torello",
+    "active": true
+  },
+  {
+    "ko": "사이먼 휴즈",
+    "en": "Simon Hughes",
+    "tier": 1.5,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "Simon_Hughes__",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-hughes",
+    "active": true
+  },
+  {
+    "ko": "사이먼 존슨",
+    "en": "Simon Johnson",
+    "tier": 1.5,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "SJohnsonSport",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-johnson",
+    "active": true,
+    "bluesky": "simonrjohnson.bsky.social"
+  },
+  {
+    "ko": "토니 후안마르티",
+    "en": "Toni Juanmarti",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "SPORT",
+    "x": "tjuanmarti",
+    "confidence": "high",
+    "note": "Catalan spelling: Toni Juanmartí.",
+    "id": "toni-juanmarti",
+    "active": true
+  },
+  {
+    "ko": "발렌타인 드리에센",
+    "en": "Valentijn Driessen",
+    "tier": 1.5,
+    "teams": [],
+    "league": "Eredivisie",
+    "country": "Netherlands",
+    "outlet": "De Telegraaf",
+    "x": "",
+    "confidence": "high",
+    "note": "Chief football editor at De Telegraaf, covering Dutch football generally; he has no verified official X account (impersonation accounts exist).",
+    "id": "valentijn-driessen",
+    "active": true
+  },
+  {
+    "ko": "차비 토레스",
+    "en": "Xavi Torres",
+    "tier": 1.5,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "L'Esportiu / SPORT",
+    "x": "xavitorresll",
+    "confidence": "high",
+    "note": "Full name Xavier Torres i Lliteras; formerly TV3.",
+    "id": "xavi-torres",
+    "active": true
+  },
+  {
+    "ko": "야기즈 사분쿠오글루",
+    "en": "Yagiz Sabuncuoglu",
+    "tier": 1.5,
+    "teams": [],
+    "league": "General",
+    "country": "Turkey",
+    "outlet": "Sports Digitale / Haberturk",
+    "x": "yagosabuncuoglu",
+    "confidence": "high",
+    "note": "Turkish spelling: Yağız Sabuncuoğlu. Turkish transfer-news specialist; formerly TRT Spor and NTV Spor.",
+    "id": "yagiz-sabuncuoglu",
+    "active": true
+  },
+  {
+    "ko": "알렉스 크룩",
+    "en": "Alex Crook",
+    "tier": 2,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "talkSPORT",
+    "x": "alex_crook",
+    "confidence": "high",
+    "note": "",
+    "id": "alex-crook",
+    "active": true
+  },
+  {
+    "ko": "알렉스 터크",
+    "en": "Alex Turk",
+    "tier": 2,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "TurkTalksFC / BBC Sport column (ex-Daily Express)",
+    "x": "turktalksfc",
+    "confidence": "high",
+    "note": "X handle inferred from his cross-platform brand handle",
+    "id": "alex-turk",
+    "active": true
+  },
+  {
+    "ko": "앤디 미튼",
+    "en": "Andy Mitten",
+    "tier": 2,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic / United We Stand",
+    "x": "AndyMitten",
+    "confidence": "high",
+    "note": "",
+    "id": "andy-mitten",
+    "active": true,
+    "bluesky": "andymitten.bsky.social"
+  },
+  {
+    "ko": "안젤로 만지안테",
+    "en": "Angelo Mangiante",
+    "tier": 2,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sky Sport Italia",
+    "x": "angelomangiante",
+    "confidence": "high",
+    "note": "Primarily an AS Roma reporter, but no club tag in source so teams left empty",
+    "id": "angelo-mangiante",
+    "active": true
+  },
+  {
+    "ko": "벤 제이콥스",
+    "en": "Ben Jacobs",
+    "tier": 2,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "CBS Sports / TalkSPORT",
+    "x": "JacobsBen",
+    "confidence": "high",
+    "note": "",
+    "id": "ben-jacobs",
+    "active": true,
+    "bluesky": "jacobsben.bsky.social"
+  },
+  {
+    "ko": "크리스 휠러",
+    "en": "Chris Wheeler",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "ChrisWheelerDM",
+    "confidence": "high",
+    "note": "Mail's northern football correspondent; no club tag in source",
+    "id": "chris-wheeler",
+    "active": true
+  },
+  {
+    "ko": "크리스티안 폴크",
+    "en": "Christian Falk",
+    "tier": 2,
+    "teams": [
+      "bayern"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "BILD",
+    "x": "cfbayern",
+    "confidence": "high",
+    "note": "",
+    "id": "christian-falk",
+    "active": true
+  },
+  {
+    "ko": "크리스티안 오르틀레프",
+    "en": "Christian Ortlepp",
+    "tier": 2,
+    "teams": [],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "ex-Sport1 / Eurosport Germany",
+    "x": "",
+    "confidence": "low",
+    "note": "Phonetic match is exact, but this Christian Ortlepp left journalism in 2017 for media consulting, which sits oddly with a current tier list. May be a different person",
+    "id": "christian-ortlepp",
+    "active": true
+  },
+  {
+    "ko": "콘스탄틴 에크너",
+    "en": "Constantin Eckner",
+    "tier": 2,
+    "teams": [],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Freelance (DAZN, Die Zeit, The Times, BBC)",
+    "x": "",
+    "confidence": "high",
+    "note": "German football writer/commentator, no single club beat",
+    "id": "constantin-eckner",
+    "active": true
+  },
+  {
+    "ko": "딘 존스",
+    "en": "Dean Jones",
+    "tier": 2,
+    "teams": [
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "GiveMeSport / Bolavip",
+    "x": "DeanJonesSoccer",
+    "confidence": "high",
+    "note": "",
+    "id": "dean-jones",
+    "active": true
+  },
+  {
+    "ko": "더못 코리건",
+    "en": "Dermot Corrigan",
+    "tier": 2,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "The Athletic",
+    "x": "dermotmcorrigan",
+    "confidence": "high",
+    "note": "Irish journalist based in Madrid covering Spanish football",
+    "id": "dermot-corrigan",
+    "active": true
+  },
+  {
+    "ko": "드라메쉬 셰스",
+    "en": "Dharmesh Sheth",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Sky Sports News",
+    "x": "SkySports_Sheth",
+    "confidence": "high",
+    "note": "",
+    "id": "dharmesh-sheth",
+    "active": true
+  },
+  {
+    "ko": "도미닉 피필드",
+    "en": "Dominic Fifield",
+    "tier": 2,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "dominic-fifield",
+    "active": true,
+    "bluesky": "domfifield.bsky.social"
+  },
+  {
+    "ko": "페란 마르티네즈",
+    "en": "Ferran Martínez",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Mundo Deportivo",
+    "x": "martinezferran",
+    "confidence": "medium",
+    "note": "DUPLICATE - almost certainly the same person as the next line 페란 마르티네요, which is a misspelling of the same Mundo Deportivo Barça section chief",
+    "id": "ferran-martinez",
+    "active": true
+  },
+  {
+    "ko": "Fredrik A.N. Filtvedt",
+    "en": "Fredrik A.N. Filtvedt",
+    "tier": 2,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "Norway",
+    "outlet": "united.no / MUSCS (ex-Dagbladet)",
+    "x": "FAFiltvedt",
+    "confidence": "high",
+    "note": "Already Latin script in source, kept as-is. No club in the source line; man-utd inferred from his beat",
+    "id": "fredrik-a-n-filtvedt",
+    "active": true
+  },
+  {
+    "ko": "가브리엘 산즈",
+    "en": "Gabriel Sans",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Mundo Deportivo",
+    "x": "gbsans",
+    "confidence": "high",
+    "note": "Korean transliterates the surname as 'Sanz' but the byline is 'Sans'",
+    "id": "gabriel-sans",
+    "active": true
+  },
+  {
+    "ko": "지오반니 알바네세",
+    "en": "Giovanni Albanese",
+    "tier": 2,
+    "teams": [
+      "juventus"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Tuttosport / Sky Sport Italia",
+    "x": "GiovaAlbanese",
+    "confidence": "high",
+    "note": "No club tag in source; juventus inferred from his well-known beat",
+    "id": "giovanni-albanese",
+    "active": true
+  },
+  {
+    "ko": "헬레나 콘디스",
+    "en": "Helena Condis",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena COPE",
+    "x": "helenacondis",
+    "confidence": "high",
+    "note": "",
+    "id": "helena-condis",
+    "active": true
+  },
+  {
+    "ko": "제임스 벤지",
+    "en": "James Benge",
+    "tier": 2,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "CBS Sports",
+    "x": "jamesbenge",
+    "confidence": "high",
+    "note": "No club tag in source; arsenal inferred from his beat",
+    "id": "james-benge",
+    "active": true,
+    "bluesky": "jamesbenge.bsky.social"
+  },
+  {
+    "ko": "제임스 올리",
+    "en": "James Olley",
+    "tier": 2,
+    "teams": [
+      "chelsea",
+      "liverpool"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "ESPN",
+    "x": "JamesOlley",
+    "confidence": "high",
+    "note": "",
+    "id": "james-olley",
+    "active": true
+  },
+  {
+    "ko": "제임스 샤프",
+    "en": "James Sharpe",
+    "tier": 2,
+    "teams": [
+      "leicester"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "JamesSharpe_",
+    "confidence": "high",
+    "note": "",
+    "id": "james-sharpe",
+    "active": true
+  },
+  {
+    "ko": "제이미 잭슨",
+    "en": "Jamie Jackson",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Guardian",
+    "x": "JamieJackson___",
+    "confidence": "high",
+    "note": "Guardian football correspondent, mostly Manchester clubs but no club tag in source",
+    "id": "jamie-jackson",
+    "active": true
+  },
+  {
+    "ko": "제이슨 버트",
+    "en": "Jason Burt",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "JBurtTelegraph",
+    "confidence": "high",
+    "note": "Also appears in the 3티어 list in the same source file",
+    "id": "jason-burt",
+    "active": true
+  },
+  {
+    "ko": "하비 미구엘",
+    "en": "Javi Miguel",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Diario AS / El Chiringuito",
+    "x": "",
+    "confidence": "medium",
+    "note": "Identified as the AS / El Chiringuito reporter who breaks Barcelona transfer news; X handle not verified",
+    "id": "javi-miguel",
+    "active": true
+  },
+  {
+    "ko": "제레미 윌슨",
+    "en": "Jeremy Wilson",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "JW_Telegraph",
+    "confidence": "high",
+    "note": "",
+    "id": "jeremy-wilson",
+    "active": true
+  },
+  {
+    "ko": "호아킴 피에라",
+    "en": "Joaquim Piera",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Diario SPORT",
+    "x": "joaquimpiera",
+    "confidence": "high",
+    "note": "",
+    "id": "joaquim-piera",
+    "active": true
+  },
+  {
+    "ko": "조나단 슈레거",
+    "en": "Jonathan Shrager",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance",
+    "x": "JonathanShrager",
+    "confidence": "high",
+    "note": "Mostly Manchester United and Italian football, but no club tag in source",
+    "id": "jonathan-shrager",
+    "active": true
+  },
+  {
+    "ko": "호세 펠릭스 디아즈",
+    "en": "José Félix Díaz",
+    "tier": 2,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena COPE (ex-Marca)",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "jose-felix-diaz",
+    "active": true
+  },
+  {
+    "ko": "줄리엔 로렌스",
+    "en": "Julien Laurens",
+    "tier": 2,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "ESPN / BBC",
+    "x": "LaurensJulien",
+    "confidence": "high",
+    "note": "",
+    "id": "julien-laurens",
+    "active": true
+  },
+  {
+    "ko": "카베 숄헤콜",
+    "en": "Kaveh Solhekol",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Sky Sports News",
+    "x": "SkyKaveh",
+    "confidence": "high",
+    "note": "",
+    "id": "kaveh-solhekol",
+    "active": true
+  },
+  {
+    "ko": "키케 마린",
+    "en": "Kike Marín",
+    "tier": 2,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "El Confidencial (ex-Relevo)",
+    "x": "Kike_Marin_",
+    "confidence": "high",
+    "note": "",
+    "id": "kike-marin",
+    "active": true
+  },
+  {
+    "ko": "로익 브륄리",
+    "en": "Loïc Briley",
+    "tier": 2,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "Freelance",
+    "x": "",
+    "confidence": "medium",
+    "note": "Phonetic match to a French freelance football journalist; could not confirm a transfer-news byline",
+    "id": "loic-briley",
+    "active": true
+  },
+  {
+    "ko": "루이스 로호",
+    "en": "Luis F. Rojo",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Marca",
+    "x": "Luis_F_Rojo",
+    "confidence": "high",
+    "note": "Full byline is Luis F. Rojo (Luis Fernando Rojo), Marca's Barcelona delegate",
+    "id": "luis-f-rojo",
+    "active": true
+  },
+  {
+    "ko": "마이크 뇌커",
+    "en": "Maik Nöcker",
+    "tier": 2,
+    "teams": [],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "Fussball MML podcast (ex-Sky Deutschland)",
+    "x": "",
+    "confidence": "low",
+    "note": "Phonetic match is strong (Maik Nöcker), but he is a football podcast host/presenter rather than a transfer-news reporter, so the identification is uncertain",
+    "id": "maik-nocker",
+    "active": true
+  },
+  {
+    "ko": "마누 사인즈",
+    "en": "Manu Sainz",
+    "tier": 2,
+    "teams": [
+      "barcelona",
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Diario AS / El Chiringuito",
+    "x": "Manu_Sainz",
+    "confidence": "medium",
+    "note": "DUPLICATE - the same name also appears without a club tag later in the 2티어 list. Also note Manu Sainz of AS is in reality a Real Madrid reporter, so the (바르셀로나) tag here looks like a source error",
+    "id": "manu-sainz",
+    "active": true
+  },
+  {
+    "ko": "마르크 슈미트",
+    "en": "Marc Schmidt",
+    "tier": 2,
+    "teams": [
+      "frankfurt"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "BILD",
+    "x": "Marc_BILD",
+    "confidence": "medium",
+    "note": "Common German name; matched to BILD's Eintracht Frankfurt reporter @Marc_BILD. No club tag in source, frankfurt inferred",
+    "id": "marc-schmidt",
+    "active": true
+  },
+  {
+    "ko": "맷 로튼",
+    "en": "Matt Lawton",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Times",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "matt-lawton",
+    "active": true
+  },
+  {
+    "ko": "마이크 맥그라스",
+    "en": "Mike McGrath",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "mike-mcgrath",
+    "active": true
+  },
+  {
+    "ko": "닉 퓨어웰",
+    "en": "Nick Purewal",
+    "tier": 2,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "PA Media",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "nick-purewal",
+    "active": true
+  },
+  {
+    "ko": "니자르 킨셀라",
+    "en": "Nizaar Kinsella",
+    "tier": 2,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Evening Standard (ex-Goal)",
+    "x": "NizaarKinsella",
+    "confidence": "high",
+    "note": "",
+    "id": "nizaar-kinsella",
+    "active": true,
+    "bluesky": "nizaarkinsella.bsky.social"
+  },
+  {
+    "ko": "파스콸레 구아로",
+    "en": "Pasquale Guarro",
+    "tier": 2,
+    "teams": [
+      "inter"
+    ],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "FCInter1908 / CalcioNapoli24",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "pasquale-guarro",
+    "active": true
+  },
+  {
+    "ko": "폴 오키프",
+    "en": "Paul O'Keefe",
+    "tier": 2,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Last Word on Spurs (freelance Spurs insider)",
+    "x": "",
+    "confidence": "medium",
+    "note": "Confirmed as an active Tottenham insider, but no established mainstream outlet byline; X handle not verified",
+    "id": "paul-o-keefe",
+    "active": true
+  },
+  {
+    "ko": "필립 데 브룬",
+    "en": "Philippe De Bruyn",
+    "tier": 2,
+    "teams": [],
+    "league": "General",
+    "country": "Belgium",
+    "outlet": "",
+    "x": "",
+    "confidence": "low",
+    "note": "Could not identify. Best-guess romanization of the Korean; no matching football journalist found in English, Dutch or French sources. Alternative spellings to try: Filip De Bruyn, Philip de Bruin, Philippe Debrun. Country guessed as Belgium from the Dutch-looking surname",
+    "id": "philippe-de-bruyn",
+    "active": true
+  },
+  {
+    "ko": "롭 해리스",
+    "en": "Rob Harris",
+    "tier": 2,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "The Athletic / Sky Sports (ex-Associated Press)",
+    "x": "RobHarris",
+    "confidence": "high",
+    "note": "Global sports news / governance reporter rather than a club beat",
+    "id": "rob-harris",
+    "active": true,
+    "bluesky": "robharrisreports.bsky.social"
+  },
+  {
+    "ko": "사차 타볼리에리",
+    "en": "Sacha Tavolieri",
+    "tier": 2,
+    "teams": [],
+    "league": "General",
+    "country": "Belgium",
+    "outlet": "Freelance / RTL Belgium",
+    "x": "sachatavolieri",
+    "confidence": "high",
+    "note": "",
+    "id": "sacha-tavolieri",
+    "active": true
+  },
+  {
+    "ko": "샘 딘",
+    "en": "Sam Dean",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Telegraph",
+    "x": "SamJDean",
+    "confidence": "high",
+    "note": "",
+    "id": "sam-dean",
+    "active": true
+  },
+  {
+    "ko": "샘 리",
+    "en": "Sam Lee",
+    "tier": 2,
+    "teams": [
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Athletic",
+    "x": "SamLee",
+    "confidence": "high",
+    "note": "",
+    "id": "sam-lee",
+    "active": true
+  },
+  {
+    "ko": "사미 목벨",
+    "en": "Sami Mokbel",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "BBC Sport (ex-Daily Mail)",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "sami-mokbel",
+    "active": true
+  },
+  {
+    "ko": "사무엘 럭허스트",
+    "en": "Samuel Luckhurst",
+    "tier": 2,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Manchester Evening News",
+    "x": "samuelluckhurst",
+    "confidence": "high",
+    "note": "",
+    "id": "samuel-luckhurst",
+    "active": true
+  },
+  {
+    "ko": "산티 아우나",
+    "en": "Santi Aouna",
+    "tier": 2,
+    "teams": [
+      "psg"
+    ],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "Foot Mercato",
+    "x": "Santi_J_FM",
+    "confidence": "high",
+    "note": "",
+    "id": "santi-aouna",
+    "active": true
+  },
+  {
+    "ko": "산티 오발레",
+    "en": "Santi Ovalle",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena SER (SER Catalunya)",
+    "x": "santiovalle",
+    "confidence": "high",
+    "note": "",
+    "id": "santi-ovalle",
+    "active": true
+  },
+  {
+    "ko": "사이먼 콜린스",
+    "en": "Simon Collings",
+    "tier": 2,
+    "teams": [
+      "arsenal"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Evening Standard",
+    "x": "sr_collings",
+    "confidence": "high",
+    "note": "No club tag in source; arsenal inferred from his beat",
+    "id": "simon-collings",
+    "active": true,
+    "bluesky": "srcollings.bsky.social"
+  },
+  {
+    "ko": "사이먼 멀록",
+    "en": "Simon Mullock",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Sunday Mirror",
+    "x": "",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-mullock",
+    "active": true
+  },
+  {
+    "ko": "사이먼 필립스",
+    "en": "Simon Phillips",
+    "tier": 2,
+    "teams": [
+      "chelsea"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance / CFC Daily (Substack)",
+    "x": "siphillipssport",
+    "confidence": "high",
+    "note": "",
+    "id": "simon-phillips",
+    "active": true
+  },
+  {
+    "ko": "시케 로드리게스",
+    "en": "Sique Rodríguez",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena SER",
+    "x": "siquerodriguez",
+    "confidence": "high",
+    "note": "",
+    "id": "sique-rodriguez",
+    "active": true
+  },
+  {
+    "ko": "토비아스 알차플레",
+    "en": "Tobias Altschäffl",
+    "tier": 2,
+    "teams": [
+      "bayern"
+    ],
+    "league": "Bundesliga",
+    "country": "Germany",
+    "outlet": "BILD",
+    "x": "TobiAltschaeffl",
+    "confidence": "high",
+    "note": "No club tag in source; bayern inferred from his beat",
+    "id": "tobias-altschaffl",
+    "active": true
+  },
+  {
+    "ko": "톰 콜로모세",
+    "en": "Tom Collomosse",
+    "tier": 2,
+    "teams": [
+      "tottenham"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Freelance (ex-Evening Standard)",
+    "x": "TomCollomosse",
+    "confidence": "high",
+    "note": "",
+    "id": "tom-collomosse",
+    "active": true
+  },
+  {
+    "ko": "톰 로디",
+    "en": "Tom Roddy",
+    "tier": 2,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "The Times (has since moved to Chelsea FC communications)",
+    "x": "TomRoddy_",
+    "confidence": "high",
+    "note": "Left journalism to become Chelsea's head of football communications, so he may no longer produce bylines",
+    "id": "tom-roddy",
+    "active": true
+  },
+  {
+    "ko": "빅토르 나바로",
+    "en": "Víctor Navarro",
+    "tier": 2,
+    "teams": [
+      "barcelona"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "Cadena COPE / Jijantes FC",
+    "x": "victor_nahe",
+    "confidence": "medium",
+    "note": "Common name; matched to the COPE/Kings League Barça reporter @victor_nahe",
+    "id": "victor-navarro",
+    "active": true
+  },
+  {
+    "ko": "아드리안 카줌마",
+    "en": "Adrian Kajumba",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "Sky Sports News",
+    "x": "AdrianJKajumba",
+    "confidence": "high",
+    "note": "Now a Sky Sports News editor; long spell as Daily Mail / Daily Mirror football reporter.",
+    "id": "adrian-kajumba",
+    "active": true
+  },
+  {
+    "ko": "알렉시스 베르나르드",
+    "en": "Alexis Bernard",
+    "tier": 3,
+    "teams": [],
+    "league": "Ligue1",
+    "country": "France",
+    "outlet": "Le 10 Sport",
+    "x": "AlexisBernard10",
+    "confidence": "medium",
+    "note": "Editor-in-chief of Le10Sport; began his career at RMC.",
+    "id": "alexis-bernard",
+    "active": true
+  },
+  {
+    "ko": "알프레도 페둘라",
+    "en": "Alfredo Pedulla",
+    "tier": 3,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sportitalia",
+    "x": "AlfredoPedulla",
+    "confidence": "high",
+    "note": "Written as Alfredo Pedullà in Italian.",
+    "id": "alfredo-pedulla",
+    "active": true
+  },
+  {
+    "ko": "데이비드 아모얄",
+    "en": "David Amoyal",
+    "tier": 3,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "The Athletic",
+    "x": "DavidAmoyal",
+    "confidence": "high",
+    "note": "Serie A and transfers specialist; also ESPN and the CalcioLand podcast.",
+    "id": "david-amoyal",
+    "active": true
+  },
+  {
+    "ko": "데이비드 머독",
+    "en": "David Maddock",
+    "tier": 3,
+    "teams": [],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Daily Mirror",
+    "x": "MaddockMirror",
+    "confidence": "low",
+    "note": "GUESS. The Korean reads 'David Murdoch', but no football journalist by that name could be found. Best match is the Daily Mirror's northern football writer David Maddock, who is otherwise absent from every tier in the source file. Verify before using.",
+    "id": "david-maddock",
+    "active": true
+  },
+  {
+    "ko": "디에고 토레스",
+    "en": "Diego Torres",
+    "tier": 3,
+    "teams": [
+      "real-madrid"
+    ],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "El Pais",
+    "x": "diegotorresro",
+    "confidence": "high",
+    "note": "El Pais (El País) Real Madrid writer; reportedly moved off the Madrid beat in 2019 but still covers the club on X.",
+    "id": "diego-torres",
+    "active": true
+  },
+  {
+    "ko": "던컨 캐슬",
+    "en": "Duncan Castles",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "Scotland",
+    "outlet": "Transfer Window Podcast",
+    "x": "DuncanCastles",
+    "confidence": "high",
+    "note": "Also writes for the Daily Record.",
+    "id": "duncan-castles",
+    "active": true,
+    "bluesky": "duncancastles.bsky.social"
+  },
+  {
+    "ko": "던컨 라이트",
+    "en": "Duncan Wright",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "The Sun",
+    "x": "dwright75",
+    "confidence": "medium",
+    "note": "Senior digital sports writer at The Sun.",
+    "id": "duncan-wright",
+    "active": true
+  },
+  {
+    "ko": "잔루이지 롱가리",
+    "en": "Gianluigi Longari",
+    "tier": 3,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Sportitalia",
+    "x": "Glongari",
+    "confidence": "high",
+    "note": "",
+    "id": "gianluigi-longari",
+    "active": true
+  },
+  {
+    "ko": "기옘 발라그",
+    "en": "Guillem Balague",
+    "tier": 3,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "BBC Sport",
+    "x": "GuillemBalague",
+    "confidence": "high",
+    "note": "Spanish football expert; UK-based but covers Spain/LaLiga.",
+    "id": "guillem-balague",
+    "active": true,
+    "bluesky": "guillem-balague.bsky.social"
+  },
+  {
+    "ko": "이안 레이디먼",
+    "en": "Ian Ladyman",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "Ian_Ladyman_DM",
+    "confidence": "high",
+    "note": "Daily Mail football editor.",
+    "id": "ian-ladyman",
+    "active": true
+  },
+  {
+    "ko": "인디카일라",
+    "en": "IndyKaila",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "",
+    "x": "indykaila",
+    "confidence": "medium",
+    "note": "Anonymous ITK/aggregator account (pseudonym, Midlands-based), not a bylined journalist. Main account @indykaila; news spin-off @indykailaNews.",
+    "id": "indykaila",
+    "active": true
+  },
+  {
+    "ko": "제임스 롭슨",
+    "en": "James Robson",
+    "tier": 3,
+    "teams": [
+      "man-utd",
+      "man-city"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Associated Press",
+    "x": "jamesrobsonES",
+    "confidence": "high",
+    "note": "Now AP global soccer correspondent, based in Manchester; formerly Evening Standard Manchester football correspondent (hence the 'ES' handle).",
+    "id": "james-robson",
+    "active": true,
+    "bluesky": "jamesrobson.bsky.social"
+  },
+  {
+    "ko": "Jan Aage Fjortoft",
+    "en": "Jan Aage Fjortoft",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "Norway",
+    "outlet": "Viaplay",
+    "x": "JanAageFjortoft",
+    "confidence": "high",
+    "note": "Latin script in source, kept as-is. Norwegian spelling: Jan Åge Fjørtoft.",
+    "id": "jan-aage-fjortoft",
+    "active": true
+  },
+  {
+    "ko": "짐 화이트",
+    "en": "Jim White",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "talkSPORT",
+    "x": "JimWhite",
+    "confidence": "medium",
+    "note": "Assumed to be the talkSPORT deadline-day presenter given the transfer-news context; a different Jim White writes for The Telegraph.",
+    "id": "jim-white",
+    "active": true,
+    "bluesky": "jawhite.bsky.social"
+  },
+  {
+    "ko": "호세 알바레즈",
+    "en": "Jose Alvarez Haya",
+    "tier": 3,
+    "teams": [],
+    "league": "LaLiga",
+    "country": "Spain",
+    "outlet": "El Chiringuito",
+    "x": "10JoseAlvarez",
+    "confidence": "low",
+    "note": "GUESS. 'Jose Alvarez' is a very common Spanish name; the most prominent football-media match is El Chiringuito's Jose Alvarez Haya (written José Álvarez Haya), who is Barcelona-focused. The source line gives no club, so this identification is unverified.",
+    "id": "jose-alvarez-haya",
+    "active": true
+  },
+  {
+    "ko": "맷 휴즈",
+    "en": "Matt Hughes",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "Daily Mail",
+    "x": "MattHughesDM",
+    "confidence": "medium",
+    "note": "Daily Mail deputy football editor; name collides with other public figures called Matt Hughes, so pair searches with 'Daily Mail'.",
+    "id": "matt-hughes",
+    "active": true
+  },
+  {
+    "ko": "미구엘 델라니",
+    "en": "Miguel Delaney",
+    "tier": 3,
+    "teams": [],
+    "league": "General",
+    "country": "England",
+    "outlet": "The Independent",
+    "x": "MiguelDelaney",
+    "confidence": "high",
+    "note": "Chief football writer; Irish, based in London.",
+    "id": "miguel-delaney",
+    "active": true,
+    "bluesky": "migueldelaney.bsky.social"
+  },
+  {
+    "ko": "니콜로 스키라",
+    "en": "Nicolo Schira",
+    "tier": 3,
+    "teams": [],
+    "league": "SerieA",
+    "country": "Italy",
+    "outlet": "Gazzetta dello Sport",
+    "x": "NicoSchira",
+    "confidence": "high",
+    "note": "Written as Nicolò Schira in Italian.",
+    "id": "nicolo-schira",
+    "active": true
+  },
+  {
+    "ko": "롭 도슨",
+    "en": "Rob Dawson",
+    "tier": 3,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "ESPN",
+    "x": "RobDawsonESPN",
+    "confidence": "high",
+    "note": "",
+    "id": "rob-dawson",
+    "active": true
+  },
+  {
+    "ko": "샘 필거",
+    "en": "Sam Pilger",
+    "tier": 3,
+    "teams": [
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Forbes",
+    "x": "sampilger",
+    "confidence": "medium",
+    "note": "Freelance; bylines at Forbes, The Athletic, Daily Mail. Man Utd/Premier League focus.",
+    "id": "sam-pilger",
+    "active": true
+  },
+  {
+    "ko": "타이론 마샬",
+    "en": "Tyrone Marshall",
+    "tier": 3,
+    "teams": [
+      "man-city",
+      "man-utd"
+    ],
+    "league": "EPL",
+    "country": "England",
+    "outlet": "Manchester Evening News",
+    "x": "TyMarshall_MEN",
+    "confidence": "high",
+    "note": "Long-time MEN Man City writer, more recently senior Man Utd writer.",
+    "id": "tyrone-marshall",
+    "active": true
+  }
+]

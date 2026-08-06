@@ -1,0 +1,609 @@
+-- Everything lives in its own `tierboard` schema so this can share a Supabase
+-- project with another app without touching its `public` schema.
+--
+-- All access goes through the `public.tb_*` functions at the bottom rather than
+-- a direct Postgres connection, because many networks block outbound 5432.
+-- Those functions are SECURITY DEFINER, so only `public` needs to be exposed to
+-- PostgREST — no dashboard configuration required.
+--
+-- Apply with `npm run db:push`, or paste this whole file into the Supabase SQL
+-- editor. Safe to re-run.
+
+create schema if not exists tierboard;
+
+-- ── Tables ──────────────────────────────────────────────────────────────────
+
+create table if not exists tierboard.teams (
+  slug    text primary key,
+  ko      text not null,
+  en      text not null,
+  league  text not null,
+  aliases jsonb not null default '[]'::jsonb,
+  crest   text,
+  fd_id   integer
+);
+
+create table if not exists tierboard.journalists (
+  id         text primary key,
+  ko         text not null,
+  en         text not null,
+  tier       real not null,
+  league     text not null,
+  country    text not null default '',
+  outlet     text not null default '',
+  x          text not null default '',
+  confidence text not null default 'medium',
+  note       text not null default '',
+  active     boolean not null default true
+);
+
+create table if not exists tierboard.journalist_teams (
+  journalist_id text not null references tierboard.journalists(id) on delete cascade,
+  team_slug     text not null references tierboard.teams(slug) on delete cascade,
+  primary key (journalist_id, team_slug)
+);
+
+create table if not exists tierboard.articles (
+  id            text primary key,
+  url           text not null unique,
+  title         text not null,
+  snippet       text not null default '',
+  source        text not null default '',
+  published_at  timestamptz not null,
+  journalist_id text references tierboard.journalists(id) on delete set null,
+  tier          real,
+  title_ko      text,
+  summary_ko    text,
+  image_url     text,
+  created_at    timestamptz not null default now(),
+
+  -- Real full-text search. English stemming on the original headline, plain
+  -- token matching on the Korean translation (Postgres has no Korean stemmer).
+  search_vector tsvector generated always as (
+    setweight(to_tsvector('english', coalesce(title, '')), 'A') ||
+    setweight(to_tsvector('simple',  coalesce(title_ko, '')), 'A') ||
+    setweight(to_tsvector('english', coalesce(snippet, '')), 'B')
+  ) stored
+);
+
+create table if not exists tierboard.article_teams (
+  article_id text not null references tierboard.articles(id) on delete cascade,
+  team_slug  text not null references tierboard.teams(slug) on delete cascade,
+  primary key (article_id, team_slug)
+);
+
+-- Remembers what the push notifier already sent, so a re-run stays quiet.
+create table if not exists tierboard.notified (
+  article_id text primary key references tierboard.articles(id) on delete cascade,
+  sent_at    timestamptz not null default now()
+);
+
+-- Per-feed HTTP state. Powers conditional requests (ETag / Last-Modified) so a
+-- feed that hasn't changed costs a 304 instead of a full body, and records
+-- consecutive failures so a dead feed backs off instead of being retried every
+-- run forever.
+create table if not exists tierboard.feed_state (
+  url            text primary key,
+  etag           text,
+  last_modified  text,
+  last_status    integer,
+  last_ok_at     timestamptz,
+  fail_count     integer not null default 0,
+  last_error     text,
+  updated_at     timestamptz not null default now()
+);
+
+-- One row per collection run — the only way to notice that recall quietly
+-- dropped because a source started 429ing.
+create table if not exists tierboard.collect_runs (
+  id             bigserial primary key,
+  started_at     timestamptz not null default now(),
+  duration_ms    integer,
+  sources_ok     integer not null default 0,
+  sources_304    integer not null default 0,
+  sources_failed integer not null default 0,
+  items_seen     integer not null default 0,
+  inserted       integer not null default 0,
+  failures       jsonb not null default '[]'::jsonb
+);
+
+-- `create table if not exists` above is a no-op on an existing database, so
+-- columns added after the first deploy need an explicit ALTER.
+alter table tierboard.articles add column if not exists image_url text;
+-- The journalist a story credits, as distinct from the one who wrote it. The
+-- biggest scoops break on X, which we can't read for free — but the outlets
+-- re-reporting them name their source in the body.
+alter table tierboard.articles add column if not exists cited_id text
+  references tierboard.journalists(id) on delete set null;
+create index if not exists idx_articles_cited on tierboard.articles (cited_id, published_at desc);
+-- A club announcing its own signing is the end of the story, not a report
+-- about it — it belongs in the feed even though it has no byline.
+alter table tierboard.articles add column if not exists official boolean not null default false;
+-- Source language, so the translator asks for the right pair. Half the feeds
+-- are Spanish, Italian or French, and sending those as `en|ko` returns
+-- gibberish or nothing.
+alter table tierboard.articles add column if not exists lang text not null default 'en';
+
+create index if not exists idx_articles_published    on tierboard.articles (published_at desc);
+create index if not exists idx_articles_tier         on tierboard.articles (tier, published_at desc);
+create index if not exists idx_articles_journalist   on tierboard.articles (journalist_id, published_at desc);
+create index if not exists idx_articles_search       on tierboard.articles using gin (search_vector);
+create index if not exists idx_article_teams_slug    on tierboard.article_teams (team_slug);
+create index if not exists idx_journalist_teams_slug on tierboard.journalist_teams (team_slug);
+create index if not exists idx_collect_runs_started  on tierboard.collect_runs (started_at desc);
+
+-- ── Row Level Security ──────────────────────────────────────────────────────
+-- No role gets direct table access; the tb_* functions below are the only door.
+-- Realtime still needs a SELECT policy on `articles` for the anon role.
+
+alter table tierboard.teams            enable row level security;
+alter table tierboard.journalists      enable row level security;
+alter table tierboard.journalist_teams enable row level security;
+alter table tierboard.articles         enable row level security;
+alter table tierboard.article_teams    enable row level security;
+alter table tierboard.notified         enable row level security;
+alter table tierboard.feed_state       enable row level security;
+alter table tierboard.collect_runs     enable row level security;
+
+-- Realtime evaluates this policy before pushing a row to a subscriber.
+grant usage on schema tierboard to anon, authenticated;
+grant select on tierboard.articles to anon, authenticated;
+drop policy if exists articles_read on tierboard.articles;
+create policy articles_read on tierboard.articles
+  for select to anon, authenticated using (true);
+
+-- ── Functions ───────────────────────────────────────────────────────────────
+-- Dropped first: `create or replace` cannot change a function's return type, so
+-- adding a column to tb_feed would otherwise fail on an existing database.
+do $$
+declare
+  r record;
+begin
+  for r in
+    select p.oid::regprocedure as sig
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.proname like 'tb\_%'
+  loop
+    execute format('drop function if exists %s', r.sig);
+  end loop;
+end $$;
+
+-- ── Read functions (browser + server) ───────────────────────────────────────
+
+create or replace function public.tb_feed(
+  p_tiers         real[]      default null,
+  p_teams         text[]      default null,
+  p_journalist_id text        default null,
+  p_league        text        default null,
+  p_q             text        default null,
+  p_before        timestamptz default null,
+  p_after         timestamptz default null,
+  p_limit         integer     default 60,
+  p_tiered_only   boolean     default false
+)
+returns table (
+  id text, url text, title text, snippet text, source text,
+  published_at timestamptz, tier real, title_ko text, summary_ko text,
+  image_url text, journalist_id text, journalist_ko text, journalist_en text,
+  outlet text, handle text, cited_id text, cited_ko text, official boolean,
+  teams text[]
+)
+language sql
+stable
+security definer
+set search_path = tierboard, public
+as $$
+  select a.id, a.url, a.title, a.snippet, a.source, a.published_at, a.tier,
+         a.title_ko, a.summary_ko, a.image_url, a.journalist_id,
+         j.ko, j.en, j.outlet, j.x, a.cited_id, c.ko, a.official,
+         coalesce(
+           (select array_agg(at.team_slug) from article_teams at where at.article_id = a.id),
+           '{}'::text[])
+  from articles a
+  left join journalists j on j.id = a.journalist_id
+  left join journalists c on c.id = a.cited_id
+  where
+    -- The default view is the point of the app: stories we can attribute to a
+    -- ranked reporter. Outlet churn about a tracked club, with no byline we
+    -- recognise, drowns those out roughly four to one.
+    (not p_tiered_only
+       or a.journalist_id is not null
+       or a.cited_id is not null
+       or a.official)
+    and (p_tiers is null or (a.tier = any(p_tiers) and not a.official))
+    and (p_teams is null or exists (
+          select 1 from article_teams at
+          where at.article_id = a.id and at.team_slug = any(p_teams)))
+    -- Filtering by a journalist should surface what they broke, whether they
+    -- wrote it themselves or an outlet credited them.
+    and (p_journalist_id is null
+         or a.journalist_id = p_journalist_id
+         or a.cited_id = p_journalist_id)
+    and (p_league is null or j.league = p_league)
+    and (p_q is null or (
+          a.search_vector @@ websearch_to_tsquery('english', p_q)
+       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
+    and (p_before is null or a.published_at < p_before)
+    -- created_at, not published_at: a backdated story we just discovered is
+    -- still news to the reader.
+    and (p_after is null or a.created_at > p_after)
+  order by a.published_at desc
+  limit least(coalesce(p_limit, 60), 200)
+$$;
+
+create or replace function public.tb_team_activity(
+  p_hours         integer default 48,
+  p_tiers         real[]  default null,
+  p_journalist_id text    default null,
+  p_league        text    default null,
+  p_q             text    default null,
+  p_tiered_only   boolean default false
+)
+returns table (slug text, n bigint, best_tier real)
+language sql
+stable
+security definer
+set search_path = tierboard, public
+as $$
+  select at.team_slug, count(*), min(a.tier)
+  from article_teams at
+  join articles a on a.id = at.article_id
+  left join journalists j on j.id = a.journalist_id
+  where a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
+    and (not p_tiered_only
+         or a.journalist_id is not null
+         or a.cited_id is not null
+         or a.official)
+    and (p_tiers is null or a.tier = any(p_tiers))
+    and (p_journalist_id is null
+         or a.journalist_id = p_journalist_id
+         or a.cited_id = p_journalist_id)
+    and (p_league is null or j.league = p_league)
+    and (p_q is null or (
+          a.search_vector @@ websearch_to_tsquery('english', p_q)
+       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
+  group by at.team_slug
+$$;
+
+-- Which journalists actually filed recently, so the picker can lead with them
+-- instead of listing 244 names in registry order.
+create or replace function public.tb_journalist_activity(
+  p_hours  integer default 168,
+  p_teams  text[]  default null,
+  p_league text    default null,
+  p_q      text    default null
+)
+returns table (journalist_id text, n bigint)
+language sql
+stable
+security definer
+set search_path = tierboard, public
+as $$
+  select coalesce(a.journalist_id, a.cited_id) as journalist_id, count(*)
+  from articles a
+  left join journalists j on j.id = coalesce(a.journalist_id, a.cited_id)
+  where coalesce(a.journalist_id, a.cited_id) is not null
+    and a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
+    and (p_teams is null or exists (
+          select 1 from article_teams at
+          where at.article_id = a.id and at.team_slug = any(p_teams)))
+    and (p_league is null or j.league = p_league)
+    and (p_q is null or (
+          a.search_vector @@ websearch_to_tsquery('english', p_q)
+       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
+  group by coalesce(a.journalist_id, a.cited_id)
+$$;
+
+-- ── Write functions (server only) ───────────────────────────────────────────
+
+create or replace function public.tb_upsert_articles(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_inserted integer;
+begin
+  with input as (
+    select * from jsonb_to_recordset(p_items) as t(
+      id text, url text, title text, snippet text, source text,
+      published_at timestamptz, journalist_id text, tier real, image_url text,
+      cited_id text, official boolean, lang text)
+  ), ins as (
+    insert into articles
+      (id, url, title, snippet, source, published_at, journalist_id, tier,
+       image_url, cited_id, official, lang)
+    select id, url, title, snippet, source, published_at, journalist_id, tier,
+           image_url, cited_id, coalesce(official, false), coalesce(lang, 'en')
+    from input
+    on conflict (url) do update set
+      -- a later sighting may carry the image or blurb the first one lacked
+      snippet   = case when excluded.snippet <> '' then excluded.snippet else articles.snippet end,
+      image_url = coalesce(excluded.image_url, articles.image_url),
+      cited_id  = coalesce(articles.cited_id, excluded.cited_id),
+      -- A citation found on a later pass also settles the trust level.
+      tier      = coalesce(articles.tier, excluded.tier)
+    where articles.image_url is null or articles.snippet = '' or articles.cited_id is null
+    returning (xmax = 0) as is_new
+  )
+  select count(*) filter (where is_new) into v_inserted from ins;
+
+  -- Tag every input row, not just the new ones: an article first seen without a
+  -- club mention can pick the tag up on a later sighting.
+  insert into article_teams (article_id, team_slug)
+  select x.id, s.slug
+  from jsonb_to_recordset(p_items) as x(id text, teams jsonb),
+       lateral jsonb_array_elements_text(x.teams) as s(slug)
+  where exists (select 1 from articles a where a.id = x.id)
+    and exists (select 1 from teams t where t.slug = s.slug)
+  on conflict do nothing;
+
+  return v_inserted;
+end $$;
+
+create or replace function public.tb_seed_teams(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_count integer;
+begin
+  insert into teams (slug, ko, en, league, aliases, crest, fd_id)
+  select slug, ko, en, league, coalesce(aliases, '[]'::jsonb), crest, fd_id
+  from jsonb_to_recordset(p_items) as t(
+    slug text, ko text, en text, league text, aliases jsonb, crest text, fd_id integer)
+  on conflict (slug) do update set
+    ko = excluded.ko, en = excluded.en, league = excluded.league,
+    aliases = excluded.aliases,
+    -- keep an existing crest if this run doesn't have one
+    crest = coalesce(excluded.crest, teams.crest),
+    fd_id = coalesce(excluded.fd_id, teams.fd_id);
+
+  get diagnostics v_count = row_count;
+
+  -- The registry is the source of truth: a club removed from teams.json is
+  -- removed here too, cascading to its article and journalist tags.
+  delete from teams t
+  where not exists (
+    select 1 from jsonb_to_recordset(p_items) as x(slug text) where x.slug = t.slug
+  );
+
+  return v_count;
+end $$;
+
+create or replace function public.tb_seed_journalists(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_count integer;
+begin
+  insert into journalists (id, ko, en, tier, league, country, outlet, x, confidence, note, active)
+  select id, ko, en, tier, league,
+         coalesce(country, ''), coalesce(outlet, ''), coalesce(handle, ''),
+         coalesce(confidence, 'medium'), coalesce(note, ''), coalesce(active, true)
+  from jsonb_to_recordset(p_items) as t(
+    id text, ko text, en text, tier real, league text, country text,
+    outlet text, handle text, confidence text, note text, active boolean)
+  on conflict (id) do update set
+    ko = excluded.ko, en = excluded.en, tier = excluded.tier,
+    league = excluded.league, country = excluded.country,
+    outlet = excluded.outlet, x = excluded.x,
+    confidence = excluded.confidence, note = excluded.note,
+    active = excluded.active;
+
+  get diagnostics v_count = row_count;
+
+  -- Beats are replaced wholesale so a removed team doesn't linger.
+  -- `where true` because Supabase enables pg_safeupdate, which rejects an
+  -- unqualified DELETE.
+  delete from journalist_teams where true;
+  insert into journalist_teams (journalist_id, team_slug)
+  select x.id, s.slug
+  from jsonb_to_recordset(p_items) as x(id text, teams jsonb),
+       lateral jsonb_array_elements_text(x.teams) as s(slug)
+  where exists (select 1 from teams t where t.slug = s.slug)
+  on conflict do nothing;
+
+  return v_count;
+end $$;
+
+create or replace function public.tb_feed_state_get(p_urls text[])
+returns table (url text, etag text, last_modified text, fail_count integer, updated_at timestamptz)
+language sql
+stable
+security definer
+set search_path = tierboard, public
+as $$
+  select f.url, f.etag, f.last_modified, f.fail_count, f.updated_at
+  from feed_state f where f.url = any(p_urls)
+$$;
+
+create or replace function public.tb_feed_state_set(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_count integer;
+begin
+  insert into feed_state (url, etag, last_modified, last_status, last_error)
+  select url, etag, last_modified, last_status, last_error
+  from jsonb_to_recordset(p_items) as t(
+    url text, etag text, last_modified text, last_status integer, last_error text)
+  on conflict (url) do update set
+    etag = excluded.etag,
+    last_modified = excluded.last_modified,
+    last_status = excluded.last_status,
+    last_error = excluded.last_error,
+    updated_at = now(),
+    last_ok_at = case when excluded.last_error is null then now() else feed_state.last_ok_at end,
+    fail_count = case when excluded.last_error is null then 0 else feed_state.fail_count + 1 end;
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end $$;
+
+create or replace function public.tb_record_run(p_stats jsonb)
+returns bigint
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_id bigint;
+begin
+  insert into collect_runs
+    (duration_ms, sources_ok, sources_304, sources_failed, items_seen, inserted, failures)
+  values (
+    (p_stats->>'duration_ms')::integer,
+    (p_stats->>'sources_ok')::integer,
+    (p_stats->>'sources_304')::integer,
+    (p_stats->>'sources_failed')::integer,
+    (p_stats->>'items_seen')::integer,
+    (p_stats->>'inserted')::integer,
+    coalesce(p_stats->'failures', '[]'::jsonb))
+  returning id into v_id;
+  return v_id;
+end $$;
+
+create or replace function public.tb_pending_translations(
+  p_limit    integer default 120,
+  p_max_tier real    default 3
+)
+returns table (id text, title text, snippet text, source text, tier real, lang text)
+language sql
+stable
+security definer
+set search_path = tierboard, public
+as $$
+  select a.id, a.title, a.snippet, a.source, a.tier, a.lang
+  from articles a
+  where a.title_ko is null
+    and (a.tier is null or a.tier <= p_max_tier)
+    -- Only what the feed actually shows. The free translation budget is about
+    -- 700 headlines a day against 1,000+ collected, and two thirds of those
+    -- never surface — translating them starved the ones on screen.
+    and (a.journalist_id is not null or a.cited_id is not null or a.official)
+    -- Newest first: an old headline nobody will scroll to isn't worth quota.
+    and a.published_at > now() - interval '7 days'
+  order by a.published_at desc
+  limit least(coalesce(p_limit, 120), 500)
+$$;
+
+create or replace function public.tb_apply_translations(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_count integer;
+begin
+  update articles a
+  set title_ko = coalesce(nullif(t.title_ko, ''), a.title_ko),
+      -- A title-only pass must not erase a summary an earlier run produced.
+      summary_ko = coalesce(nullif(t.summary_ko, ''), a.summary_ko)
+  from jsonb_to_recordset(p_items) as t(id text, title_ko text, summary_ko text)
+  where a.id = t.id;
+
+  get diagnostics v_count = row_count;
+  return v_count;
+end $$;
+
+-- Drops anything older than the retention window. Transfer news has no value
+-- after a couple of months, and this keeps the free-tier database small.
+create or replace function public.tb_prune(p_days integer default 60)
+returns integer
+language plpgsql
+security definer
+set search_path = tierboard, public
+as $$
+declare
+  v_deleted integer;
+begin
+  delete from articles
+  where published_at < now() - make_interval(days => greatest(p_days, 1));
+  get diagnostics v_deleted = row_count;
+
+  -- article_teams / notified cascade; feed_state is keyed by URL, not article.
+  delete from collect_runs
+  where started_at < now() - make_interval(days => greatest(p_days, 1));
+
+  return v_deleted;
+end $$;
+
+-- Insert-and-report in one step: returns only the ids that were not already
+-- notified, so the caller can't double-send on a retry.
+create or replace function public.tb_mark_notified(p_ids text[])
+returns text[]
+language sql
+volatile
+security definer
+set search_path = tierboard, public
+as $$
+  with ins as (
+    insert into notified (article_id)
+    select unnest(p_ids)
+    on conflict do nothing
+    returning article_id
+  )
+  select coalesce(array_agg(article_id), '{}'::text[]) from ins
+$$;
+
+-- ── Function grants ─────────────────────────────────────────────────────────
+-- Postgres grants EXECUTE to PUBLIC by default, so every write function must be
+-- revoked explicitly or the anon key could call it.
+
+do $$
+declare
+  fn text;
+  read_fns text[] := array[
+    'public.tb_feed(real[],text[],text,text,text,timestamptz,timestamptz,integer,boolean)',
+    'public.tb_team_activity(integer,real[],text,text,text,boolean)',
+    'public.tb_journalist_activity(integer,text[],text,text)'
+  ];
+  write_fns text[] := array[
+    'public.tb_upsert_articles(jsonb)',
+    'public.tb_seed_teams(jsonb)',
+    'public.tb_seed_journalists(jsonb)',
+    'public.tb_feed_state_get(text[])',
+    'public.tb_feed_state_set(jsonb)',
+    'public.tb_record_run(jsonb)',
+    'public.tb_pending_translations(integer,real)',
+    'public.tb_apply_translations(jsonb)',
+    'public.tb_mark_notified(text[])',
+    'public.tb_prune(integer)'
+  ];
+begin
+  foreach fn in array read_fns loop
+    execute format('revoke all on function %s from public', fn);
+    execute format('grant execute on function %s to anon, authenticated, service_role', fn);
+  end loop;
+
+  foreach fn in array write_fns loop
+    execute format('revoke all on function %s from public, anon, authenticated', fn);
+    execute format('grant execute on function %s to service_role', fn);
+  end loop;
+end $$;
+
+-- ── Realtime ────────────────────────────────────────────────────────────────
+-- Lets the dashboard react to new articles instead of polling.
+do $$
+begin
+  if not exists (
+    select 1 from pg_publication_tables
+    where pubname = 'supabase_realtime'
+      and schemaname = 'tierboard'
+      and tablename = 'articles'
+  ) then
+    alter publication supabase_realtime add table tierboard.articles;
+  end if;
+end $$;
