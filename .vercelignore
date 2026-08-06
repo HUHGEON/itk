@@ -1,0 +1,9 @@
+# Never upload local secrets — the deploy gets its values from project env vars.
+.env
+.env.*
+!.env.example
+
+.git
+node_modules
+.next
+data/local.db
