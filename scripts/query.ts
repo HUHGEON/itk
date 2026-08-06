@@ -7,7 +7,7 @@
  *
  *   npm run query "select count(*) from tierboard.articles"
  */
-import "./lib/load-env";
+import "../lib/load-env";
 async function main() {
   const ref = new URL(process.env.NEXT_PUBLIC_SUPABASE_URL!).hostname.split(".")[0];
   const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/database/query`, {
