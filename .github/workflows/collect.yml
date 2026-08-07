@@ -78,12 +78,7 @@ jobs:
           MYMEMORY_EMAIL: ${{ secrets.MYMEMORY_EMAIL }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
 
-      # Optional — skips itself when no channel is configured.
-      - name: Push team alerts
+      # Destinations are rows in the database, registered from the UI — no env
+      # vars, and no redeploy to change who gets what.
+      - name: Push Discord alerts
         run: npm run notify
-        env:
-          NOTIFY_TEAMS: ${{ vars.NOTIFY_TEAMS }}
-          NOTIFY_MAX_TIER: ${{ vars.NOTIFY_MAX_TIER }}
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}

@@ -6,6 +6,7 @@ import type { Team, League, Journalist } from "@/lib/types";
 import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
 import { tierColor, tierLabel } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
+import { ScrollRail } from "./ScrollRail";
 
 const LEAGUES: League[] = ["EPL", "LaLiga", "Bundesliga", "SerieA", "Ligue1", "Eredivisie"];
 
@@ -112,7 +113,7 @@ export function Filters({
       )}
 
       {/* Tier chips */}
-      <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto px-3 py-2.5">
+      <ScrollRail className="flex items-center gap-1.5 px-3 py-2.5">
         <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">신뢰도</span>
         {ALL_TIERS.map((t) => {
           const key = String(t);
@@ -135,10 +136,10 @@ export function Filters({
             </button>
           );
         })}
-      </div>
+      </ScrollRail>
 
       {selectedTiers.length > 0 && (
-        <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto border-t border-border px-3 py-2.5">
+        <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
           <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">기자</span>
           {tierReporters.length === 0 ? (
             <span className="text-[12px] text-muted">최근 기사가 있는 기자가 없습니다</span>
@@ -174,12 +175,12 @@ export function Filters({
               );
             })
           )}
-        </div>
+        </ScrollRail>
       )}
 
       {/* League tabs across the top; picking one drops its clubs in below. */}
       <div className="border-t border-border">
-        <div className="no-scrollbar flex gap-1 overflow-x-auto px-3 pt-2">
+        <ScrollRail className="flex gap-1 px-3 pt-2">
           <LeagueTab active={!league} onClick={() => push((p) => p.delete("league"))}>
             전체
           </LeagueTab>
@@ -198,12 +199,12 @@ export function Filters({
               {LEAGUE_LABEL[g.league]}
             </LeagueTab>
           ))}
-        </div>
+        </ScrollRail>
 
         {/* Clubs of the open league — plus any picks made in another league, so
             a selection never disappears when the tab changes. */}
         {(openGroup || selected.length > 0) && (
-          <div className="no-scrollbar flex items-center gap-1.5 overflow-x-auto px-3 py-2.5">
+          <ScrollRail className="flex items-center gap-1.5 px-3 py-2.5">
             {(openGroup?.members ?? selected).map((t) => {
               const on = selectedTeams.includes(t.slug);
               const act = activity[t.slug];
@@ -255,9 +256,8 @@ export function Filters({
                     </span>
                   </button>
                 ))}
-          </div>
+          </ScrollRail>
         )}
-
       </div>
 
       {/* Search */}

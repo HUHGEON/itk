@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { collect } from "@/lib/collect";
+import { rpc } from "@/lib/supabase";
 
 /**
  * Collect on demand, from the button in the header.
@@ -24,4 +25,65 @@ export async function collectNow(): Promise<
   } catch (err) {
     return { ok: false, error: err instanceof Error ? err.message : String(err) };
   }
+}
+
+/** Discord destination as shown in the UI — never the full webhook URL. */
+export interface Subscription {
+  id: string;
+  label: string;
+  hint: string;
+  teams: string[];
+  maxTier: number;
+  active: boolean;
+  lastSentAt: string | null;
+}
+
+export async function listSubscriptions(): Promise<Subscription[]> {
+  const rows = await rpc<
+    {
+      id: string; label: string; hint: string; teams: string[];
+      max_tier: number; active: boolean; last_sent_at: string | null;
+    }[]
+  >("itk_list_subscriptions");
+
+  return (rows ?? []).map((r) => ({
+    id: r.id,
+    label: r.label,
+    hint: r.hint,
+    teams: r.teams ?? [],
+    maxTier: r.max_tier,
+    active: r.active,
+    lastSentAt: r.last_sent_at,
+  }));
+}
+
+export async function addSubscription(input: {
+  url: string;
+  teams: string[];
+  maxTier: number;
+  label: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await rpc<string>("itk_add_subscription", {
+      p_url: input.url.trim(),
+      p_teams: input.teams,
+      p_max_tier: input.maxTier,
+      p_label: input.label.trim(),
+    });
+    revalidatePath("/");
+    return { ok: true };
+  } catch (err) {
+    // The database enforces the Discord host and the team requirement, so its
+    // message is the one worth showing.
+    const raw = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: raw.replace(/^itk_add_subscription 실패: /, "") };
+  }
+}
+
+export async function removeSubscription(
+  id: string,
+): Promise<{ ok: boolean }> {
+  await rpc<number>("itk_remove_subscription", { p_id: id });
+  revalidatePath("/");
+  return { ok: true };
 }

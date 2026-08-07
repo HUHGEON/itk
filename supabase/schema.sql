@@ -72,10 +72,27 @@ create table if not exists itk.article_teams (
   primary key (article_id, team_slug)
 );
 
--- Remembers what the push notifier already sent, so a re-run stays quiet.
+-- Discord destinations, registered from the UI rather than baked into env
+-- vars, so several team/tier combinations can run side by side.
+create table if not exists itk.subscriptions (
+  id           uuid primary key default gen_random_uuid(),
+  label        text not null default '',
+  webhook_url  text not null unique,
+  teams        text[] not null default '{}',
+  max_tier     real not null default 1.5,
+  active       boolean not null default true,
+  fail_count   integer not null default 0,
+  last_sent_at timestamptz,
+  created_at   timestamptz not null default now()
+);
+
+-- Remembers what has been sent *per destination* — a global article_id key
+-- meant the first subscriber to receive a story silenced it for everyone else.
 create table if not exists itk.notified (
-  article_id text primary key references itk.articles(id) on delete cascade,
-  sent_at    timestamptz not null default now()
+  subscription_id uuid not null references itk.subscriptions(id) on delete cascade,
+  article_id      text not null references itk.articles(id) on delete cascade,
+  sent_at         timestamptz not null default now(),
+  primary key (subscription_id, article_id)
 );
 
 -- Per-feed HTTP state. Powers conditional requests (ETag / Last-Modified) so a
@@ -124,6 +141,29 @@ alter table itk.articles add column if not exists official boolean not null defa
 -- gibberish or nothing.
 alter table itk.articles add column if not exists lang text not null default 'en';
 
+-- The notified table was keyed on article_id alone before subscriptions
+-- existed; rebuild it rather than try to guess which destination each row was.
+do $$
+begin
+  if exists (
+    select 1 from information_schema.columns
+    where table_schema = 'itk' and table_name = 'notified'
+      and column_name = 'article_id'
+  ) and not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'itk' and table_name = 'notified'
+      and column_name = 'subscription_id'
+  ) then
+    drop table itk.notified;
+    create table itk.notified (
+      subscription_id uuid not null references itk.subscriptions(id) on delete cascade,
+      article_id      text not null references itk.articles(id) on delete cascade,
+      sent_at         timestamptz not null default now(),
+      primary key (subscription_id, article_id)
+    );
+  end if;
+end $$;
+
 create index if not exists idx_articles_published    on itk.articles (published_at desc);
 create index if not exists idx_articles_tier         on itk.articles (tier, published_at desc);
 create index if not exists idx_articles_journalist   on itk.articles (journalist_id, published_at desc);
@@ -142,6 +182,7 @@ alter table itk.journalist_teams enable row level security;
 alter table itk.articles         enable row level security;
 alter table itk.article_teams    enable row level security;
 alter table itk.notified         enable row level security;
+alter table itk.subscriptions    enable row level security;
 alter table itk.feed_state       enable row level security;
 alter table itk.collect_runs     enable row level security;
 
@@ -550,9 +591,116 @@ begin
   return v_deleted;
 end $$;
 
+
+-- ── Subscriptions ───────────────────────────────────────────────────────────
+-- Server-only: the webhook URL is a bearer credential for a Discord channel,
+-- so it is never returned to the browser in full.
+
+create or replace function public.itk_add_subscription(
+  p_url      text,
+  p_teams    text[],
+  p_max_tier real default 1.5,
+  p_label    text default ''
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare
+  v_id uuid;
+begin
+  -- Anything that isn't a Discord webhook would turn this into an open relay.
+  if p_url !~ '^https://(discord|discordapp)\.com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$' then
+    raise exception '디스코드 웹훅 주소가 아닙니다';
+  end if;
+  if coalesce(array_length(p_teams, 1), 0) = 0 then
+    raise exception '팀을 최소 하나 선택해야 합니다';
+  end if;
+  if (select count(*) from subscriptions) >= 50 then
+    raise exception '구독이 너무 많습니다';
+  end if;
+
+  insert into subscriptions (webhook_url, teams, max_tier, label)
+  values (p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''))
+  on conflict (webhook_url) do update set
+    teams = excluded.teams,
+    max_tier = excluded.max_tier,
+    label = excluded.label,
+    active = true,
+    fail_count = 0
+  returning id into v_id;
+
+  return v_id;
+end $$;
+
+-- Masked for display: enough to tell two destinations apart, not enough to post.
+create or replace function public.itk_list_subscriptions()
+returns table (id uuid, label text, hint text, teams text[], max_tier real,
+               active boolean, last_sent_at timestamptz)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select s.id, s.label,
+         '…' || right(s.webhook_url, 6),
+         s.teams, s.max_tier, s.active, s.last_sent_at
+  from subscriptions s
+  order by s.created_at
+$$;
+
+create or replace function public.itk_remove_subscription(p_id uuid)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from subscriptions where id = p_id;
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+-- Full URLs — only the notifier calls this.
+create or replace function public.itk_active_subscriptions()
+returns table (id uuid, webhook_url text, teams text[], max_tier real,
+               first_run boolean)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  -- first_run tells the notifier to record the current backlog as already
+  -- sent instead of delivering it: a new destination otherwise receives every
+  -- stored article at once.
+  select s.id, s.webhook_url, s.teams, s.max_tier, s.last_sent_at is null
+  from subscriptions s
+  where s.active and s.fail_count < 10
+$$;
+
+create or replace function public.itk_subscription_failed(p_id uuid, p_reset boolean default false)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  if p_reset then
+    update subscriptions set fail_count = 0, last_sent_at = now() where id = p_id;
+    return 0;
+  end if;
+  -- A webhook deleted on Discord's side 404s forever; stop after ten.
+  update subscriptions set fail_count = fail_count + 1 where id = p_id
+  returning fail_count into v_n;
+  return coalesce(v_n, 0);
+end $$;
+
 -- Insert-and-report in one step: returns only the ids that were not already
 -- notified, so the caller can't double-send on a retry.
-create or replace function public.itk_mark_notified(p_ids text[])
+create or replace function public.itk_mark_notified(p_sub uuid, p_ids text[])
 returns text[]
 language sql
 volatile
@@ -560,8 +708,8 @@ security definer
 set search_path = itk, public
 as $$
   with ins as (
-    insert into notified (article_id)
-    select unnest(p_ids)
+    insert into notified (subscription_id, article_id)
+    select p_sub, unnest(p_ids)
     on conflict do nothing
     returning article_id
   )
@@ -589,8 +737,13 @@ declare
     'public.itk_record_run(jsonb)',
     'public.itk_pending_translations(integer,real)',
     'public.itk_apply_translations(jsonb)',
-    'public.itk_mark_notified(text[])',
-    'public.itk_prune(integer)'
+    'public.itk_mark_notified(uuid,text[])',
+    'public.itk_prune(integer)',
+    'public.itk_add_subscription(text,text[],real,text)',
+    'public.itk_list_subscriptions()',
+    'public.itk_remove_subscription(uuid)',
+    'public.itk_active_subscriptions()',
+    'public.itk_subscription_failed(uuid,boolean)'
   ];
 begin
   foreach fn in array read_fns loop
