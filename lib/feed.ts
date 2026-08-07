@@ -72,7 +72,7 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
     limit = 60, before, after, tieredOnly = false,
   } = filters;
 
-  const rows = await rpc<FeedRpcRow[]>("tb_feed", {
+  const rows = await rpc<FeedRpcRow[]>("itk_feed", {
     p_tiers: tiers?.length ? tiers : null,
     p_teams: teams?.length ? teams : null,
     p_journalist_id: orNull(journalistId),
@@ -118,7 +118,7 @@ export async function getJournalistActivity(
   hours = 168,
 ) {
   const rows = await rpc<{ journalist_id: string; n: number }[]>(
-    "tb_journalist_activity",
+    "itk_journalist_activity",
     {
       p_hours: hours,
       p_teams: filters.teams?.length ? filters.teams : null,
@@ -138,7 +138,7 @@ export async function getTeamActivity(
   hours = 48,
 ) {
   const rows = await rpc<{ slug: string; n: number; best_tier: number | null }[]>(
-    "tb_team_activity",
+    "itk_team_activity",
     {
       p_hours: hours,
       p_tiers: filters.tiers?.length ? filters.tiers : null,

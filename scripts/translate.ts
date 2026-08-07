@@ -43,7 +43,7 @@ async function fetchPending(limit: number, maxTier: number): Promise<Pending[]> 
       id: string; title: string; snippet: string | null;
       source: string | null; tier: number | null; lang: string | null;
     }[]
-  >("tb_pending_translations", { p_limit: limit, p_max_tier: maxTier });
+  >("itk_pending_translations", { p_limit: limit, p_max_tier: maxTier });
 
   return (rows ?? []).map((r) => ({
     id: r.id,
@@ -149,7 +149,7 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
 
 async function save(items: { id: string; title_ko: string }[]): Promise<number> {
   if (items.length === 0) return 0;
-  return rpc<number>("tb_apply_translations", {
+  return rpc<number>("itk_apply_translations", {
     p_items: items.map((i) => ({ ...i, summary_ko: null })),
   });
 }

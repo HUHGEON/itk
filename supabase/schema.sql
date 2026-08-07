@@ -1,7 +1,7 @@
--- Everything lives in its own `tierboard` schema so this can share a Supabase
+-- Everything lives in its own `itk` schema so this can share a Supabase
 -- project with another app without touching its `public` schema.
 --
--- All access goes through the `public.tb_*` functions at the bottom rather than
+-- All access goes through the `public.itk_*` functions at the bottom rather than
 -- a direct Postgres connection, because many networks block outbound 5432.
 -- Those functions are SECURITY DEFINER, so only `public` needs to be exposed to
 -- PostgREST — no dashboard configuration required.
@@ -9,11 +9,11 @@
 -- Apply with `npm run db:push`, or paste this whole file into the Supabase SQL
 -- editor. Safe to re-run.
 
-create schema if not exists tierboard;
+create schema if not exists itk;
 
 -- ── Tables ──────────────────────────────────────────────────────────────────
 
-create table if not exists tierboard.teams (
+create table if not exists itk.teams (
   slug    text primary key,
   ko      text not null,
   en      text not null,
@@ -23,7 +23,7 @@ create table if not exists tierboard.teams (
   fd_id   integer
 );
 
-create table if not exists tierboard.journalists (
+create table if not exists itk.journalists (
   id         text primary key,
   ko         text not null,
   en         text not null,
@@ -37,20 +37,20 @@ create table if not exists tierboard.journalists (
   active     boolean not null default true
 );
 
-create table if not exists tierboard.journalist_teams (
-  journalist_id text not null references tierboard.journalists(id) on delete cascade,
-  team_slug     text not null references tierboard.teams(slug) on delete cascade,
+create table if not exists itk.journalist_teams (
+  journalist_id text not null references itk.journalists(id) on delete cascade,
+  team_slug     text not null references itk.teams(slug) on delete cascade,
   primary key (journalist_id, team_slug)
 );
 
-create table if not exists tierboard.articles (
+create table if not exists itk.articles (
   id            text primary key,
   url           text not null unique,
   title         text not null,
   snippet       text not null default '',
   source        text not null default '',
   published_at  timestamptz not null,
-  journalist_id text references tierboard.journalists(id) on delete set null,
+  journalist_id text references itk.journalists(id) on delete set null,
   tier          real,
   title_ko      text,
   summary_ko    text,
@@ -66,15 +66,15 @@ create table if not exists tierboard.articles (
   ) stored
 );
 
-create table if not exists tierboard.article_teams (
-  article_id text not null references tierboard.articles(id) on delete cascade,
-  team_slug  text not null references tierboard.teams(slug) on delete cascade,
+create table if not exists itk.article_teams (
+  article_id text not null references itk.articles(id) on delete cascade,
+  team_slug  text not null references itk.teams(slug) on delete cascade,
   primary key (article_id, team_slug)
 );
 
 -- Remembers what the push notifier already sent, so a re-run stays quiet.
-create table if not exists tierboard.notified (
-  article_id text primary key references tierboard.articles(id) on delete cascade,
+create table if not exists itk.notified (
+  article_id text primary key references itk.articles(id) on delete cascade,
   sent_at    timestamptz not null default now()
 );
 
@@ -82,7 +82,7 @@ create table if not exists tierboard.notified (
 -- feed that hasn't changed costs a 304 instead of a full body, and records
 -- consecutive failures so a dead feed backs off instead of being retried every
 -- run forever.
-create table if not exists tierboard.feed_state (
+create table if not exists itk.feed_state (
   url            text primary key,
   etag           text,
   last_modified  text,
@@ -95,7 +95,7 @@ create table if not exists tierboard.feed_state (
 
 -- One row per collection run — the only way to notice that recall quietly
 -- dropped because a source started 429ing.
-create table if not exists tierboard.collect_runs (
+create table if not exists itk.collect_runs (
   id             bigserial primary key,
   started_at     timestamptz not null default now(),
   duration_ms    integer,
@@ -109,52 +109,52 @@ create table if not exists tierboard.collect_runs (
 
 -- `create table if not exists` above is a no-op on an existing database, so
 -- columns added after the first deploy need an explicit ALTER.
-alter table tierboard.articles add column if not exists image_url text;
+alter table itk.articles add column if not exists image_url text;
 -- The journalist a story credits, as distinct from the one who wrote it. The
 -- biggest scoops break on X, which we can't read for free — but the outlets
 -- re-reporting them name their source in the body.
-alter table tierboard.articles add column if not exists cited_id text
-  references tierboard.journalists(id) on delete set null;
-create index if not exists idx_articles_cited on tierboard.articles (cited_id, published_at desc);
+alter table itk.articles add column if not exists cited_id text
+  references itk.journalists(id) on delete set null;
+create index if not exists idx_articles_cited on itk.articles (cited_id, published_at desc);
 -- A club announcing its own signing is the end of the story, not a report
 -- about it — it belongs in the feed even though it has no byline.
-alter table tierboard.articles add column if not exists official boolean not null default false;
+alter table itk.articles add column if not exists official boolean not null default false;
 -- Source language, so the translator asks for the right pair. Half the feeds
 -- are Spanish, Italian or French, and sending those as `en|ko` returns
 -- gibberish or nothing.
-alter table tierboard.articles add column if not exists lang text not null default 'en';
+alter table itk.articles add column if not exists lang text not null default 'en';
 
-create index if not exists idx_articles_published    on tierboard.articles (published_at desc);
-create index if not exists idx_articles_tier         on tierboard.articles (tier, published_at desc);
-create index if not exists idx_articles_journalist   on tierboard.articles (journalist_id, published_at desc);
-create index if not exists idx_articles_search       on tierboard.articles using gin (search_vector);
-create index if not exists idx_article_teams_slug    on tierboard.article_teams (team_slug);
-create index if not exists idx_journalist_teams_slug on tierboard.journalist_teams (team_slug);
-create index if not exists idx_collect_runs_started  on tierboard.collect_runs (started_at desc);
+create index if not exists idx_articles_published    on itk.articles (published_at desc);
+create index if not exists idx_articles_tier         on itk.articles (tier, published_at desc);
+create index if not exists idx_articles_journalist   on itk.articles (journalist_id, published_at desc);
+create index if not exists idx_articles_search       on itk.articles using gin (search_vector);
+create index if not exists idx_article_teams_slug    on itk.article_teams (team_slug);
+create index if not exists idx_journalist_teams_slug on itk.journalist_teams (team_slug);
+create index if not exists idx_collect_runs_started  on itk.collect_runs (started_at desc);
 
 -- ── Row Level Security ──────────────────────────────────────────────────────
--- No role gets direct table access; the tb_* functions below are the only door.
+-- No role gets direct table access; the itk_* functions below are the only door.
 -- Realtime still needs a SELECT policy on `articles` for the anon role.
 
-alter table tierboard.teams            enable row level security;
-alter table tierboard.journalists      enable row level security;
-alter table tierboard.journalist_teams enable row level security;
-alter table tierboard.articles         enable row level security;
-alter table tierboard.article_teams    enable row level security;
-alter table tierboard.notified         enable row level security;
-alter table tierboard.feed_state       enable row level security;
-alter table tierboard.collect_runs     enable row level security;
+alter table itk.teams            enable row level security;
+alter table itk.journalists      enable row level security;
+alter table itk.journalist_teams enable row level security;
+alter table itk.articles         enable row level security;
+alter table itk.article_teams    enable row level security;
+alter table itk.notified         enable row level security;
+alter table itk.feed_state       enable row level security;
+alter table itk.collect_runs     enable row level security;
 
 -- Realtime evaluates this policy before pushing a row to a subscriber.
-grant usage on schema tierboard to anon, authenticated;
-grant select on tierboard.articles to anon, authenticated;
-drop policy if exists articles_read on tierboard.articles;
-create policy articles_read on tierboard.articles
+grant usage on schema itk to anon, authenticated;
+grant select on itk.articles to anon, authenticated;
+drop policy if exists articles_read on itk.articles;
+create policy articles_read on itk.articles
   for select to anon, authenticated using (true);
 
 -- ── Functions ───────────────────────────────────────────────────────────────
 -- Dropped first: `create or replace` cannot change a function's return type, so
--- adding a column to tb_feed would otherwise fail on an existing database.
+-- adding a column to itk_feed would otherwise fail on an existing database.
 do $$
 declare
   r record;
@@ -171,7 +171,7 @@ end $$;
 
 -- ── Read functions (browser + server) ───────────────────────────────────────
 
-create or replace function public.tb_feed(
+create or replace function public.itk_feed(
   p_tiers         real[]      default null,
   p_teams         text[]      default null,
   p_journalist_id text        default null,
@@ -192,7 +192,7 @@ returns table (
 language sql
 stable
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   select a.id, a.url, a.title, a.snippet, a.source, a.published_at, a.tier,
          a.title_ko, a.summary_ko, a.image_url, a.journalist_id,
@@ -232,7 +232,7 @@ as $$
   limit least(coalesce(p_limit, 60), 200)
 $$;
 
-create or replace function public.tb_team_activity(
+create or replace function public.itk_team_activity(
   p_hours         integer default 48,
   p_tiers         real[]  default null,
   p_journalist_id text    default null,
@@ -244,7 +244,7 @@ returns table (slug text, n bigint, best_tier real)
 language sql
 stable
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   select at.team_slug, count(*), min(a.tier)
   from article_teams at
@@ -268,7 +268,7 @@ $$;
 
 -- Which journalists actually filed recently, so the picker can lead with them
 -- instead of listing 244 names in registry order.
-create or replace function public.tb_journalist_activity(
+create or replace function public.itk_journalist_activity(
   p_hours  integer default 168,
   p_teams  text[]  default null,
   p_league text    default null,
@@ -278,7 +278,7 @@ returns table (journalist_id text, n bigint)
 language sql
 stable
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   select coalesce(a.journalist_id, a.cited_id) as journalist_id, count(*)
   from articles a
@@ -297,11 +297,11 @@ $$;
 
 -- ── Write functions (server only) ───────────────────────────────────────────
 
-create or replace function public.tb_upsert_articles(p_items jsonb)
+create or replace function public.itk_upsert_articles(p_items jsonb)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_inserted integer;
@@ -343,11 +343,11 @@ begin
   return v_inserted;
 end $$;
 
-create or replace function public.tb_seed_teams(p_items jsonb)
+create or replace function public.itk_seed_teams(p_items jsonb)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_count integer;
@@ -375,11 +375,11 @@ begin
   return v_count;
 end $$;
 
-create or replace function public.tb_seed_journalists(p_items jsonb)
+create or replace function public.itk_seed_journalists(p_items jsonb)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_count integer;
@@ -414,22 +414,22 @@ begin
   return v_count;
 end $$;
 
-create or replace function public.tb_feed_state_get(p_urls text[])
+create or replace function public.itk_feed_state_get(p_urls text[])
 returns table (url text, etag text, last_modified text, fail_count integer, updated_at timestamptz)
 language sql
 stable
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   select f.url, f.etag, f.last_modified, f.fail_count, f.updated_at
   from feed_state f where f.url = any(p_urls)
 $$;
 
-create or replace function public.tb_feed_state_set(p_items jsonb)
+create or replace function public.itk_feed_state_set(p_items jsonb)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_count integer;
@@ -451,11 +451,11 @@ begin
   return v_count;
 end $$;
 
-create or replace function public.tb_record_run(p_stats jsonb)
+create or replace function public.itk_record_run(p_stats jsonb)
 returns bigint
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_id bigint;
@@ -474,7 +474,7 @@ begin
   return v_id;
 end $$;
 
-create or replace function public.tb_pending_translations(
+create or replace function public.itk_pending_translations(
   p_limit    integer default 120,
   p_max_tier real    default 3
 )
@@ -482,7 +482,7 @@ returns table (id text, title text, snippet text, source text, tier real, lang t
 language sql
 stable
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   select a.id, a.title, a.snippet, a.source, a.tier, a.lang
   from articles a
@@ -498,11 +498,11 @@ as $$
   limit least(coalesce(p_limit, 120), 500)
 $$;
 
-create or replace function public.tb_apply_translations(p_items jsonb)
+create or replace function public.itk_apply_translations(p_items jsonb)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_count integer;
@@ -520,11 +520,11 @@ end $$;
 
 -- Drops anything older than the retention window. Transfer news has no value
 -- after a couple of months, and this keeps the free-tier database small.
-create or replace function public.tb_prune(p_days integer default 60)
+create or replace function public.itk_prune(p_days integer default 60)
 returns integer
 language plpgsql
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
 declare
   v_deleted integer;
@@ -542,12 +542,12 @@ end $$;
 
 -- Insert-and-report in one step: returns only the ids that were not already
 -- notified, so the caller can't double-send on a retry.
-create or replace function public.tb_mark_notified(p_ids text[])
+create or replace function public.itk_mark_notified(p_ids text[])
 returns text[]
 language sql
 volatile
 security definer
-set search_path = tierboard, public
+set search_path = itk, public
 as $$
   with ins as (
     insert into notified (article_id)
@@ -566,21 +566,21 @@ do $$
 declare
   fn text;
   read_fns text[] := array[
-    'public.tb_feed(real[],text[],text,text,text,timestamptz,timestamptz,integer,boolean)',
-    'public.tb_team_activity(integer,real[],text,text,text,boolean)',
-    'public.tb_journalist_activity(integer,text[],text,text)'
+    'public.itk_feed(real[],text[],text,text,text,timestamptz,timestamptz,integer,boolean)',
+    'public.itk_team_activity(integer,real[],text,text,text,boolean)',
+    'public.itk_journalist_activity(integer,text[],text,text)'
   ];
   write_fns text[] := array[
-    'public.tb_upsert_articles(jsonb)',
-    'public.tb_seed_teams(jsonb)',
-    'public.tb_seed_journalists(jsonb)',
-    'public.tb_feed_state_get(text[])',
-    'public.tb_feed_state_set(jsonb)',
-    'public.tb_record_run(jsonb)',
-    'public.tb_pending_translations(integer,real)',
-    'public.tb_apply_translations(jsonb)',
-    'public.tb_mark_notified(text[])',
-    'public.tb_prune(integer)'
+    'public.itk_upsert_articles(jsonb)',
+    'public.itk_seed_teams(jsonb)',
+    'public.itk_seed_journalists(jsonb)',
+    'public.itk_feed_state_get(text[])',
+    'public.itk_feed_state_set(jsonb)',
+    'public.itk_record_run(jsonb)',
+    'public.itk_pending_translations(integer,real)',
+    'public.itk_apply_translations(jsonb)',
+    'public.itk_mark_notified(text[])',
+    'public.itk_prune(integer)'
   ];
 begin
   foreach fn in array read_fns loop
@@ -601,9 +601,9 @@ begin
   if not exists (
     select 1 from pg_publication_tables
     where pubname = 'supabase_realtime'
-      and schemaname = 'tierboard'
+      and schemaname = 'itk'
       and tablename = 'articles'
   ) then
-    alter publication supabase_realtime add table tierboard.articles;
+    alter publication supabase_realtime add table itk.articles;
   end if;
 end $$;

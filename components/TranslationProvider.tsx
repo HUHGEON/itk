@@ -10,7 +10,7 @@ import {
 } from "react";
 import { toKorean, translatorSupported } from "@/lib/translate-client";
 
-const STORAGE_KEY = "tierboard:translate";
+const STORAGE_KEY = "itk:translate";
 
 interface Ctx {
   enabled: boolean;

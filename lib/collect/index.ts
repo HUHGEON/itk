@@ -269,7 +269,7 @@ async function persist(items: RawItem[]): Promise<number> {
 
   let inserted = 0;
   for (let i = 0; i < rows.length; i += CHUNK) {
-    inserted += await rpc<number>("tb_upsert_articles", {
+    inserted += await rpc<number>("itk_upsert_articles", {
       p_items: rows.slice(i, i + CHUNK),
     });
   }
@@ -460,7 +460,7 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
 
   const deduped = [...byUrl.values()];
   const inserted = await persist(deduped);
-  const pruned = await rpc<number>("tb_prune", { p_days: RETENTION_DAYS });
+  const pruned = await rpc<number>("itk_prune", { p_days: RETENTION_DAYS });
   const durationMs = Date.now() - started;
 
   const stats: CollectStats = {
@@ -484,7 +484,7 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
 
 async function recordRun(s: CollectStats): Promise<void> {
   try {
-    await rpc<number>("tb_record_run", {
+    await rpc<number>("itk_record_run", {
       p_stats: {
         duration_ms: s.durationMs,
         sources_ok: s.ok,

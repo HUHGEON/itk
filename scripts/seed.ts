@@ -5,7 +5,7 @@ import { loadJournalists, loadTeams } from "../lib/registry";
 
 async function main() {
   const teams = loadTeams();
-  await rpc<number>("tb_seed_teams", {
+  await rpc<number>("itk_seed_teams", {
     p_items: teams.map((t) => ({
       slug: t.slug,
       ko: t.ko,
@@ -21,7 +21,7 @@ async function main() {
   if (journalists.length === 0) {
     console.warn("⚠ data/journalists.json이 비어 있습니다. 먼저 `npm run merge`를 실행하세요.");
   } else {
-    await rpc<number>("tb_seed_journalists", {
+    await rpc<number>("itk_seed_journalists", {
       // `handle` rather than `x`: the column is named x, but a one-letter JSON
       // key is easy to mistype and the function maps it back.
       p_items: journalists.map((j) => ({

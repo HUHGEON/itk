@@ -29,7 +29,7 @@ export function supabase(): SupabaseClient {
 
   client = createClient(url, key, {
     auth: { persistSession: false, autoRefreshToken: false },
-    global: { headers: { "x-application-name": "tierboard" } },
+    global: { headers: { "x-application-name": "itk" } },
     realtime: {
       // supabase-js wires up a realtime client on construction even when only
       // RPC is used, and Node < 22 has no global WebSocket. Nothing here
@@ -41,7 +41,7 @@ export function supabase(): SupabaseClient {
 }
 
 /**
- * Calls a `tb_*` database function and throws on error.
+ * Calls a `itk_*` database function and throws on error.
  *
  * supabase-js returns `{ data, error }` rather than rejecting, which is easy to
  * ignore by accident — a silent null here would look like "no articles" instead

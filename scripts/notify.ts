@@ -83,7 +83,7 @@ async function main() {
   // tradeoff is that a failed send is not retried — duplicates are worse than a
   // rare miss for something that runs every 20 minutes.
   const claimed = new Set(
-    await rpc<string[]>("tb_mark_notified", { p_ids: rows.map((r) => r.id) }),
+    await rpc<string[]>("itk_mark_notified", { p_ids: rows.map((r) => r.id) }),
   );
   const toSend = rows.filter((r) => claimed.has(r.id));
 

@@ -56,10 +56,12 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             bleed through it while scrolling. */}
         <header className="sticky top-0 z-30 border-b border-border bg-bg">
           <div className="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-2.5">
-            <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded bg-accent text-[13px] font-black text-black">
-              T
+            <span className="flex h-6 shrink-0 items-center rounded bg-accent px-1.5 text-[12px] font-black tracking-tight text-black">
+              ITK
             </span>
-            <h1 className="text-[14px] font-bold">티어보드</h1>
+            {/* In The Know — transfer-market slang for someone with real
+                sources, which is exactly what the tier list ranks. */}
+            <span className="text-[12px] text-muted">In The Know</span>
             <span className="text-[11px] text-muted">{rows.length}건</span>
             <div className="ml-auto flex items-center gap-2">
               <CollectButton />

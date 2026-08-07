@@ -1,4 +1,4 @@
-# 티어보드
+# ITK
 
 해외 축구 기자 **244명을 신뢰도 티어(0 / 1 / 1.5 / 2 / 3)로 분류**해 두고, 그 사람들이
 쓴 기사만 모아 보는 대시보드. 이적설을 "누가 먼저 떴냐"가 아니라 **"누가 떴냐"** 로 거른다.
@@ -23,7 +23,7 @@ X(트위터) API는 쓰지 않는다 — 월 $200이라 무료 배포가 불가�
 
 ### 1. Supabase 프로젝트
 
-**이미 쓰고 있는 프로젝트를 그대로 재사용해도 된다.** 모든 테이블은 `tierboard`
+**이미 쓰고 있는 프로젝트를 그대로 재사용해도 된다.** 모든 테이블은 `itk`
 스키마 안에 만들어지므로 기존 `public` 스키마를 건드리지 않는다.
 
 **Settings → API Keys** 에서 세 값을 복사해 `.env.local` 에 넣는다.
@@ -102,11 +102,11 @@ npm run dev
 ```sql
 -- 최근 수집 상태 확인
 select started_at, sources_ok, sources_304, sources_failed, inserted
-from tierboard.collect_runs order by started_at desc limit 20;
+from itk.collect_runs order by started_at desc limit 20;
 
 -- 계속 죽는 피드 찾기
 select url, fail_count, last_status, last_error
-from tierboard.feed_state where fail_count > 0 order by fail_count desc;
+from itk.feed_state where fail_count > 0 order by fail_count desc;
 ```
 
 ## 왜 Postgres 직결을 안 쓰나
@@ -116,12 +116,12 @@ from tierboard.feed_state where fail_count > 0 order by fail_count desc;
 아예 불가능하다.
 
 그래서 **모든 DB 접근이 PostgREST 함수 호출(HTTPS 443)로 나간다.** 테이블에는 아무
-역할도 직접 접근하지 못하고, `public.tb_*` 함수만이 유일한 통로다.
+역할도 직접 접근하지 못하고, `public.itk_*` 함수만이 유일한 통로다.
 
 | 함수 | 호출 주체 |
 |---|---|
-| `tb_feed`, `tb_team_activity` | 브라우저(publishable) + 서버 |
-| `tb_upsert_articles`, `tb_seed_*`, `tb_feed_state_*`, `tb_record_run`, `tb_apply_translations`, `tb_mark_notified` | **서버 전용** (secret key) |
+| `itk_feed`, `itk_team_activity` | 브라우저(publishable) + 서버 |
+| `itk_upsert_articles`, `itk_seed_*`, `itk_feed_state_*`, `itk_record_run`, `itk_apply_translations`, `itk_mark_notified` | **서버 전용** (secret key) |
 
 Postgres는 새 함수에 `EXECUTE`를 `PUBLIC`으로 기본 부여하기 때문에, 쓰기 함수는
 명시적으로 `revoke` 한 뒤 `service_role`에만 부여한다. publishable key로는 쓰기
@@ -130,7 +130,7 @@ Postgres는 새 함수에 `EXECUTE`를 `PUBLIC`으로 기본 부여하기 때문
 부수 효과로 배포도 단순해졌다 — pooler 문자열, prepared statement, 커넥션 고갈 같은
 서버리스 이슈가 전부 사라진다.
 
-되돌리고 싶으면 `drop schema tierboard cascade;` 와 `tb_*` 함수 삭제로 끝난다.
+되돌리고 싶으면 `drop schema itk cascade;` 와 `itk_*` 함수 삭제로 끝난다.
 
 ## 알림
 
@@ -163,7 +163,7 @@ Postgres는 새 함수에 `EXECUTE`를 `PUBLIC`으로 기본 부여하기 때문
 ## 보존 기간
 
 2개월(`RETENTION_DAYS`)이 지난 기사는 수집 단계에서 버리고, 이미 저장된 것도 매 실행마다
-`tb_prune`이 지운다. 이적 뉴스는 그보다 오래되면 가치가 없고, 무료 티어 500MB를 지키는
+`itk_prune`이 지운다. 이적 뉴스는 그보다 오래되면 가치가 없고, 무료 티어 500MB를 지키는
 효과도 있다. Google News는 수년 치를 돌려주기 때문에 이 필터가 없으면 대부분이 과거
 기사로 채워진다 — 실제로 한 번 실행에 6,879건이 이 조건으로 걸러졌다.
 

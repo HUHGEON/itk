@@ -118,7 +118,7 @@ export class FeedFetcher {
         fail_count: number;
         updated_at: string;
       }[]
-    >("tb_feed_state_get", { p_urls: urls });
+    >("itk_feed_state_get", { p_urls: urls });
 
     for (const r of rows ?? []) {
       this.state.set(r.url, {
@@ -244,7 +244,7 @@ export class FeedFetcher {
       last_error: u.error,
     }));
 
-    await rpc<number>("tb_feed_state_set", { p_items: rows });
+    await rpc<number>("itk_feed_state_set", { p_items: rows });
     this.updates.clear();
   }
 }

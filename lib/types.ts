@@ -4,7 +4,7 @@
  * Declared here (not in db.ts) so client components can read it without
  * pulling the Postgres driver into the browser bundle.
  */
-export const DB_SCHEMA = "tierboard";
+export const DB_SCHEMA = "itk";
 
 export type Tier = 0 | 1 | 1.5 | 2 | 3;
 

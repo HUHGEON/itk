@@ -5,7 +5,7 @@
  * 5432 is blocked on many networks — same reason the app itself is HTTPS-only.
  * Needs SUPABASE_ACCESS_TOKEN.
  *
- *   npm run query "select count(*) from tierboard.articles"
+ *   npm run query "select count(*) from itk.articles"
  */
 import "../lib/load-env";
 async function main() {

@@ -7,7 +7,7 @@ import { tierLabel } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { TeamCrest } from "./TeamCrest";
 
-const STORAGE_KEY = "tierboard:alerts";
+const STORAGE_KEY = "itk:alerts";
 /** Safety net only — Realtime is the primary trigger. */
 const FALLBACK_POLL_MS = 300_000;
 /** A collector run inserts hundreds of rows; wait for the burst to settle. */
@@ -105,7 +105,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
     let burst: number | undefined;
     const supabase = supabaseBrowser();
     const channel = supabase
-      ?.channel("tierboard-articles")
+      ?.channel("itk-articles")
       .on(
         "postgres_changes",
         { event: "INSERT", schema: DB_SCHEMA, table: "articles" },
