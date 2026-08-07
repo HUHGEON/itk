@@ -782,6 +782,27 @@ as $$
   limit 1000 offset greatest(coalesce(p_offset, 0), 0);
 $$;
 
+
+-- Removes stories that were taken long after they were published.
+--
+-- Until COLLECT_DAYS existed the ingest cutoff was the retention window, so
+-- widening the Google News queries pulled in weeks-old pieces as fresh
+-- arrivals. These are exactly the rows the current rule would have refused.
+-- Articles that are old but were caught while they were news are kept.
+create or replace function public.itk_purge_backfill(p_days integer default 14)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from articles
+  where created_at - published_at > make_interval(days => greatest(p_days, 1));
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_purge_junk()
 returns integer
 language plpgsql
@@ -1286,6 +1307,7 @@ declare
     'public.itk_hydrate_pending(integer)',
     'public.itk_dedupe_resolved()',
     'public.itk_purge_junk()',
+    'public.itk_purge_backfill(integer)',
     'public.itk_retag(jsonb)',
     'public.itk_articles_for_retag(integer)',
     'public.itk_titles_for_bench(integer)',
