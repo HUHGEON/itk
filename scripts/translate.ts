@@ -243,11 +243,13 @@ async function main() {
   // Counted separately: flush() empties `misses`, so its length is not a total.
   let failed = 0;
 
-  // The day's spend lives in the database. CI starts a fresh process every
-  // twenty minutes, and a counter in a local variable meant each of those runs
-  // believed it had the whole day's allowance to itself.
-  let spent = await rpc<number>("itk_translate_usage", { p_add: 0 });
-  const startedAt = spent;
+  // MyMemory meters by IP address, not by account — an anonymous request from
+  // the same machine gets the same 429. Hosted CI runners draw a different IP
+  // each run, so each run really does have its own allowance and the budget is
+  // per run. The database total is a record of the day across all of them, not
+  // the thing that gates a run.
+  let spent = 0;
+  const dayBefore = await rpc<number>("itk_translate_usage", { p_add: 0 });
 
   const flush = async () => {
     if (results.length) saved += await save(results.splice(0, results.length));
@@ -267,7 +269,7 @@ async function main() {
 
     try {
       const ko = await viaMyMemory(item.title, item.lang);
-      spent = await rpc<number>("itk_translate_usage", { p_add: item.title.length });
+      spent += item.title.length;
       if (ko) results.push({ id: item.id, title_ko: ko });
       // Recorded, so a headline the provider cannot handle stops returning to
       // the front of the queue and spending the budget again.
@@ -276,10 +278,9 @@ async function main() {
         failed++;
       }
     } catch {
-      // Park the rest of the day: the next CI run in twenty minutes would
-      // otherwise spend a request rediscovering the same limit.
-      spent = await rpc<number>("itk_translate_usage", { p_add: MYMEMORY_DAILY_CHARS });
-      console.log("  MyMemory 오늘 한도 소진 — 중단합니다 (내일 재개).");
+      // This IP is done for the day. The next run comes from another one, so
+      // stopping here must not speak for it.
+      console.log("  이 IP의 오늘 한도 소진 — 이번 실행만 중단합니다.");
       break;
     }
 
@@ -289,11 +290,12 @@ async function main() {
   }
 
   await flush();
+  const dayTotal = await rpc<number>("itk_translate_usage", { p_add: spent });
 
   console.log(
     `✓ ${saved}건 번역 저장${failed ? ` · 실패 ${failed}건` : ""} · ` +
-      `오늘 사용 ${spent.toLocaleString()} / ${MYMEMORY_DAILY_CHARS.toLocaleString()}자` +
-      ` (이번 실행 ${(spent - startedAt).toLocaleString()}자)`,
+      `이번 실행 ${spent.toLocaleString()} / ${MYMEMORY_DAILY_CHARS.toLocaleString()}자` +
+      ` · 오늘 누적 ${dayTotal.toLocaleString()}자 (이전 ${dayBefore.toLocaleString()})`,
   );
 }
 
