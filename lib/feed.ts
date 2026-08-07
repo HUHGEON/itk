@@ -8,8 +8,12 @@ export interface FeedFilters {
   /** full-text query against the headline (English + Korean) */
   q?: string;
   limit?: number;
-  /** cursor: only articles published strictly before this timestamp */
-  before?: number;
+  /**
+   * Pagination cursor — the last row of the previous page. Composite because
+   * several feeds stamp a whole batch with the same minute, and a
+   * timestamp-only cursor silently drops the rest of that batch.
+   */
+  cursor?: { publishedAt: number; id: string };
   /** only articles first seen after this timestamp — used by the notifier */
   after?: number;
   /** the default view: only stories attributable to a ranked reporter */
@@ -69,7 +73,7 @@ function orNull<T>(v: T | undefined | null): T | null {
 export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
   const {
     tiers, teams, journalistId, league, q,
-    limit = 60, before, after, tieredOnly = false,
+    limit = 60, cursor, after, tieredOnly = false,
   } = filters;
 
   const rows = await rpc<FeedRpcRow[]>("itk_feed", {
@@ -78,7 +82,8 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
     p_journalist_id: orNull(journalistId),
     p_league: orNull(league),
     p_q: q?.trim() ? q.trim() : null,
-    p_before: before ? new Date(before).toISOString() : null,
+    p_before: cursor ? new Date(cursor.publishedAt).toISOString() : null,
+    p_before_id: cursor?.id ?? null,
     p_after: after ? new Date(after).toISOString() : null,
     p_limit: limit,
     p_tiered_only: tieredOnly,

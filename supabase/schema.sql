@@ -178,6 +178,7 @@ create or replace function public.itk_feed(
   p_league        text        default null,
   p_q             text        default null,
   p_before        timestamptz default null,
+  p_before_id     text        default null,
   p_after         timestamptz default null,
   p_limit         integer     default 60,
   p_tiered_only   boolean     default false
@@ -224,11 +225,14 @@ as $$
     and (p_q is null or (
           a.search_vector @@ websearch_to_tsquery('english', p_q)
        or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
-    and (p_before is null or a.published_at < p_before)
+    -- Composite cursor: a plain timestamp comparison skips rows whenever a
+    -- feed stamps a batch with the same minute, which several of them do.
+    and (p_before is null
+         or (a.published_at, a.id) < (p_before, coalesce(p_before_id, '')))
     -- created_at, not published_at: a backdated story we just discovered is
     -- still news to the reader.
     and (p_after is null or a.created_at > p_after)
-  order by a.published_at desc
+  order by a.published_at desc, a.id desc
   limit least(coalesce(p_limit, 60), 200)
 $$;
 
@@ -566,7 +570,7 @@ do $$
 declare
   fn text;
   read_fns text[] := array[
-    'public.itk_feed(real[],text[],text,text,text,timestamptz,timestamptz,integer,boolean)',
+    'public.itk_feed(real[],text[],text,text,text,timestamptz,text,timestamptz,integer,boolean)',
     'public.itk_team_activity(integer,real[],text,text,text,boolean)',
     'public.itk_journalist_activity(integer,text[],text,text)'
   ];

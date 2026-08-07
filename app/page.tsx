@@ -1,9 +1,10 @@
+import Link from "next/link";
 import { Suspense } from "react";
 import { getFeed, getTeamActivity, getJournalistActivity } from "@/lib/feed";
 import { loadTeams, loadJournalists } from "@/lib/registry";
 import type { Team } from "@/lib/types";
 import { Filters } from "@/components/Filters";
-import { ArticleCard } from "@/components/ArticleCard";
+import { ArticleList } from "@/components/ArticleList";
 import { AlertPanel } from "@/components/AlertPanel";
 import { TranslationProvider, TranslateToggle } from "@/components/TranslationProvider";
 import { CollectButton } from "@/components/CollectButton";
@@ -35,8 +36,11 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
 
   const base = { tiers, teams: teamSlugs, league, q, journalistId: who };
 
+  // Matches ArticleList's page size so the first "load more" lines up.
+  const PAGE_SIZE = 40;
+
   const [rows, activity, journalistActivity] = await Promise.all([
-    getFeed({ ...base, tieredOnly, limit: 80 }),
+    getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
     // Counts describe the combination on screen, so each excludes its own
     // dimension: team badges ignore the team filter, journalist badges ignore
     // the journalist filter.
@@ -49,6 +53,18 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   const journalists = loadJournalists();
   const now = Date.now();
 
+  // Handed to the client so paging keeps whatever filters are on screen.
+  const feedQuery = new URLSearchParams(
+    Object.entries({
+      tier: tiers.join(","),
+      team: teamSlugs.join(","),
+      league: league ?? "",
+      q: q ?? "",
+      who: who ?? "",
+      feed: tieredOnly ? "" : "all",
+    }).filter(([, v]) => v !== ""),
+  ).toString();
+
   return (
     <TranslationProvider>
       <div className="min-h-screen bg-bg">
@@ -57,16 +73,17 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
         <header className="sticky top-0 z-30 border-b border-border bg-bg">
           <div className="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-2.5">
             {/* ITK — In The Know, transfer-market slang for someone with real
-                sources, which is what the tier list ranks. The + sits outside
-                the fill so the mark reads as a wordmark rather than a badge. */}
-            <span className="flex shrink-0 items-baseline gap-0.5">
-              <span className="rounded bg-accent px-1.5 py-0.5 text-[13px] font-black tracking-tight text-black">
-                ITK
-              </span>
-              <span className="text-[15px] font-black leading-none text-accent">+</span>
-            </span>
+                sources, which is what the tier list ranks. Doubles as the way
+                back to an unfiltered feed. */}
+            <Link
+              href="/"
+              title="필터 초기화"
+              className="flex shrink-0 items-center rounded bg-accent px-1.5 py-0.5 text-[13px] font-black tracking-tight text-black transition-opacity hover:opacity-80"
+            >
+              ITK+
+            </Link>
             <span className="hidden text-[12px] text-muted sm:inline">In The Know</span>
-            <span className="text-[11px] text-muted">{rows.length}건</span>
+            
             <div className="ml-auto flex items-center gap-2">
               <CollectButton />
               <TranslateToggle />
@@ -88,9 +105,12 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             {rows.length === 0 ? (
               <EmptyState tieredOnly={tieredOnly} hasJournalists={journalists.length > 0} />
             ) : (
-              rows.map((row) => (
-                <ArticleCard key={row.id} row={row} teams={teamMap} now={now} />
-              ))
+              <ArticleList
+                initialRows={rows}
+                teams={teamMap}
+                now={now}
+                query={feedQuery}
+              />
             )}
           </main>
 
