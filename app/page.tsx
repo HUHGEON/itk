@@ -56,12 +56,16 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
             bleed through it while scrolling. */}
         <header className="sticky top-0 z-30 border-b border-border bg-bg">
           <div className="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-2.5">
-            <span className="flex h-6 shrink-0 items-center rounded bg-accent px-1.5 text-[12px] font-black tracking-tight text-black">
-              ITK
+            {/* ITK — In The Know, transfer-market slang for someone with real
+                sources, which is what the tier list ranks. The + sits outside
+                the fill so the mark reads as a wordmark rather than a badge. */}
+            <span className="flex shrink-0 items-baseline gap-0.5">
+              <span className="rounded bg-accent px-1.5 py-0.5 text-[13px] font-black tracking-tight text-black">
+                ITK
+              </span>
+              <span className="text-[15px] font-black leading-none text-accent">+</span>
             </span>
-            {/* In The Know — transfer-market slang for someone with real
-                sources, which is exactly what the tier list ranks. */}
-            <span className="text-[12px] text-muted">In The Know</span>
+            <span className="hidden text-[12px] text-muted sm:inline">In The Know</span>
             <span className="text-[11px] text-muted">{rows.length}건</span>
             <div className="ml-auto flex items-center gap-2">
               <CollectButton />
