@@ -77,6 +77,17 @@ function format(rows: FeedRow[], teamName: (s: string) => string): string[] {
     });
 }
 
+/**
+ * How old a story may be and still be worth pushing.
+ *
+ * "New" was decided by when we first saw a story, not when it was published.
+ * Broadening the Google News queries made the collector surface pieces from
+ * weeks back, and each one arrived as a fresh alert — a 9 July transfer story
+ * pushed on 7 August. They are still claimed below so they never fire later;
+ * they just are not sent.
+ */
+const FRESH_HOURS = 48;
+
 async function runOne(sub: Subscription, teamName: (s: string) => string): Promise<number> {
   const tiers = ALL_TIERS.filter((t) => t <= sub.max_tier);
 
@@ -105,7 +116,14 @@ async function runOne(sub: Subscription, teamName: (s: string) => string): Promi
       p_ids: rows.map((r) => r.id),
     }),
   );
-  const toSend = rows.filter((r) => claimed.has(r.id));
+  const cutoff = Date.now() - FRESH_HOURS * 3_600_000;
+  const fresh = rows.filter((r) => claimed.has(r.id) && r.publishedAt >= cutoff);
+  const stale = claimed.size - fresh.length;
+  if (stale > 0) {
+    console.log(`  ${sub.id.slice(0, 8)} 오래된 기사 ${stale}건은 기록만 (발송 안 함)`);
+  }
+
+  const toSend = fresh;
   if (toSend.length === 0) return 0;
 
   // A brand-new destination would otherwise receive every stored article in
