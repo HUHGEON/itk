@@ -19,7 +19,8 @@
     "query": "tsx scripts/query.ts",
     "hydrate": "tsx scripts/hydrate.ts",
     "relang": "tsx scripts/relang.ts",
-    "audit": "tsx scripts/audit-journalists.ts"
+    "audit": "tsx scripts/audit-journalists.ts",
+    "retag": "tsx scripts/retag.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

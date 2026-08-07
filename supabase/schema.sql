@@ -388,9 +388,14 @@ begin
       snippet   = case when excluded.snippet <> '' then excluded.snippet else articles.snippet end,
       image_url = coalesce(excluded.image_url, articles.image_url),
       cited_id  = coalesce(articles.cited_id, excluded.cited_id),
+      -- An outlet feed sees a story before the reporter's own feed does, and
+      -- without this the byline never arrived — the story stayed "기자 미확인"
+      -- and dropped out of the default view.
+      journalist_id = coalesce(articles.journalist_id, excluded.journalist_id),
       -- A citation found on a later pass also settles the trust level.
       tier      = coalesce(articles.tier, excluded.tier)
-    where articles.image_url is null or articles.snippet = '' or articles.cited_id is null
+    where articles.image_url is null or articles.snippet = ''
+       or articles.cited_id is null or articles.journalist_id is null
     returning (xmax = 0) as is_new
   )
   select count(*) filter (where is_new) into v_inserted from ins;
@@ -558,8 +563,13 @@ begin
   from jsonb_to_recordset(p_items) as t(
     url text, etag text, last_modified text, last_status integer, last_error text)
   on conflict (url) do update set
-    etag = excluded.etag,
-    last_modified = excluded.last_modified,
+    -- Only a successful response may replace the validators. A failure carries
+    -- no ETag, and overwriting with null turned every transient error into a
+    -- full re-download on the next run.
+    etag = case when excluded.last_error is null
+                then excluded.etag else feed_state.etag end,
+    last_modified = case when excluded.last_error is null
+                         then excluded.last_modified else feed_state.last_modified end,
     last_status = excluded.last_status,
     last_error = excluded.last_error,
     updated_at = now(),
@@ -655,6 +665,134 @@ end $$;
 
 -- Story count per reporter, counting both their own byline and the times an
 -- outlet credited them. Used by the audit to find names that never land.
+
+
+-- Collapses articles that turned out to be the same page.
+--
+-- The same story arrives twice: once as a Google News wrapper from a
+-- reporter's feed, once as a direct link from the outlet's own feed. Nothing
+-- could match them until the hydrate pass resolved the wrapper, so this runs
+-- after it. The survivor is the row that carries attribution, and the loser's
+-- club tags, notify history and translations move across before it goes.
+
+
+-- Removes rows that are not stories: archive pagination, CMS artefacts, and
+-- one-line social posts whose substance is in replies we never fetch. The
+-- collector now rejects these on the way in; this clears what predates it.
+
+-- Replaces an article's club tags outright. Detection lives in the app, and a
+-- partial update would leave the wrong tags that prompted the recount behind.
+create or replace function public.itk_retag(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  create temp table _retag on commit drop as
+  select x.id, x.teams
+  from jsonb_to_recordset(coalesce(p_items, '[]'::jsonb)) as x(id text, teams jsonb);
+
+  delete from article_teams t using _retag r where t.article_id = r.id;
+
+  insert into article_teams (article_id, team_slug)
+  select r.id, s.slug
+  from _retag r, lateral jsonb_array_elements_text(r.teams) as s(slug)
+  where exists (select 1 from teams t where t.slug = s.slug)
+    and exists (select 1 from articles a where a.id = r.id)
+  on conflict do nothing;
+
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+create or replace function public.itk_articles_for_retag(p_offset integer default 0)
+returns table (id text, title text, snippet text, journalist_teams text[])
+language sql stable security definer set search_path = itk, public
+as $$
+  select a.id, a.title, a.snippet,
+         coalesce((select array_agg(jt.team_slug) from journalist_teams jt
+                    where jt.journalist_id = a.journalist_id), '{}')
+  from articles a
+  where a.published_at > now() - interval '60 days'
+  order by a.published_at desc, a.id desc
+  limit 1000 offset greatest(coalesce(p_offset, 0), 0);
+$$;
+
+create or replace function public.itk_purge_junk()
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from articles
+  where title ~* 'page [0-9]+ of [0-9]+'
+     or title ~* '^allow fb ia'
+     or title ~* '^(home|news|archive|tag|category|author|index)\M'
+     or length(btrim(title)) < 20;
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+create or replace function public.itk_dedupe_resolved()
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  create temp table _dupes on commit drop as
+  with keyed as (
+    select id, lower(coalesce(nullif(resolved_url, ''), url)) as k,
+           journalist_id, cited_id, official, created_at
+    from articles
+  ), ranked as (
+    select k, id,
+           row_number() over (
+             partition by k
+             -- Attribution first: an unattributed copy is the one the feed
+             -- would have hidden anyway.
+             order by (journalist_id is not null) desc,
+                      (cited_id is not null) desc,
+                      official desc,
+                      created_at asc,
+                      id asc
+           ) as rn
+    from keyed
+  )
+  select r.id as loser, (select id from ranked s where s.k = r.k and s.rn = 1) as winner
+  from ranked r
+  where r.rn > 1;
+
+  insert into article_teams (article_id, team_slug)
+  select d.winner, t.team_slug from _dupes d
+  join article_teams t on t.article_id = d.loser
+  on conflict do nothing;
+
+  insert into notified (subscription_id, article_id, sent_at)
+  select n.subscription_id, d.winner, n.sent_at from _dupes d
+  join notified n on n.article_id = d.loser
+  on conflict do nothing;
+
+  -- Whatever the loser had and the winner lacks.
+  update articles w
+  set snippet    = case when w.snippet = '' then l.snippet else w.snippet end,
+      image_url  = coalesce(w.image_url, l.image_url),
+      title_ko   = coalesce(w.title_ko, l.title_ko),
+      summary_ko = coalesce(w.summary_ko, l.summary_ko),
+      cited_id   = coalesce(w.cited_id, l.cited_id)
+  from _dupes d join articles l on l.id = d.loser
+  where w.id = d.winner;
+
+  delete from articles a using _dupes d where a.id = d.loser;
+
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
 
 create or replace function public.itk_journalist_counts()
 returns table (id text, n bigint)
@@ -929,6 +1067,10 @@ declare
     'public.itk_claim_subscriptions(text,text)',
     'public.itk_hydrate_apply(jsonb)',
     'public.itk_hydrate_pending(integer)',
+    'public.itk_dedupe_resolved()',
+    'public.itk_purge_junk()',
+    'public.itk_retag(jsonb)',
+    'public.itk_articles_for_retag(integer)',
     'public.itk_list_subscriptions(text)',
     'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',

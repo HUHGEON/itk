@@ -1,4 +1,5 @@
 import type { Journalist } from "../types";
+import { isJunkTitle } from "./sources";
 import { detectTeams } from "../registry";
 import type { RawItem } from "./index";
 
@@ -53,7 +54,13 @@ function imageOf(post: BskyPost): string | null {
  */
 function splitText(text: string): { title: string; snippet: string } {
   const clean = text.replace(/\s+/g, " ").trim();
-  const firstLine = text.split("\n").find((l) => l.trim().length > 0)?.trim() ?? clean;
+  let firstLine = text.split("\n").find((l) => l.trim().length > 0)?.trim() ?? clean;
+
+  // Plenty of posts open with a greeting or a label — "Hello friends.",
+  // "The ratings." — and the news is on the next line. Taking that as the
+  // headline put a card in the feed that said nothing, so fall back to the
+  // whole post and let the length rules below trim it.
+  if (firstLine.length < 25 && clean.length > firstLine.length) firstLine = clean;
 
   if (firstLine.length <= 140) {
     // Only keep a body when it actually adds something — a one-line post would
@@ -103,6 +110,9 @@ export async function fetchBluesky(j: Journalist, limit = 30): Promise<RawItem[]
     if (detected.length === 0 && !FOOTBALL_POST.test(text)) return [];
 
     const { title, snippet } = splitText(text);
+    // "The ratings." / "Hello friends." — the opening post of a thread whose
+    // substance is in replies we don't fetch. A card with nothing on it.
+    if (isJunkTitle(title) && !snippet) return [];
 
     return [
       {

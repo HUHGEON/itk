@@ -43,7 +43,10 @@ async function main() {
   });
 
   if (pending.length === 0) {
-    console.log("본문 요약: 대상 없음");
+    // Still worth a merge pass: a previous run may have resolved a wrapper
+    // whose twin only arrived from the outlet feed afterwards.
+    const merged = await rpc<number>("itk_dedupe_resolved", {});
+    console.log(`본문 요약: 대상 없음 · 중복병합 ${merged}`);
     return;
   }
 
@@ -66,13 +69,16 @@ async function main() {
   );
 
   const written = await rpc<number>("itk_hydrate_apply", { p_rows: done });
+  // Only now can the wrapper links be matched against the outlet's own, so the
+  // merge belongs here rather than in the collector.
+  const merged = await rpc<number>("itk_dedupe_resolved", {});
   const gotText = done.filter((d) => d.snippet).length;
   const gotImage = done.filter((d) => d.image_url).length;
   const gotUrl = done.filter((d) => d.resolved_url).length;
 
   console.log(
     `본문 요약: ${pending.length}건 시도 · 요약 ${gotText} · 이미지 ${gotImage} · ` +
-      `원문링크 ${gotUrl} · 기록 ${written}`,
+      `원문링크 ${gotUrl} · 기록 ${written} · 중복병합 ${merged}`,
   );
 }
 

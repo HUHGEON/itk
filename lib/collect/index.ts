@@ -3,7 +3,7 @@ import { rpc } from "../supabase";
 import { detectCitation, detectTeams, loadJournalists, loadTeams } from "../registry";
 import type { Journalist } from "../types";
 import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
-import { OTHER_SPORT, OUTLET_FEEDS, googleNewsUrl } from "./sources";
+import { OTHER_SPORT, OUTLET_FEEDS, googleNewsUrl, isJunkTitle } from "./sources";
 import { fetchBluesky } from "./bluesky";
 import { CLUB_SITEMAPS, fetchClubSitemap } from "./clubs";
 import { detectLang, langForCountry } from "./lang";
@@ -134,6 +134,8 @@ function ownFeedItems(j: Journalist, items: FeedItem[]): RawItem[] {
     const title = item.title ? stripHtml(item.title) : "";
     if (!link || !title) return [];
 
+    if (isJunkTitle(title)) return [];
+
     const snippet = item.contentSnippet ? stripHtml(item.contentSnippet).slice(0, 400) : "";
     const detected = detectTeams(`${title} ${snippet}`);
 
@@ -159,6 +161,12 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
     const link = item.link ?? "";
     const title = item.title ? stripHtml(item.title) : "";
     if (!link || !title) return [];
+    if (isJunkTitle(title)) return [];
+
+    // A Google News hit is a name match, not a byline. Their namesake in another
+    // sport matches just as well — "Ferran Martínez" returned an ACB basketball
+    // profile — so the same guard the outlet feeds use applies here.
+    if (OTHER_SPORT.test(title)) return [];
 
     // Fall back to the journalist's own beat when the headline names no club.
     const detected = detectTeams(title);
@@ -217,6 +225,8 @@ function outletItems(
     const link = item.link ?? "";
     const title = item.title ? stripHtml(item.title) : "";
     if (!link || !title) return [];
+
+    if (isJunkTitle(title)) return [];
 
     const match = item.creator ? matchByline(item.creator, journalists) : null;
     const snippet = item.contentSnippet ? stripHtml(item.contentSnippet).slice(0, 400) : "";

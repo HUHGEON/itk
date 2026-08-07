@@ -60,7 +60,8 @@ export function teamMatchers(): { slug: string; pattern: RegExp }[] {
     for (const alias of team.aliases) {
       out.push({
         slug: team.slug,
-        pattern: new RegExp(`\\b${escapeRe(alias)}\\b`, "i"),
+        // Global: detectTeams masks every occurrence, not just the first.
+        pattern: new RegExp(`\\b${escapeRe(alias)}\\b`, "gi"),
         len: alias.length,
       });
     }
@@ -71,15 +72,59 @@ export function teamMatchers(): { slug: string; pattern: RegExp }[] {
   return matcherCache;
 }
 
+/**
+ * Clubs we don't track whose names contain an alias we do.
+ *
+ * "Leeds United" is not Manchester United and "AFC Bournemouth" is not Arsenal,
+ * but `\bUnited\b` and `\bAFC\b` match both. Masking a tracked club's longer
+ * name handles Newcastle United on its own; these are the ones no tracked alias
+ * would ever cover.
+ */
+const SHIELDS = new RegExp(
+  [
+    // "United"
+    "(?:leeds|west ham|sheffield|dundee|carlisle|colchester|oxford|rotherham",
+    "|southend|torquay|hartlepool|cambridge|scunthorpe|ayr|hereford)\\s+united",
+    // "City"
+    "|(?:leicester|norwich|hull|cardiff|swansea|bristol|stoke|coventry|birmingham",
+    "|lincoln|exeter|salford|bradford|york|chester|new york|melbourne|mumbai",
+    "|ho chi minh)\\s+city",
+    // "AFC" — two clubs and a continental confederation
+    "|afc\\s+(?:bournemouth|wimbledon|ajax|champions league|asian cup)",
+    // "Madrid" / "Milan" as places rather than clubs
+    "|rayo vallecano|milan(?:o)?\\s+(?:fashion|design|airport)",
+  ].join(""),
+  "gi",
+);
+
+/** Same length, so every offset after it is unchanged. */
+function blank(match: string): string {
+  return " ".repeat(match.length);
+}
+
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
 
-/** Tags free text with every team it mentions. */
+/**
+ * Tags free text with every team it mentions.
+ *
+ * Matching consumes: each alias is blanked out of the text once it has matched,
+ * and the aliases run longest first. Testing them independently meant
+ * "Newcastle United" tagged Manchester United as well, "Atletico Madrid" tagged
+ * Real Madrid, and "Inter Milan" tagged AC Milan — the wrong-club tags that
+ * showed up under the filters.
+ */
 export function detectTeams(text: string): string[] {
   const found = new Set<string>();
+  let rest = text.replace(SHIELDS, blank);
+
   for (const { slug, pattern } of teamMatchers()) {
-    if (pattern.test(text)) found.add(slug);
+    pattern.lastIndex = 0;
+    if (!pattern.test(rest)) continue;
+    found.add(slug);
+    pattern.lastIndex = 0;
+    rest = rest.replace(pattern, blank);
   }
   return [...found];
 }

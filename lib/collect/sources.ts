@@ -31,9 +31,35 @@ export const OTHER_SPORT = new RegExp(
     "\\bf1\\b", "formula 1", "grand prix", "motogp",
     "boxing", "\\bufc\\b", "darts", "snooker", "nfl", "\\bnba\\b", "olympic",
     "cyclisme", "radsport", "ciclismo",
+    // Basketball shares surnames with football reporters — a Google News query
+    // for "Ferran Martínez" returned his namesake's ACB player profile.
+    "basketball", "baloncesto", "\\bacb\\b", "euroleague", "euroliga",
+    "pallacanestro", "\\bnhl\\b", "handball", "balonmano",
   ].join("|"),
   "i",
 );
+
+/**
+ * Titles that are not a story. Archive pagination and CMS artefacts reach the
+ * feeds regularly — "Allow FB IA Liverpool FC - Page 2088 of 2144" is an index
+ * page, and a two-word Bluesky post is the lead-in to a thread we can't read.
+ */
+const JUNK_TITLE = new RegExp(
+  [
+    "page \\d+ of \\d+",
+    "^allow fb ia",
+    "^(home|news|archive|tag|category|author|index)\\b",
+    "^\\W*$",
+  ].join("|"),
+  "i",
+);
+
+export function isJunkTitle(title: string): boolean {
+  const t = title.trim();
+  // Short posts carry no story of their own: "The ratings.", "Hello friends."
+  if (t.length < 20) return true;
+  return JUNK_TITLE.test(t);
+}
 
 export const OUTLET_FEEDS: OutletFeed[] = [
   // England — nationals
