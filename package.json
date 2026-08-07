@@ -18,7 +18,8 @@
     "bluesky": "tsx scripts/discover-bluesky.ts",
     "query": "tsx scripts/query.ts",
     "hydrate": "tsx scripts/hydrate.ts",
-    "relang": "tsx scripts/relang.ts"
+    "relang": "tsx scripts/relang.ts",
+    "audit": "tsx scripts/audit-journalists.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

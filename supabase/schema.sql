@@ -652,6 +652,30 @@ end $$;
 
 -- Headlines to run language detection over. Defaults to the ones still waiting
 -- on a translation, which is where a wrong tag actually costs something.
+
+-- Story count per reporter, counting both their own byline and the times an
+-- outlet credited them. Used by the audit to find names that never land.
+
+create or replace function public.itk_articles_by_id(p_ids text[])
+returns table (id text, journalist_id text, source text, published_at timestamptz)
+language sql stable security definer set search_path = itk, public
+as $$ select a.id, a.journalist_id, a.source, a.published_at
+      from articles a where a.id = any(p_ids); $$;
+
+create or replace function public.itk_journalist_counts()
+returns table (id text, n bigint)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select j.id,
+         (select count(*) from articles a
+           where a.journalist_id = j.id or a.cited_id = j.id)
+  from journalists j
+  where j.active;
+$$;
+
 create or replace function public.itk_articles_for_lang(
   p_only_untranslated boolean default true,
   -- PostgREST caps a response at 1,000 rows, so the caller pages through.

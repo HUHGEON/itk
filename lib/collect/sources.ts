@@ -138,9 +138,36 @@ const LOCALES: Record<string, { hl: string; gl: string; ceid: string }> = {
 const DEFAULT_LOCALE = { hl: "en-GB", gl: "GB", ceid: "GB:en" };
 
 /**
+ * Football-context words per locale, OR'd into every query. They are what keeps
+ * namesakes out — there are a lot of people called "Simon Stone" — so they have
+ * to be words the local press actually uses, not English ones.
+ */
+const CONTEXT: Record<string, string> = {
+  en: "football OR soccer OR transfer",
+  de: "Fußball OR Transfer OR Bundesliga",
+  es: "fútbol OR fichaje OR traspaso",
+  it: "calcio OR calciomercato OR trasferimento",
+  fr: "football OR mercato OR transfert",
+  nl: "voetbal OR transfer OR eredivisie",
+  pt: "futebol OR transferência OR mercado",
+  tr: "futbol OR transfer",
+  no: "fotball OR overgang",
+};
+
+function contextFor(hl: string): string {
+  return CONTEXT[hl.split("-")[0]] ?? CONTEXT.en;
+}
+
+/**
  * Builds a Google News RSS query for one journalist. The name is quoted so we
- * get their reporting rather than fuzzy matches, and a football-context term is
- * OR'd in to keep namesakes out (there are a lot of people called "Simon Stone").
+ * get their reporting rather than fuzzy matches.
+ *
+ * The club names are a hint, not a requirement: demanding one meant a reporter
+ * whose recent pieces never named their club — or whose club the local press
+ * spells differently from our table — returned nothing inside the retention
+ * window, which is why 43 of the 244 listed reporters had never produced a
+ * single story. The football-context terms carry the namesake filtering on
+ * their own.
  */
 export function googleNewsUrl(opts: {
   name: string;
@@ -148,10 +175,8 @@ export function googleNewsUrl(opts: {
   teamNames: string[];
 }): string {
   const { hl, gl, ceid } = LOCALES[opts.country] ?? DEFAULT_LOCALE;
-  const context =
-    opts.teamNames.length > 0
-      ? opts.teamNames.map((t) => `"${t}"`).join(" OR ")
-      : "football OR soccer OR transfer";
+  const clubs = opts.teamNames.map((t) => `"${t}"`);
+  const context = [...clubs, contextFor(hl)].join(" OR ");
   const q = `"${opts.name}" (${context})`;
   const params = new URLSearchParams({ q, hl, gl, ceid });
   return `https://news.google.com/rss/search?${params.toString()}`;
