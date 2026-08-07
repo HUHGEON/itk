@@ -157,8 +157,11 @@ export async function fetchClubSitemap(feed: ClubFeed): Promise<RawItem[]> {
   rows.sort((a, b) => b.at - a.at);
 
   return rows
-    .slice(0, MAX_PER_CLUB)
+    // Filter before truncating. Slicing first meant a club whose newest 40
+    // posts were all ticket info and match previews — Man City and PSG both
+    // are — yielded nothing at all, silently.
     .filter((r) => SQUAD_NEWS.test(r.title))
+    .slice(0, MAX_PER_CLUB)
     .map((r) => {
       const detected = detectTeams(r.title);
       return {

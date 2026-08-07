@@ -121,15 +121,20 @@ async function main() {
 
   // Fires a full sweep the first minute each scheduled time is reached.
   if (times.length > 0) {
-    let lastFired = -1;
+    // Keyed by date+minute, so the same wall-clock time fires again tomorrow,
+    // and only marked fired once the sweep actually starts — a band running at
+    // the scheduled minute used to consume the slot and skip the sweep.
+    let lastFired = "";
     setInterval(() => {
+      if (running) return;
       const now = new Date();
       const minute = now.getHours() * 60 + now.getMinutes();
-      if (!times.includes(minute) || minute === lastFired) return;
-      lastFired = minute;
+      const slot = `${now.toDateString()}#${minute}`;
+      if (!times.includes(minute) || slot === lastFired) return;
+
+      lastFired = slot;
+      running = true;
       void (async () => {
-        if (running) return;
-        running = true;
         console.log(`[${stamp()}] 예약 수집 시작 (전 티어)`);
         await runBand({ name: "full", everyMs: 0, opts: { maxTier: 3 } } as never, 0);
         running = false;

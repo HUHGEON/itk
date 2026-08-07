@@ -187,11 +187,20 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
 function matchByline(creator: string, journalists: Journalist[]): Journalist | null {
   const cleaned = creator.replace(/\s+/g, " ").trim().toLowerCase();
   if (!cleaned) return null;
-  return (
-    journalists.find((j) => cleaned === j.en.toLowerCase()) ??
-    journalists.find((j) => j.en.length > 6 && cleaned.includes(j.en.toLowerCase())) ??
-    null
-  );
+
+  const active = journalists.filter((j) => j.active);
+  const exact = active.find((j) => cleaned === j.en.toLowerCase());
+  if (exact) return exact;
+
+  // "Matt Lawton, Chief Sports Reporter" must not match "Matt Law" just
+  // because it comes first in the registry — take the longest name that fits.
+  let best: Journalist | null = null;
+  for (const j of active) {
+    if (j.en.length <= 6) continue;
+    if (!cleaned.includes(j.en.toLowerCase())) continue;
+    if (!best || j.en.length > best.en.length) best = j;
+  }
+  return best;
 }
 
 function outletItems(
@@ -414,7 +423,8 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
 
   const results = [...clubResults, ...bskyResults, ...feedResults];
 
-  await fetcher.flush();
+  // Deliberately not flushed yet — see the end of the run. A failed state
+  // write used to throw away every article the run had already fetched.
 
   const counts = { ok: 0, notModified: 0, failed: 0, skipped: 0 };
   const failures: { label: string; error: string }[] = [];
@@ -450,16 +460,33 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
       byUrl.set(item.url, { ...item, teams: [...item.teams] });
       continue;
     }
+    // Keep the better-tiered attribution but carry over whatever the other
+    // sighting had: replacing wholesale dropped the image and body that only
+    // the outlet feed carries, and the citation only the article text has.
     const merged = [...new Set([...existing.teams, ...item.teams])];
-    if ((item.tier ?? 99) < (existing.tier ?? 99)) {
-      byUrl.set(item.url, { ...item, teams: merged });
-    } else {
-      existing.teams = merged;
-    }
+    const better = (item.tier ?? 99) < (existing.tier ?? 99) ? item : existing;
+    const other = better === item ? existing : item;
+
+    byUrl.set(item.url, {
+      ...better,
+      teams: merged,
+      snippet: better.snippet || other.snippet,
+      imageUrl: better.imageUrl ?? other.imageUrl,
+      citedId: better.citedId ?? other.citedId,
+      official: better.official || other.official,
+    });
   }
 
   const deduped = [...byUrl.values()];
   const inserted = await persist(deduped);
+
+  // Conditional-request bookkeeping is best-effort: losing it costs one extra
+  // full fetch next run, whereas losing the articles costs the articles.
+  try {
+    await fetcher.flush();
+  } catch (err) {
+    console.warn("feed_state 기록 실패:", err instanceof Error ? err.message : err);
+  }
   const pruned = await rpc<number>("itk_prune", { p_days: RETENTION_DAYS });
   const durationMs = Date.now() - started;
 

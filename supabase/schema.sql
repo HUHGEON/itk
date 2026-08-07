@@ -259,7 +259,9 @@ as $$
          or a.journalist_id is not null
          or a.cited_id is not null
          or a.official)
-    and (p_tiers is null or a.tier = any(p_tiers))
+    -- Same rule as itk_feed: a club's own post isn't a ranked reporter's word,
+    -- so a tier filter must exclude it here too or the badge overcounts.
+    and (p_tiers is null or (a.tier = any(p_tiers) and not a.official))
     and (p_journalist_id is null
          or a.journalist_id = p_journalist_id
          or a.cited_id = p_journalist_id)
@@ -370,11 +372,15 @@ begin
   get diagnostics v_count = row_count;
 
   -- The registry is the source of truth: a club removed from teams.json is
-  -- removed here too, cascading to its article and journalist tags.
-  delete from teams t
-  where not exists (
-    select 1 from jsonb_to_recordset(p_items) as x(slug text) where x.slug = t.slug
-  );
+  -- removed here too, cascading to its article and journalist tags. An empty
+  -- payload means the caller failed to read the file, not that every club was
+  -- deleted — deleting on it would wipe every article's club tags.
+  if v_count > 0 then
+    delete from teams t
+    where not exists (
+      select 1 from jsonb_to_recordset(p_items) as x(slug text) where x.slug = t.slug
+    );
+  end if;
 
   return v_count;
 end $$;

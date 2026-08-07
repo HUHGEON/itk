@@ -5,6 +5,14 @@ import { loadJournalists, loadTeams } from "../lib/registry";
 
 async function main() {
   const teams = loadTeams();
+  if (teams.length === 0) {
+    // The registry drives deletion downstream, so an unreadable file must stop
+    // the run rather than be treated as "no teams exist".
+    throw new Error(
+      "data/teams.json 을 읽지 못했습니다. 프로젝트 루트에서 실행했는지 확인하세요.",
+    );
+  }
+
   await rpc<number>("itk_seed_teams", {
     p_items: teams.map((t) => ({
       slug: t.slug,

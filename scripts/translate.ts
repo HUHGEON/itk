@@ -142,8 +142,16 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
   const text = res.content.find((b) => b.type === "text");
   if (!text || text.type !== "text") return out;
 
-  const parsed = JSON.parse(text.text) as { items: { id: string; title_ko: string }[] };
-  for (const it of parsed.items) out.set(it.id, it.title_ko);
+  // A truncated response (stop_reason "max_tokens") leaves invalid JSON. Losing
+  // one batch is fine; letting it throw would abandon every batch after it.
+  try {
+    const parsed = JSON.parse(text.text) as { items?: { id: string; title_ko: string }[] };
+    for (const it of parsed.items ?? []) {
+      if (it?.id && it.title_ko) out.set(it.id, it.title_ko);
+    }
+  } catch {
+    console.warn(`  ⚠ 배치 응답을 해석하지 못했습니다 (stop_reason: ${res.stop_reason})`);
+  }
   return out;
 }
 
