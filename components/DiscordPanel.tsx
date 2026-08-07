@@ -1,8 +1,8 @@
 "use client";
 
-import { useCallback, useEffect, useState, useTransition } from "react";
-import type { Team } from "@/lib/types";
-import { ALL_TIERS } from "@/lib/types";
+import { useCallback, useEffect, useMemo, useState, useTransition } from "react";
+import type { League, Team } from "@/lib/types";
+import { ALL_TIERS, LEAGUE_LABEL } from "@/lib/types";
 import { tierLabel } from "@/lib/format";
 import { ownerKey } from "@/lib/owner-key";
 import {
@@ -22,6 +22,15 @@ import { Modal } from "./Modal";
  * keyed on a token in localStorage — the site is public, and a server-rendered
  * list showed every visitor's webhooks to everyone.
  */
+const LEAGUE_ORDER: League[] = [
+  "EPL",
+  "LaLiga",
+  "SerieA",
+  "Ligue1",
+  "Bundesliga",
+  "Eredivisie",
+];
+
 export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [subs, setSubs] = useState<Subscription[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -51,6 +60,17 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   useEffect(refresh, [refresh]);
 
   const teamName = (slug: string) => teams.find((t) => t.slug === slug)?.ko ?? slug;
+
+  // 17 clubs in one wrap is a wall; grouping by league makes the picker
+  // scannable and gives each league a select-all.
+  const byLeague = useMemo(
+    () =>
+      LEAGUE_ORDER.map((league) => ({
+        league,
+        members: teams.filter((t) => t.league === league),
+      })).filter((g) => g.members.length > 0),
+    [teams],
+  );
 
   const reset = () => {
     setUrl("");
@@ -220,27 +240,58 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 </button>
               )}
             </div>
-            <div className="mt-1 flex max-h-44 flex-wrap gap-1 overflow-y-auto rounded-lg border border-border bg-surface-2 p-2">
-              {teams.map((t) => {
-                const on = picked.includes(t.slug);
+            <div className="mt-1 max-h-56 space-y-2.5 overflow-y-auto rounded-lg border border-border bg-surface-2 p-2">
+              {byLeague.map(({ league, members }) => {
+                const slugs = members.map((m) => m.slug);
+                const allOn = slugs.every((sl) => picked.includes(sl));
                 return (
-                  <button
-                    key={t.slug}
-                    type="button"
-                    onClick={() =>
-                      setPicked((p) =>
-                        p.includes(t.slug) ? p.filter((x) => x !== t.slug) : [...p, t.slug],
-                      )
-                    }
-                    className={`flex items-center gap-1 rounded-full border py-1 pr-2 pl-1 text-[11px] ${
-                      on
-                        ? "border-accent bg-accent/15 font-semibold text-accent"
-                        : "border-border text-muted hover:text-text"
-                    }`}
-                  >
-                    <TeamCrest team={t} size={14} />
-                    {t.ko}
-                  </button>
+                  <div key={league}>
+                    <div className="flex items-baseline justify-between px-0.5 pb-1">
+                      <span className="text-[10px] font-bold tracking-wide text-muted">
+                        {LEAGUE_LABEL[league]}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPicked((p) =>
+                            allOn
+                              ? p.filter((sl) => !slugs.includes(sl))
+                              : Array.from(new Set([...p, ...slugs])),
+                          )
+                        }
+                        className="text-[10px] text-muted hover:text-text"
+                      >
+                        {allOn ? "전체 해제" : "전체 선택"}
+                      </button>
+                    </div>
+                    <div className="flex flex-wrap gap-1">
+                      {members.map((t) => {
+                        const on = picked.includes(t.slug);
+                        return (
+                          <button
+                            key={t.slug}
+                            type="button"
+                            onClick={() =>
+                              setPicked((p) =>
+                                p.includes(t.slug)
+                                  ? p.filter((x) => x !== t.slug)
+                                  : [...p, t.slug],
+                              )
+                            }
+                            aria-pressed={on}
+                            className={`flex items-center gap-1 rounded-full border py-1 pr-2 pl-1 text-[11px] ${
+                              on
+                                ? "border-accent bg-accent/15 font-semibold text-accent"
+                                : "border-border text-muted hover:text-text"
+                            }`}
+                          >
+                            <TeamCrest team={t} size={14} />
+                            {t.ko}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
                 );
               })}
             </div>
