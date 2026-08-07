@@ -812,6 +812,14 @@ begin
     select id, lower(coalesce(nullif(resolved_url, ''), url)) as k,
            journalist_id, cited_id, official, created_at
     from articles
+    union all
+    -- One outlet does not publish two stories under the same headline, but it
+    -- does publish one story at two paths — L'Équipe served the same piece
+    -- under /Actualites/ and /Article/. Same source, same title, same story.
+    select id, 'title:' || lower(source) || '|' || lower(btrim(title)) as k,
+           journalist_id, cited_id, official, created_at
+    from articles
+    where coalesce(source, '') <> '' and coalesce(title, '') <> ''
   ), ranked as (
     select k, id,
            row_number() over (
