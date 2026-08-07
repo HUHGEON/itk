@@ -8,8 +8,10 @@ import { ownerKey } from "@/lib/owner-key";
 import {
   addSubscription,
   claimSubscriptions,
+  getSubscription,
   listSubscriptions,
   removeSubscription,
+  updateSubscription,
   type Subscription,
 } from "@/app/actions";
 import { TeamCrest } from "./TeamCrest";
@@ -31,6 +33,21 @@ const LEAGUE_ORDER: League[] = [
   "Eredivisie",
 ];
 
+/**
+ * Shows enough of a webhook to recognise it, not enough to post with.
+ * The id identifies the channel; the token after it is the credential, so only
+ * its ends survive.
+ */
+function maskWebhook(url: string): string {
+  const m = url.match(/^(https:\/\/[^/]+\/api\/webhooks\/)(\d+)\/(.+)$/);
+  if (!m) return "…";
+  const [, prefix, id, token] = m;
+  const shortId = id.length > 6 ? `${id.slice(0, 4)}…${id.slice(-2)}` : id;
+  const shortToken =
+    token.length > 10 ? `${token.slice(0, 4)}${"•".repeat(12)}${token.slice(-4)}` : "•".repeat(12);
+  return `${prefix}${shortId}/${shortToken}`;
+}
+
 export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [subs, setSubs] = useState<Subscription[] | null>(null);
   const [open, setOpen] = useState(false);
@@ -42,6 +59,12 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [maxTier, setMaxTier] = useState(1.5);
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+
+  // Edit: null while adding, the id of the row being changed otherwise.
+  const [editing, setEditing] = useState<string | null>(null);
+  const [hasPass, setHasPass] = useState(false);
+  const [reveal, setReveal] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // Recovery: pulls destinations registered elsewhere into this browser.
   const [claimOpen, setClaimOpen] = useState(false);
@@ -79,6 +102,35 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     setMaxTier(1.5);
     setPass("");
     setError("");
+    setEditing(null);
+    setHasPass(false);
+    setReveal(false);
+  };
+
+  const openAdd = () => {
+    reset();
+    setOpen(true);
+  };
+
+  const openEdit = (id: string) => {
+    reset();
+    setEditing(id);
+    setOpen(true);
+    setLoading(true);
+    void getSubscription(ownerKey(), id)
+      .then((d) => {
+        if (!d) {
+          setError("알림을 찾을 수 없습니다");
+          return;
+        }
+        setUrl(d.webhookUrl);
+        setLabel(d.label);
+        setPicked(d.teams);
+        setMaxTier(d.maxTier);
+        setHasPass(d.hasPass);
+      })
+      .catch(() => setError("불러오지 못했습니다"))
+      .finally(() => setLoading(false));
   };
 
   const submit = () => {
@@ -89,14 +141,13 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     }
     setError("");
     startTransition(async () => {
-      const res = await addSubscription({
-        owner: key,
-        url,
-        teams: picked,
-        maxTier,
-        label,
-        passphrase: pass,
-      });
+      const res = editing
+        ? await updateSubscription({
+            owner: key, id: editing, url, teams: picked, maxTier, label, passphrase: pass,
+          })
+        : await addSubscription({
+            owner: key, url, teams: picked, maxTier, label, passphrase: pass,
+          });
       if (!res.ok) {
         setError(res.error);
         return;
@@ -150,7 +201,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           </button>
           <button
             type="button"
-            onClick={() => setOpen(true)}
+            onClick={openAdd}
             className="text-[12px] font-semibold text-accent hover:underline"
           >
             + 추가
@@ -173,10 +224,23 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           {subs.map((s) => (
             <li key={s.id} className="rounded-lg border border-border bg-surface-2 p-2">
               <div className="flex items-center gap-1.5">
+                {/* No part of the webhook here — it lives on the edit screen. */}
                 <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">
                   {s.label || "디스코드"}
-                  <span className="ml-1 font-normal text-muted">{s.hint}</span>
+                  {s.hasPass && (
+                    <span className="ml-1 font-normal text-muted" title="비밀번호 설정됨">
+                      🔒
+                    </span>
+                  )}
                 </span>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => openEdit(s.id)}
+                  className="shrink-0 text-[11px] text-muted hover:text-text disabled:opacity-50"
+                >
+                  수정
+                </button>
                 <button
                   type="button"
                   disabled={pending}
@@ -200,18 +264,44 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           setOpen(false);
           setError("");
         }}
-        title="디스코드 알림 추가"
+        title={editing ? "디스코드 알림 수정" : "디스코드 알림 추가"}
       >
         <div className="space-y-3">
           <div>
-            <label className="text-[11px] font-semibold text-muted">웹훅 주소</label>
-            <input
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder="https://discord.com/api/webhooks/…"
-              autoFocus
-              className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
-            />
+            <div className="flex items-baseline justify-between">
+              <label className="text-[11px] font-semibold text-muted">웹훅 주소</label>
+              {editing && (
+                <button
+                  type="button"
+                  onClick={() => setReveal((v) => !v)}
+                  className="text-[10px] text-muted hover:text-text"
+                >
+                  {reveal ? "가리기" : "전체 보기"}
+                </button>
+              )}
+            </div>
+
+            {/* On the edit screen the stored webhook is masked until asked for:
+                the URL is a credential, and it only needs to be recognisable to
+                confirm which channel this is. */}
+            {editing && !reveal ? (
+              <button
+                type="button"
+                onClick={() => setReveal(true)}
+                title="누르면 전체 주소가 보입니다"
+                className="mt-1 w-full truncate rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-left font-mono text-[11px] text-muted"
+              >
+                {loading ? "불러오는 중…" : maskWebhook(url)}
+              </button>
+            ) : (
+              <input
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://discord.com/api/webhooks/…"
+                autoFocus={!editing}
+                className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
+              />
+            )}
             <p className="mt-1 text-[10px] leading-snug text-muted">
               디스코드 채널 → 편집 → 연동 → 웹후크 → 새 웹후크 → URL 복사
             </p>
@@ -328,13 +418,16 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
               type="password"
               value={pass}
               onChange={(e) => setPass(e.target.value)}
-              placeholder="4자 이상"
+              placeholder={editing && hasPass ? "변경하려면 새 비밀번호" : "4자 이상"}
               autoComplete="new-password"
               className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
             />
             <p className="mt-1 text-[10px] leading-snug text-muted">
-              설정하면 다른 기기·브라우저에서도 이 알림을 불러와 수정·삭제할 수
-              있습니다. 비워두면 이 브라우저에서만 관리됩니다.
+              {editing
+                ? hasPass
+                  ? "비밀번호가 설정돼 있습니다. 비워두면 그대로 둡니다."
+                  : "설정하면 다른 기기에서도 이 알림을 불러올 수 있습니다."
+                : "설정하면 다른 기기·브라우저에서도 이 알림을 불러와 수정·삭제할 수 있습니다. 비워두면 이 브라우저에서만 관리됩니다."}
             </p>
           </div>
 
@@ -343,14 +436,16 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           <button
             type="button"
             onClick={submit}
-            disabled={pending || !url || picked.length === 0}
+            disabled={pending || loading || !url || picked.length === 0}
             className="w-full rounded-lg bg-accent px-3 py-2.5 text-[12px] font-bold text-black disabled:opacity-40"
           >
-            {pending ? "등록 중…" : "등록"}
+            {pending ? "저장 중…" : editing ? "수정" : "등록"}
           </button>
 
           <p className="text-[10px] leading-snug text-muted">
-            등록 시점 이후의 새 기사만 전송됩니다.
+            {editing
+              ? "이미 보낸 기사는 다시 보내지 않습니다."
+              : "등록 시점 이후의 새 기사만 전송됩니다."}
           </p>
         </div>
       </Modal>

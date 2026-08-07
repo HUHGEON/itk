@@ -998,16 +998,17 @@ end $$;
 
 -- Masked for display: enough to tell two destinations apart, not enough to post.
 create or replace function public.itk_list_subscriptions(p_owner text)
-returns table (id uuid, label text, hint text, teams text[], max_tier real,
-               active boolean, last_sent_at timestamptz)
+returns table (id uuid, label text, teams text[], max_tier real,
+               active boolean, has_pass boolean, last_sent_at timestamptz)
 language sql
 stable
 security definer
 set search_path = itk, public
 as $$
-  select s.id, s.label,
-         '…' || right(s.webhook_url, 6),
-         s.teams, s.max_tier, s.active, s.last_sent_at
+  -- No part of the webhook here. It is a credential — anyone holding it can
+  -- post to the channel — so it is fetched one row at a time, for editing.
+  select s.id, s.label, s.teams, s.max_tier, s.active,
+         (s.passphrase is not null), s.last_sent_at
   from subscriptions s
   where s.owner_key = p_owner and coalesce(length(p_owner), 0) >= 16
   order by s.created_at
@@ -1016,6 +1017,85 @@ $$;
 
 -- Adopts a destination on a new device. The browser token is the everyday
 -- path; this is the way back in after clearing site data or switching device.
+
+-- One destination in full, for the edit screen. Separate from the list so the
+-- webhook is fetched deliberately rather than shipped with every page load.
+create or replace function public.itk_get_subscription(p_owner text, p_id uuid)
+returns table (id uuid, label text, webhook_url text, teams text[],
+               max_tier real, has_pass boolean)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select s.id, s.label, s.webhook_url, s.teams, s.max_tier,
+         (s.passphrase is not null)
+  from subscriptions s
+  where s.id = p_id
+    and s.owner_key = p_owner
+    and coalesce(length(p_owner), 0) >= 16
+$$;
+
+-- Edits an existing destination. The notify history is keyed on the
+-- subscription, not the URL, so changing the channel does not replay the
+-- backlog into it.
+create or replace function public.itk_update_subscription(
+  p_owner    text,
+  p_id       uuid,
+  p_url      text,
+  p_teams    text[],
+  p_max_tier real,
+  p_label    text default '',
+  p_pass     text default null
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_id uuid;
+begin
+  if coalesce(length(p_owner), 0) < 16 then
+    raise exception '소유자 키가 없습니다';
+  end if;
+
+  if p_url !~ '^https://(discord|discordapp)\.com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$' then
+    raise exception '디스코드 웹훅 주소가 아닙니다';
+  end if;
+
+  if coalesce(array_length(p_teams, 1), 0) = 0 then
+    raise exception '팀을 하나 이상 선택하세요';
+  end if;
+
+  -- Another owner already registered this channel.
+  if exists (
+    select 1 from subscriptions s
+    where s.webhook_url = p_url and s.id <> p_id
+  ) then
+    raise exception '이미 등록된 웹훅입니다';
+  end if;
+
+  update subscriptions s
+  set webhook_url = p_url,
+      teams       = p_teams,
+      max_tier    = greatest(least(p_max_tier, 3), 0),
+      label       = coalesce(p_label, ''),
+      -- Blank leaves the existing one alone; there is no way to read it back,
+      -- so an empty field must not silently clear it.
+      passphrase  = case when coalesce(length(p_pass), 0) >= 4
+                         then extensions.crypt(p_pass, extensions.gen_salt('bf', 10))
+                         else s.passphrase end,
+      active      = true,
+      fail_count  = 0
+  where s.id = p_id and s.owner_key = p_owner
+  returning s.id into v_id;
+
+  if v_id is null then
+    raise exception '수정할 알림을 찾을 수 없습니다';
+  end if;
+  return v_id;
+end $$;
+
 create or replace function public.itk_claim_subscriptions(p_owner text, p_pass text)
 returns integer
 language plpgsql
@@ -1145,6 +1225,8 @@ declare
     'public.itk_articles_for_retag(integer)',
     'public.itk_titles_for_bench(integer)',
     'public.itk_list_subscriptions(text)',
+    'public.itk_get_subscription(text,uuid)',
+    'public.itk_update_subscription(text,uuid,text,text[],real,text,text)',
     'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',
     'public.itk_subscription_failed(uuid,boolean)'

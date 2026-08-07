@@ -27,15 +27,26 @@ export async function collectNow(): Promise<
   }
 }
 
-/** Discord destination as shown in the UI — never the full webhook URL. */
+/** Discord destination as listed in the UI — carries no part of the webhook. */
 export interface Subscription {
   id: string;
   label: string;
-  hint: string;
   teams: string[];
   maxTier: number;
   active: boolean;
+  /** whether a passphrase was set, so the UI can say so without revealing it */
+  hasPass: boolean;
   lastSentAt: string | null;
+}
+
+/** One destination in full. Fetched only when the edit screen opens. */
+export interface SubscriptionDetail {
+  id: string;
+  label: string;
+  webhookUrl: string;
+  teams: string[];
+  maxTier: number;
+  hasPass: boolean;
 }
 
 /**
@@ -47,20 +58,73 @@ export async function listSubscriptions(owner: string): Promise<Subscription[]> 
   if (!owner || owner.length < 16) return [];
   const rows = await rpc<
     {
-      id: string; label: string; hint: string; teams: string[];
-      max_tier: number; active: boolean; last_sent_at: string | null;
+      id: string; label: string; teams: string[]; max_tier: number;
+      active: boolean; has_pass: boolean; last_sent_at: string | null;
     }[]
   >("itk_list_subscriptions", { p_owner: owner });
 
   return (rows ?? []).map((r) => ({
     id: r.id,
     label: r.label,
-    hint: r.hint,
     teams: r.teams ?? [],
     maxTier: r.max_tier,
     active: r.active,
+    hasPass: Boolean(r.has_pass),
     lastSentAt: r.last_sent_at,
   }));
+}
+
+/** The webhook leaves the server only for the owner, and only to be edited. */
+export async function getSubscription(
+  owner: string,
+  id: string,
+): Promise<SubscriptionDetail | null> {
+  if (!owner || owner.length < 16) return null;
+  const rows = await rpc<
+    {
+      id: string; label: string; webhook_url: string;
+      teams: string[]; max_tier: number; has_pass: boolean;
+    }[]
+  >("itk_get_subscription", { p_owner: owner, p_id: id });
+
+  const r = rows?.[0];
+  if (!r) return null;
+  return {
+    id: r.id,
+    label: r.label,
+    webhookUrl: r.webhook_url,
+    teams: r.teams ?? [],
+    maxTier: r.max_tier,
+    hasPass: Boolean(r.has_pass),
+  };
+}
+
+export async function updateSubscription(input: {
+  owner: string;
+  id: string;
+  url: string;
+  teams: string[];
+  maxTier: number;
+  label: string;
+  /** blank leaves the existing passphrase in place */
+  passphrase?: string;
+}): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    await rpc("itk_update_subscription", {
+      p_owner: input.owner,
+      p_id: input.id,
+      p_url: input.url.trim(),
+      p_teams: input.teams,
+      p_max_tier: input.maxTier,
+      p_label: input.label.trim(),
+      p_pass: input.passphrase?.trim() || null,
+    });
+    revalidatePath("/");
+    return { ok: true };
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: raw.replace(/^itk_update_subscription 실패: /, "") };
+  }
 }
 
 export async function addSubscription(input: {
