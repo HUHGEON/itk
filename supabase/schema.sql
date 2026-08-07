@@ -975,8 +975,8 @@ begin
 
   insert into subscriptions (owner_key, webhook_url, teams, max_tier, label, passphrase)
   values (p_owner, p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''),
-          case when coalesce(length(p_pass), 0) >= 4
-               then extensions.crypt(p_pass, extensions.gen_salt('bf', 10)) end)
+          case when public.itk_check_pass(p_pass) is not null
+               then extensions.crypt(btrim(p_pass), extensions.gen_salt('bf', 10)) end)
   -- Re-registering the same webhook updates it, but only for its owner; the
   -- where clause is what stops one visitor overwriting another's destination.
   on conflict (webhook_url) do update set
@@ -1020,21 +1020,79 @@ $$;
 
 -- One destination in full, for the edit screen. Separate from the list so the
 -- webhook is fetched deliberately rather than shipped with every page load.
-create or replace function public.itk_get_subscription(p_owner text, p_id uuid)
-returns table (id uuid, label text, webhook_url text, teams text[],
-               max_tier real, has_pass boolean)
-language sql
-stable
+
+-- Minimum length for a passphrase. Short ones were being dropped in silence,
+-- so someone who typed two characters believed they had set one.
+create or replace function public.itk_check_pass(p_pass text)
+returns text
+language plpgsql
+immutable
+as $$
+begin
+  if p_pass is null or btrim(p_pass) = '' then
+    return null;
+  end if;
+  if length(btrim(p_pass)) < 4 then
+    raise exception '비밀번호는 4자 이상이어야 합니다';
+  end if;
+  return btrim(p_pass);
+end $$;
+
+-- Proves the caller may touch this destination.
+--
+-- The browser token says which rows are yours; a passphrase, once set, says it
+-- is really you. Without this a stolen or shared browser profile could read the
+-- webhook and repoint the channel — the token alone was the whole lock.
+create or replace function public.itk_authorize_sub(p_owner text, p_id uuid, p_auth text)
+returns void
+language plpgsql
 security definer
 set search_path = itk, public
 as $$
+declare v_hash text;
+begin
+  if coalesce(length(p_owner), 0) < 16 then
+    raise exception '소유자 키가 없습니다';
+  end if;
+
+  select s.passphrase into v_hash
+  from subscriptions s
+  where s.id = p_id and s.owner_key = p_owner;
+
+  if not found then
+    raise exception '알림을 찾을 수 없습니다';
+  end if;
+
+  if v_hash is null then
+    return;  -- registered without one: the browser token is the only lock
+  end if;
+
+  if coalesce(p_auth, '') = '' then
+    raise exception '비밀번호가 필요합니다';
+  end if;
+  if v_hash <> extensions.crypt(p_auth, v_hash) then
+    raise exception '비밀번호가 일치하지 않습니다';
+  end if;
+end $$;
+
+create or replace function public.itk_get_subscription(
+  p_owner text, p_id uuid, p_auth text default null
+)
+returns table (id uuid, label text, webhook_url text, teams text[],
+               max_tier real, has_pass boolean)
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+begin
+  perform public.itk_authorize_sub(p_owner, p_id, p_auth);
+
+  return query
   select s.id, s.label, s.webhook_url, s.teams, s.max_tier,
          (s.passphrase is not null)
   from subscriptions s
-  where s.id = p_id
-    and s.owner_key = p_owner
-    and coalesce(length(p_owner), 0) >= 16
-$$;
+  where s.id = p_id and s.owner_key = p_owner;
+end $$;
 
 -- Edits an existing destination. The notify history is keyed on the
 -- subscription, not the URL, so changing the channel does not replay the
@@ -1046,18 +1104,21 @@ create or replace function public.itk_update_subscription(
   p_teams    text[],
   p_max_tier real,
   p_label    text default '',
-  p_pass     text default null
+  p_pass     text default null,
+  -- the existing passphrase, when one is set
+  p_auth     text default null
 )
 returns uuid
 language plpgsql
 security definer
 set search_path = itk, public
 as $$
-declare v_id uuid;
+declare
+  v_id  uuid;
+  v_new text;
 begin
-  if coalesce(length(p_owner), 0) < 16 then
-    raise exception '소유자 키가 없습니다';
-  end if;
+  perform public.itk_authorize_sub(p_owner, p_id, p_auth);
+  v_new := public.itk_check_pass(p_pass);
 
   if p_url !~ '^https://(discord|discordapp)\.com/api/webhooks/[0-9]+/[A-Za-z0-9_-]+$' then
     raise exception '디스코드 웹훅 주소가 아닙니다';
@@ -1082,8 +1143,8 @@ begin
       label       = coalesce(p_label, ''),
       -- Blank leaves the existing one alone; there is no way to read it back,
       -- so an empty field must not silently clear it.
-      passphrase  = case when coalesce(length(p_pass), 0) >= 4
-                         then extensions.crypt(p_pass, extensions.gen_salt('bf', 10))
+      passphrase  = case when v_new is not null
+                         then extensions.crypt(v_new, extensions.gen_salt('bf', 10))
                          else s.passphrase end,
       active      = true,
       fail_count  = 0
@@ -1120,7 +1181,9 @@ begin
   return v_n;
 end $$;
 
-create or replace function public.itk_remove_subscription(p_owner text, p_id uuid)
+create or replace function public.itk_remove_subscription(
+  p_owner text, p_id uuid, p_auth text default null
+)
 returns integer
 language plpgsql
 security definer
@@ -1128,8 +1191,10 @@ set search_path = itk, public
 as $$
 declare v_n integer;
 begin
+  perform public.itk_authorize_sub(p_owner, p_id, p_auth);
+
   delete from subscriptions
-  where id = p_id and owner_key = p_owner and coalesce(length(p_owner), 0) >= 16;
+  where id = p_id and owner_key = p_owner;
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
@@ -1225,9 +1290,10 @@ declare
     'public.itk_articles_for_retag(integer)',
     'public.itk_titles_for_bench(integer)',
     'public.itk_list_subscriptions(text)',
-    'public.itk_get_subscription(text,uuid)',
-    'public.itk_update_subscription(text,uuid,text,text[],real,text,text)',
-    'public.itk_remove_subscription(text,uuid)',
+    'public.itk_get_subscription(text,uuid,text)',
+    'public.itk_update_subscription(text,uuid,text,text[],real,text,text,text)',
+    'public.itk_remove_subscription(text,uuid,text)',
+    'public.itk_authorize_sub(text,uuid,text)',
     'public.itk_active_subscriptions()',
     'public.itk_subscription_failed(uuid,boolean)'
   ];

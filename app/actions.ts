@@ -78,14 +78,22 @@ export async function listSubscriptions(owner: string): Promise<Subscription[]> 
 export async function getSubscription(
   owner: string,
   id: string,
-): Promise<SubscriptionDetail | null> {
+  /** the destination's own passphrase, required once one has been set */
+  auth?: string,
+): Promise<SubscriptionDetail | { error: string } | null> {
   if (!owner || owner.length < 16) return null;
-  const rows = await rpc<
-    {
-      id: string; label: string; webhook_url: string;
-      teams: string[]; max_tier: number; has_pass: boolean;
-    }[]
-  >("itk_get_subscription", { p_owner: owner, p_id: id });
+  let rows;
+  try {
+    rows = await rpc<
+      {
+        id: string; label: string; webhook_url: string;
+        teams: string[]; max_tier: number; has_pass: boolean;
+      }[]
+    >("itk_get_subscription", { p_owner: owner, p_id: id, p_auth: auth || null });
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    return { error: raw.replace(/^itk_get_subscription 실패: /, "") };
+  }
 
   const r = rows?.[0];
   if (!r) return null;
@@ -108,6 +116,8 @@ export async function updateSubscription(input: {
   label: string;
   /** blank leaves the existing passphrase in place */
   passphrase?: string;
+  /** the existing passphrase, required once one has been set */
+  auth?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await rpc("itk_update_subscription", {
@@ -118,6 +128,7 @@ export async function updateSubscription(input: {
       p_max_tier: input.maxTier,
       p_label: input.label.trim(),
       p_pass: input.passphrase?.trim() || null,
+      p_auth: input.auth?.trim() || null,
     });
     revalidatePath("/");
     return { ok: true };
@@ -158,10 +169,21 @@ export async function addSubscription(input: {
 export async function removeSubscription(
   owner: string,
   id: string,
-): Promise<{ ok: boolean }> {
-  const n = await rpc<number>("itk_remove_subscription", { p_owner: owner, p_id: id });
-  revalidatePath("/");
-  return { ok: n > 0 };
+  /** the destination's own passphrase, required once one has been set */
+  auth?: string,
+): Promise<{ ok: true } | { ok: false; error: string }> {
+  try {
+    const n = await rpc<number>("itk_remove_subscription", {
+      p_owner: owner,
+      p_id: id,
+      p_auth: auth || null,
+    });
+    revalidatePath("/");
+    return n > 0 ? { ok: true } : { ok: false, error: "삭제할 알림을 찾을 수 없습니다" };
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: raw.replace(/^itk_remove_subscription 실패: /, "") };
+  }
 }
 
 /** Re-attaches passphrase-protected destinations to this browser. */

@@ -65,6 +65,15 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [hasPass, setHasPass] = useState(false);
   const [reveal, setReveal] = useState(false);
   const [loading, setLoading] = useState(false);
+  // The destination's own passphrase. Held only for the life of the modal —
+  // the browser token says which rows are yours, this says it is really you.
+  const [auth, setAuth] = useState("");
+  const [locked, setLocked] = useState(false);
+
+  // Delete needs the same proof, and its own small prompt.
+  const [removing, setRemoving] = useState<Subscription | null>(null);
+  const [removeAuth, setRemoveAuth] = useState("");
+  const [removeErr, setRemoveErr] = useState("");
 
   // Recovery: pulls destinations registered elsewhere into this browser.
   const [claimOpen, setClaimOpen] = useState(false);
@@ -105,6 +114,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     setEditing(null);
     setHasPass(false);
     setReveal(false);
+    setAuth("");
+    setLocked(false);
   };
 
   const openAdd = () => {
@@ -112,25 +123,53 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     setOpen(true);
   };
 
-  const openEdit = (id: string) => {
-    reset();
-    setEditing(id);
-    setOpen(true);
+  const load = (id: string, pass: string) => {
     setLoading(true);
-    void getSubscription(ownerKey(), id)
+    setError("");
+    return getSubscription(ownerKey(), id, pass)
       .then((d) => {
         if (!d) {
           setError("알림을 찾을 수 없습니다");
-          return;
+          return false;
+        }
+        if ("error" in d) {
+          setError(d.error);
+          return false;
         }
         setUrl(d.webhookUrl);
         setLabel(d.label);
         setPicked(d.teams);
         setMaxTier(d.maxTier);
         setHasPass(d.hasPass);
+        return true;
       })
-      .catch(() => setError("불러오지 못했습니다"))
+      .catch(() => {
+        setError("불러오지 못했습니다");
+        return false;
+      })
       .finally(() => setLoading(false));
+  };
+
+  const openEdit = (sub: Subscription) => {
+    reset();
+    setEditing(sub.id);
+    setOpen(true);
+    // A protected destination stays sealed until the passphrase is entered,
+    // even here — the browser token alone was letting anyone with the profile
+    // read the webhook and repoint the channel.
+    if (sub.hasPass) {
+      setLocked(true);
+      setHasPass(true);
+      return;
+    }
+    void load(sub.id, "");
+  };
+
+  const unlock = () => {
+    if (!editing) return;
+    startTransition(async () => {
+      if (await load(editing, auth)) setLocked(false);
+    });
   };
 
   const submit = () => {
@@ -143,7 +182,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     startTransition(async () => {
       const res = editing
         ? await updateSubscription({
-            owner: key, id: editing, url, teams: picked, maxTier, label, passphrase: pass,
+            owner: key, id: editing, url, teams: picked, maxTier, label,
+            passphrase: pass, auth,
           })
         : await addSubscription({
             owner: key, url, teams: picked, maxTier, label, passphrase: pass,
@@ -181,11 +221,31 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     });
   };
 
-  const remove = (id: string) =>
+  const remove = (sub: Subscription) => {
+    if (sub.hasPass) {
+      setRemoveAuth("");
+      setRemoveErr("");
+      setRemoving(sub);
+      return;
+    }
     startTransition(async () => {
-      await removeSubscription(ownerKey(), id);
+      await removeSubscription(ownerKey(), sub.id);
       refresh();
     });
+  };
+
+  const confirmRemove = () => {
+    if (!removing) return;
+    startTransition(async () => {
+      const res = await removeSubscription(ownerKey(), removing.id, removeAuth);
+      if (!res.ok) {
+        setRemoveErr(res.error);
+        return;
+      }
+      setRemoving(null);
+      refresh();
+    });
+  };
 
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
@@ -236,7 +296,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => openEdit(s.id)}
+                  onClick={() => openEdit(s)}
                   className="shrink-0 text-[11px] text-muted hover:text-text disabled:opacity-50"
                 >
                   수정
@@ -244,7 +304,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 <button
                   type="button"
                   disabled={pending}
-                  onClick={() => remove(s.id)}
+                  onClick={() => remove(s)}
                   className="shrink-0 text-[11px] text-muted hover:text-red-400 disabled:opacity-50"
                 >
                   삭제
@@ -266,6 +326,38 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
         }}
         title={editing ? "디스코드 알림 수정" : "디스코드 알림 추가"}
       >
+        {locked ? (
+          <div className="space-y-3">
+            <p className="text-[11px] leading-relaxed text-muted">
+              이 알림에는 비밀번호가 설정돼 있습니다. 웹훅 주소를 보거나 내용을
+              바꾸려면 비밀번호를 입력하세요.
+            </p>
+            <input
+              type="password"
+              value={auth}
+              onChange={(e) => setAuth(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && auth) unlock();
+              }}
+              placeholder="비밀번호"
+              autoComplete="current-password"
+              autoFocus
+              className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
+            />
+            {error && <p className="text-[11px] text-red-400">{error}</p>}
+            <button
+              type="button"
+              onClick={unlock}
+              disabled={pending || loading || !auth}
+              className="w-full rounded-lg bg-accent px-3 py-2.5 text-[12px] font-bold text-black disabled:opacity-40"
+            >
+              {loading ? "확인 중…" : "확인"}
+            </button>
+            <p className="text-[10px] leading-snug text-muted">
+              잊어버렸다면 이 알림은 삭제 후 다시 등록해야 합니다.
+            </p>
+          </div>
+        ) : (
         <div className="space-y-3">
           <div>
             <div className="flex items-baseline justify-between">
@@ -447,6 +539,41 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
               ? "이미 보낸 기사는 다시 보내지 않습니다."
               : "등록 시점 이후의 새 기사만 전송됩니다."}
           </p>
+        </div>
+        )}
+      </Modal>
+
+      <Modal
+        open={removing !== null}
+        onClose={() => setRemoving(null)}
+        title="알림 삭제"
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] leading-relaxed text-muted">
+            <b>{removing?.label || "디스코드"}</b> 알림을 삭제합니다. 비밀번호가
+            설정돼 있어 확인이 필요합니다.
+          </p>
+          <input
+            type="password"
+            value={removeAuth}
+            onChange={(e) => setRemoveAuth(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && removeAuth) confirmRemove();
+            }}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            autoFocus
+            className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
+          />
+          {removeErr && <p className="text-[11px] text-red-400">{removeErr}</p>}
+          <button
+            type="button"
+            onClick={confirmRemove}
+            disabled={pending || !removeAuth}
+            className="w-full rounded-lg bg-red-500/90 px-3 py-2.5 text-[12px] font-bold text-black disabled:opacity-40"
+          >
+            {pending ? "삭제 중…" : "삭제"}
+          </button>
         </div>
       </Modal>
 
