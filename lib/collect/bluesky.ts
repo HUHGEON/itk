@@ -1,6 +1,6 @@
 import type { Journalist } from "../types";
 import { isJunkTitle } from "./sources";
-import { detectTeams } from "../registry";
+import { beatFallback, detectTeams } from "../registry";
 import type { RawItem } from "./index";
 
 /**
@@ -123,7 +123,7 @@ export async function fetchBluesky(j: Journalist, limit = 30): Promise<RawItem[]
         publishedAt: post.record.createdAt ? Date.parse(post.record.createdAt) : Date.now(),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : j.teams,
+        teams: detected.length > 0 ? detected : beatFallback(j.teams),
         imageUrl: imageOf(post),
         citedId: null,
       },

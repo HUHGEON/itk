@@ -9,7 +9,7 @@
  */
 import "../lib/load-env";
 import { rpc } from "../lib/supabase";
-import { detectTeams } from "../lib/registry";
+import { beatFallback, detectTeams } from "../lib/registry";
 
 interface Row {
   id: string;
@@ -30,7 +30,8 @@ async function main() {
       const detected = detectTeams(`${r.title} ${r.snippet ?? ""}`);
       // Same rule the collector uses: a story that names no club falls back to
       // the reporter's beat rather than being left untagged.
-      const teams = detected.length > 0 ? detected : (r.journalist_teams ?? []);
+      const teams =
+        detected.length > 0 ? detected : beatFallback(r.journalist_teams ?? []);
       items.push({ id: r.id, teams });
     }
 

@@ -1,6 +1,12 @@
 import crypto from "node:crypto";
 import { rpc } from "../supabase";
-import { detectCitation, detectTeams, loadJournalists, loadTeams } from "../registry";
+import {
+  beatFallback,
+  detectCitation,
+  detectTeams,
+  loadJournalists,
+  loadTeams,
+} from "../registry";
 import type { Journalist } from "../types";
 import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
 import { OTHER_SPORT, OUTLET_FEEDS, googleNewsUrl, isJunkTitle } from "./sources";
@@ -148,7 +154,7 @@ function ownFeedItems(j: Journalist, items: FeedItem[]): RawItem[] {
         publishedAt: parseDate(item.isoDate),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : j.teams,
+        teams: detected.length > 0 ? detected : beatFallback(j.teams),
         imageUrl: imageFrom(item),
         citedId: null,
       },
@@ -180,7 +186,7 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
         publishedAt: parseDate(item.isoDate),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : j.teams,
+        teams: detected.length > 0 ? detected : beatFallback(j.teams),
         // Google News links are JS redirect pages — no image or body to read.
         // The hydrate pass resolves them afterwards and fills both in.
         imageUrl: null,
