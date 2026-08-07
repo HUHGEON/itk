@@ -76,6 +76,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [removeErr, setRemoveErr] = useState("");
 
   // Recovery: pulls destinations registered elsewhere into this browser.
+  const [listOpen, setListOpen] = useState(false);
   const [claimOpen, setClaimOpen] = useState(false);
   const [claimPass, setClaimPass] = useState("");
   const [claimMsg, setClaimMsg] = useState("");
@@ -152,6 +153,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
 
   const openEdit = (sub: Subscription) => {
     reset();
+    setListOpen(false);
     setEditing(sub.id);
     setOpen(true);
     // A protected destination stays sealed until the passphrase is entered,
@@ -192,9 +194,13 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
         setError(res.error);
         return;
       }
+      const wasEditing = Boolean(editing);
       reset();
       setOpen(false);
       refresh();
+      // Editing was reached from the list, so hand it back rather than
+      // dropping the reader on the sidebar.
+      if (wasEditing) setListOpen(true);
     });
   };
 
@@ -225,6 +231,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     if (sub.hasPass) {
       setRemoveAuth("");
       setRemoveErr("");
+      setListOpen(false);
       setRemoving(sub);
       return;
     }
@@ -244,6 +251,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
       }
       setRemoving(null);
       refresh();
+      if ((subs?.length ?? 0) > 1) setListOpen(true);
     });
   };
 
@@ -251,72 +259,91 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-[13px] font-bold">디스코드 알림</h2>
-        <div className="flex items-center gap-2.5">
-          <button
-            type="button"
-            onClick={() => setClaimOpen(true)}
-            className="text-[12px] text-muted hover:text-text"
-          >
-            불러오기
-          </button>
-          <button
-            type="button"
-            onClick={openAdd}
-            className="text-[12px] font-semibold text-accent hover:underline"
-          >
-            + 추가
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={openAdd}
+          className="text-[12px] font-semibold text-accent hover:underline"
+        >
+          + 추가
+        </button>
       </div>
 
-      {subs === null ? (
-        <p className="mt-2 text-[11px] text-muted">불러오는 중…</p>
-      ) : subs.length === 0 ? (
-        <p className="mt-2 text-[11px] leading-relaxed text-muted">
-          웹훅을 등록하면 브라우저를 닫아도 알림이 옵니다.
-          <br />
-          <span className="text-[10px]">
-            다른 기기에서 등록했다면 <b>불러오기</b>로 가져올 수 있습니다.
-          </span>
-        </p>
-      ) : (
-        <ul className="mt-3 space-y-2">
-          {subs.map((s) => (
-            <li key={s.id} className="rounded-lg border border-border bg-surface-2 p-2">
-              <div className="flex items-center gap-1.5">
-                {/* No part of the webhook here — it lives on the edit screen. */}
-                <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">
-                  {s.label || "디스코드"}
-                  {s.hasPass && (
-                    <span className="ml-1 font-normal text-muted" title="비밀번호 설정됨">
-                      🔒
-                    </span>
-                  )}
-                </span>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => openEdit(s)}
-                  className="shrink-0 text-[11px] text-muted hover:text-text disabled:opacity-50"
-                >
-                  수정
-                </button>
-                <button
-                  type="button"
-                  disabled={pending}
-                  onClick={() => remove(s)}
-                  className="shrink-0 text-[11px] text-muted hover:text-red-400 disabled:opacity-50"
-                >
-                  삭제
-                </button>
-              </div>
-              <p className="mt-1 text-[11px] text-muted">
-                {tierLabel(s.maxTier)}까지 · {s.teams.map(teamName).join(", ") || "팀 없음"}
-              </p>
-            </li>
-          ))}
-        </ul>
-      )}
+      {/* The list is a modal rather than a panel section. It is per-browser, so
+          it never shows anyone else's destinations, but registering several
+          here pushed the rest of the sidebar off the screen. */}
+      <p className="mt-2 text-[11px] leading-relaxed text-muted">
+        {subs === null
+          ? "불러오는 중…"
+          : subs.length === 0
+            ? "웹훅을 등록하면 브라우저를 닫아도 알림이 옵니다."
+            : `이 브라우저에 등록된 알림 ${subs.length}개`}
+      </p>
+
+      <div className="mt-2 flex items-center gap-2">
+        <button
+          type="button"
+          onClick={() => setListOpen(true)}
+          disabled={!subs || subs.length === 0}
+          className="flex-1 rounded-lg border border-border bg-surface-2 px-3 py-1.5 text-[12px] font-medium text-text disabled:opacity-40"
+        >
+          목록 보기
+        </button>
+        <button
+          type="button"
+          onClick={() => setClaimOpen(true)}
+          className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-muted hover:text-text"
+        >
+          불러오기
+        </button>
+      </div>
+
+      <p className="mt-2 text-[10px] leading-snug text-muted">
+        목록은 이 브라우저에서만 보입니다. 저장소를 지우거나 다른 기기에서 열면
+        <b> 불러오기</b>로 가져오세요.
+      </p>
+
+      <Modal open={listOpen} onClose={() => setListOpen(false)} title="내 디스코드 알림">
+        {subs && subs.length > 0 ? (
+          <ul className="space-y-2">
+            {subs.map((s) => (
+              <li key={s.id} className="rounded-lg border border-border bg-surface-2 p-2.5">
+                <div className="flex items-center gap-1.5">
+                  {/* No part of the webhook here — it lives on the edit screen. */}
+                  <span className="min-w-0 flex-1 truncate text-[12px] font-semibold">
+                    {s.label || "디스코드"}
+                    {s.hasPass && (
+                      <span className="ml-1 font-normal text-muted" title="비밀번호 설정됨">
+                        🔒
+                      </span>
+                    )}
+                  </span>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => openEdit(s)}
+                    className="shrink-0 text-[11px] text-muted hover:text-text disabled:opacity-50"
+                  >
+                    수정
+                  </button>
+                  <button
+                    type="button"
+                    disabled={pending}
+                    onClick={() => remove(s)}
+                    className="shrink-0 text-[11px] text-muted hover:text-red-400 disabled:opacity-50"
+                  >
+                    삭제
+                  </button>
+                </div>
+                <p className="mt-1 text-[11px] text-muted">
+                  {tierLabel(s.maxTier)}까지 · {s.teams.map(teamName).join(", ") || "팀 없음"}
+                </p>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-[11px] text-muted">등록된 알림이 없습니다.</p>
+        )}
+      </Modal>
 
       <Modal
         open={open}
