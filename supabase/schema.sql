@@ -76,6 +76,10 @@ create table if not exists itk.article_teams (
 -- vars, so several team/tier combinations can run side by side.
 create table if not exists itk.subscriptions (
   id           uuid primary key default gen_random_uuid(),
+  -- Random token held in the browser's localStorage. Cheaper than accounts and
+  -- enough for "only I see the destinations I registered": the site is public,
+  -- and an unguarded list let any visitor read and delete everyone's.
+  owner_key    text not null default '',
   label        text not null default '',
   webhook_url  text not null unique,
   teams        text[] not null default '{}',
@@ -140,6 +144,8 @@ alter table itk.articles add column if not exists official boolean not null defa
 -- are Spanish, Italian or French, and sending those as `en|ko` returns
 -- gibberish or nothing.
 alter table itk.articles add column if not exists lang text not null default 'en';
+alter table itk.subscriptions add column if not exists owner_key text not null default '';
+create index if not exists idx_subscriptions_owner on itk.subscriptions (owner_key);
 
 -- The notified table was keyed on article_id alone before subscriptions
 -- existed; rebuild it rather than try to guess which destination each row was.
@@ -597,6 +603,7 @@ end $$;
 -- so it is never returned to the browser in full.
 
 create or replace function public.itk_add_subscription(
+  p_owner    text,
   p_url      text,
   p_teams    text[],
   p_max_tier real default 1.5,
@@ -617,25 +624,35 @@ begin
   if coalesce(array_length(p_teams, 1), 0) = 0 then
     raise exception '팀을 최소 하나 선택해야 합니다';
   end if;
-  if (select count(*) from subscriptions) >= 50 then
-    raise exception '구독이 너무 많습니다';
+  if coalesce(length(p_owner), 0) < 16 then
+    raise exception '소유자 키가 없습니다';
+  end if;
+  if (select count(*) from subscriptions where owner_key = p_owner) >= 10 then
+    raise exception '구독이 너무 많습니다 (최대 10개)';
   end if;
 
-  insert into subscriptions (webhook_url, teams, max_tier, label)
-  values (p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''))
+  insert into subscriptions (owner_key, webhook_url, teams, max_tier, label)
+  values (p_owner, p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''))
+  -- Re-registering the same webhook updates it, but only for its owner; the
+  -- where clause is what stops one visitor overwriting another's destination.
   on conflict (webhook_url) do update set
     teams = excluded.teams,
     max_tier = excluded.max_tier,
     label = excluded.label,
     active = true,
     fail_count = 0
+  where subscriptions.owner_key = p_owner
   returning id into v_id;
+
+  if v_id is null then
+    raise exception '이미 다른 사용자가 등록한 웹훅입니다';
+  end if;
 
   return v_id;
 end $$;
 
 -- Masked for display: enough to tell two destinations apart, not enough to post.
-create or replace function public.itk_list_subscriptions()
+create or replace function public.itk_list_subscriptions(p_owner text)
 returns table (id uuid, label text, hint text, teams text[], max_tier real,
                active boolean, last_sent_at timestamptz)
 language sql
@@ -647,10 +664,11 @@ as $$
          '…' || right(s.webhook_url, 6),
          s.teams, s.max_tier, s.active, s.last_sent_at
   from subscriptions s
+  where s.owner_key = p_owner and coalesce(length(p_owner), 0) >= 16
   order by s.created_at
 $$;
 
-create or replace function public.itk_remove_subscription(p_id uuid)
+create or replace function public.itk_remove_subscription(p_owner text, p_id uuid)
 returns integer
 language plpgsql
 security definer
@@ -658,7 +676,8 @@ set search_path = itk, public
 as $$
 declare v_n integer;
 begin
-  delete from subscriptions where id = p_id;
+  delete from subscriptions
+  where id = p_id and owner_key = p_owner and coalesce(length(p_owner), 0) >= 16;
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
@@ -739,9 +758,9 @@ declare
     'public.itk_apply_translations(jsonb)',
     'public.itk_mark_notified(uuid,text[])',
     'public.itk_prune(integer)',
-    'public.itk_add_subscription(text,text[],real,text)',
-    'public.itk_list_subscriptions()',
-    'public.itk_remove_subscription(uuid)',
+    'public.itk_add_subscription(text,text,text[],real,text)',
+    'public.itk_list_subscriptions(text)',
+    'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',
     'public.itk_subscription_failed(uuid,boolean)'
   ];

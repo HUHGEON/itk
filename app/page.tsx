@@ -9,7 +9,6 @@ import { AlertPanel } from "@/components/AlertPanel";
 import { TranslationProvider, TranslateToggle } from "@/components/TranslationProvider";
 import { CollectButton } from "@/components/CollectButton";
 import { DiscordPanel } from "@/components/DiscordPanel";
-import { listSubscriptions } from "@/app/actions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,14 +40,13 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
 
-  const [rows, activity, journalistActivity, subscriptions] = await Promise.all([
+  const [rows, activity, journalistActivity] = await Promise.all([
     getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
     // Counts describe the combination on screen, so each excludes its own
     // dimension: team badges ignore the team filter, journalist badges ignore
     // the journalist filter.
     getTeamActivity({ ...base, tieredOnly }),
     getJournalistActivity({ teams: teamSlugs, league, q }),
-    listSubscriptions().catch(() => []),
   ]);
 
   const teams = loadTeams();
@@ -118,7 +116,7 @@ export default async function Home({ searchParams }: { searchParams: SearchParam
           </main>
 
           <aside className="w-full shrink-0 space-y-4 px-4 pb-6 lg:w-64 lg:px-0">
-            <DiscordPanel teams={teams} subscriptions={subscriptions} />
+            <DiscordPanel teams={teams} />
             <AlertPanel teams={teams} />
           </aside>
         </div>

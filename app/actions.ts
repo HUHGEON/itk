@@ -38,13 +38,19 @@ export interface Subscription {
   lastSentAt: string | null;
 }
 
-export async function listSubscriptions(): Promise<Subscription[]> {
+/**
+ * `owner` is a random token the browser keeps in localStorage. It stands in for
+ * an account: the site is public, and without it every visitor could read and
+ * delete everyone else's destinations.
+ */
+export async function listSubscriptions(owner: string): Promise<Subscription[]> {
+  if (!owner || owner.length < 16) return [];
   const rows = await rpc<
     {
       id: string; label: string; hint: string; teams: string[];
       max_tier: number; active: boolean; last_sent_at: string | null;
     }[]
-  >("itk_list_subscriptions");
+  >("itk_list_subscriptions", { p_owner: owner });
 
   return (rows ?? []).map((r) => ({
     id: r.id,
@@ -58,6 +64,7 @@ export async function listSubscriptions(): Promise<Subscription[]> {
 }
 
 export async function addSubscription(input: {
+  owner: string;
   url: string;
   teams: string[];
   maxTier: number;
@@ -65,6 +72,7 @@ export async function addSubscription(input: {
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await rpc<string>("itk_add_subscription", {
+      p_owner: input.owner,
       p_url: input.url.trim(),
       p_teams: input.teams,
       p_max_tier: input.maxTier,
@@ -81,9 +89,10 @@ export async function addSubscription(input: {
 }
 
 export async function removeSubscription(
+  owner: string,
   id: string,
 ): Promise<{ ok: boolean }> {
-  await rpc<number>("itk_remove_subscription", { p_id: id });
+  const n = await rpc<number>("itk_remove_subscription", { p_owner: owner, p_id: id });
   revalidatePath("/");
-  return { ok: true };
+  return { ok: n > 0 };
 }
