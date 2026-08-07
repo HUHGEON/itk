@@ -71,6 +71,12 @@ jobs:
       - name: Collect articles
         run: npm run collect -- ${{ steps.band.outputs.args }}
 
+      # Google News and club sitemaps carry no description, so more than half
+      # the feed arrives with nothing to expand. This resolves the real article
+      # address and reads the summary out of the page's own metadata.
+      - name: Fetch article summaries
+        run: npm run hydrate -- --limit 80
+
       # MyMemory needs no key; ANTHROPIC_API_KEY upgrades the engine if present.
       - name: Translate headlines
         run: npm run translate -- --limit 150

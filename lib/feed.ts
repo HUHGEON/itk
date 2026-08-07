@@ -22,6 +22,10 @@ export interface FeedFilters {
 
 export interface FeedRow {
   id: string;
+  /**
+   * Where "원문 보기" goes. Google News links are opaque redirect wrappers, so
+   * this is the resolved address once the hydrate pass has found it.
+   */
   url: string;
   title: string;
   snippet: string;
@@ -46,6 +50,7 @@ export interface FeedRow {
 interface FeedRpcRow {
   id: string;
   url: string;
+  resolved_url: string | null;
   title: string;
   snippet: string | null;
   source: string | null;
@@ -91,7 +96,7 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
 
   return (rows ?? []).map((r) => ({
     id: r.id,
-    url: r.url,
+    url: r.resolved_url || r.url,
     title: r.title,
     snippet: r.snippet ?? "",
     source: r.source ?? "",

@@ -24,6 +24,8 @@ const GAP_MS = 700;
 interface Pending {
   id: string;
   title: string;
+  /** already translated — the row is only here for its body */
+  titleKo: string | null;
   snippet: string;
   source: string;
   tier: number | null;
@@ -37,17 +39,26 @@ function arg(name: string): string | undefined {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function fetchPending(limit: number, maxTier: number): Promise<Pending[]> {
+async function fetchPending(
+  limit: number,
+  maxTier: number,
+  bodies: boolean,
+): Promise<Pending[]> {
   const rows = await rpc<
     {
-      id: string; title: string; snippet: string | null;
+      id: string; title: string; title_ko: string | null; snippet: string | null;
       source: string | null; tier: number | null; lang: string | null;
     }[]
-  >("itk_pending_translations", { p_limit: limit, p_max_tier: maxTier });
+  >("itk_pending_translations", {
+    p_limit: limit,
+    p_max_tier: maxTier,
+    p_bodies: bodies,
+  });
 
   return (rows ?? []).map((r) => ({
     id: r.id,
     title: r.title,
+    titleKo: r.title_ko,
     snippet: r.snippet ?? "",
     source: r.source ?? "",
     tier: r.tier,
@@ -93,7 +104,12 @@ async function viaMyMemory(text: string, lang: string): Promise<string | null> {
   }
 }
 
-async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
+interface Translated {
+  title_ko: string;
+  summary_ko: string;
+}
+
+async function viaClaude(batch: Pending[]): Promise<Map<string, Translated>> {
   const { default: Anthropic } = await import("@anthropic-ai/sdk");
   const client = new Anthropic();
 
@@ -101,9 +117,9 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
     model: process.env.TRANSLATE_MODEL ?? "claude-opus-4-8",
     max_tokens: 4000,
     system:
-      "해외 축구 헤드라인을 한국어로 옮긴다. 선수·감독·구단명은 국내 축구 커뮤니티 통용 표기를 " +
+      "해외 축구 기사를 한국어로 옮긴다. 선수·감독·구단명은 국내 축구 커뮤니티 통용 표기를 " +
       "따른다 (Haaland→홀란, Tottenham→토트넘). 원문에 없는 내용을 덧붙이지 않고, 확정되지 않은 " +
-      "이적설을 확정처럼 쓰지 않는다.",
+      "이적설을 확정처럼 쓰지 않는다. summary 가 비어 있으면 summary_ko 도 빈 문자열로 둔다.",
     output_config: {
       effort: "low",
       format: {
@@ -115,8 +131,12 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
               type: "array",
               items: {
                 type: "object",
-                properties: { id: { type: "string" }, title_ko: { type: "string" } },
-                required: ["id", "title_ko"],
+                properties: {
+                  id: { type: "string" },
+                  title_ko: { type: "string" },
+                  summary_ko: { type: "string" },
+                },
+                required: ["id", "title_ko", "summary_ko"],
                 additionalProperties: false,
               },
             },
@@ -130,13 +150,13 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
       {
         role: "user",
         content: `id는 그대로 돌려줘.\n\n${JSON.stringify(
-          batch.map((b) => ({ id: b.id, title: b.title })),
+          batch.map((b) => ({ id: b.id, title: b.title, summary: b.snippet })),
         )}`,
       },
     ],
   });
 
-  const out = new Map<string, string>();
+  const out = new Map<string, Translated>();
   if (res.stop_reason === "refusal") return out;
 
   const text = res.content.find((b) => b.type === "text");
@@ -145,9 +165,11 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
   // A truncated response (stop_reason "max_tokens") leaves invalid JSON. Losing
   // one batch is fine; letting it throw would abandon every batch after it.
   try {
-    const parsed = JSON.parse(text.text) as { items?: { id: string; title_ko: string }[] };
+    const parsed = JSON.parse(text.text) as { items?: (Translated & { id: string })[] };
     for (const it of parsed.items ?? []) {
-      if (it?.id && it.title_ko) out.set(it.id, it.title_ko);
+      if (it?.id && it.title_ko) {
+        out.set(it.id, { title_ko: it.title_ko, summary_ko: it.summary_ko ?? "" });
+      }
     }
   } catch {
     console.warn(`  ⚠ 배치 응답을 해석하지 못했습니다 (stop_reason: ${res.stop_reason})`);
@@ -155,10 +177,12 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, string>> {
   return out;
 }
 
-async function save(items: { id: string; title_ko: string }[]): Promise<number> {
+async function save(
+  items: { id: string; title_ko: string; summary_ko?: string }[],
+): Promise<number> {
   if (items.length === 0) return 0;
   return rpc<number>("itk_apply_translations", {
-    p_items: items.map((i) => ({ ...i, summary_ko: null })),
+    p_items: items.map((i) => ({ ...i, summary_ko: i.summary_ko || null })),
   });
 }
 
@@ -168,7 +192,9 @@ async function main() {
   const engine =
     arg("engine") ?? (process.env.ANTHROPIC_API_KEY ? "claude" : "mymemory");
 
-  const pending = (await fetchPending(limit, maxTier)).filter((p) => !isKorean(p.title));
+  const pending = (await fetchPending(limit, maxTier, engine === "claude")).filter(
+    (p) => !isKorean(p.title),
+  );
   if (pending.length === 0) {
     console.log("번역할 기사가 없습니다.");
     return;
@@ -181,7 +207,7 @@ async function main() {
     for (let i = 0; i < pending.length; i += 25) {
       const batch = pending.slice(i, i + 25);
       const map = await viaClaude(batch);
-      done += await save([...map].map(([id, title_ko]) => ({ id, title_ko })));
+      done += await save([...map].map(([id, t]) => ({ id, ...t })));
       console.log(`  ${Math.min(i + 25, pending.length)}/${pending.length}`);
     }
     console.log(`✓ ${done}건 번역 완료 (claude)`);

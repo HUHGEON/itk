@@ -16,7 +16,9 @@
     "notify": "tsx scripts/notify.ts",
     "watch": "tsx scripts/watch.ts",
     "bluesky": "tsx scripts/discover-bluesky.ts",
-    "query": "tsx scripts/query.ts"
+    "query": "tsx scripts/query.ts",
+    "hydrate": "tsx scripts/hydrate.ts",
+    "relang": "tsx scripts/relang.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

@@ -6,6 +6,7 @@ import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
 import { OTHER_SPORT, OUTLET_FEEDS, googleNewsUrl } from "./sources";
 import { fetchBluesky } from "./bluesky";
 import { CLUB_SITEMAPS, fetchClubSitemap } from "./clubs";
+import { detectLang, langForCountry } from "./lang";
 
 export interface RawItem {
   url: string;
@@ -173,8 +174,12 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
         tier: j.tier,
         teams: detected.length > 0 ? detected : j.teams,
         // Google News links are JS redirect pages — no image or body to read.
+        // The hydrate pass resolves them afterwards and fills both in.
         imageUrl: null,
         citedId: null,
+        // The reporter's country is the prior; detectLang overrides it in
+        // persist() when the headline says otherwise.
+        lang: langForCountry(j.country),
       },
     ];
   });
@@ -273,7 +278,10 @@ async function persist(items: RawItem[]): Promise<number> {
     image_url: item.imageUrl,
     cited_id: item.citedId,
     official: item.official ?? false,
-    lang: item.lang ?? "en",
+    // The headline itself decides. A feed's declared language is only a
+    // fallback: a Google News query for a Dutch reporter returns English
+    // pieces too, and tagging those `nl` mistranslates them just as badly.
+    lang: detectLang(item.title, item.lang ?? "en"),
   }));
 
   let inserted = 0;

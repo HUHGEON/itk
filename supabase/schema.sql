@@ -55,6 +55,11 @@ create table if not exists itk.articles (
   title_ko      text,
   summary_ko    text,
   image_url     text,
+  -- Google News links are opaque redirect wrappers. `url` stays as-collected
+  -- because `id` is sha1(url) and the notify history references it; the real
+  -- article address lives here, filled in by the hydrate pass.
+  resolved_url  text,
+  hydrated_at   timestamptz,
   created_at    timestamptz not null default now(),
 
   -- Real full-text search. English stemming on the original headline, plain
@@ -149,6 +154,8 @@ alter table itk.articles add column if not exists official boolean not null defa
 alter table itk.articles add column if not exists lang text not null default 'en';
 alter table itk.subscriptions add column if not exists owner_key text not null default '';
 alter table itk.subscriptions add column if not exists passphrase text;
+alter table itk.articles add column if not exists resolved_url text;
+alter table itk.articles add column if not exists hydrated_at timestamptz;
 create extension if not exists pgcrypto with schema extensions;
 create index if not exists idx_subscriptions_owner on itk.subscriptions (owner_key);
 
@@ -236,7 +243,7 @@ create or replace function public.itk_feed(
   p_tiered_only   boolean     default false
 )
 returns table (
-  id text, url text, title text, snippet text, source text,
+  id text, url text, resolved_url text, title text, snippet text, source text,
   published_at timestamptz, tier real, title_ko text, summary_ko text,
   image_url text, journalist_id text, journalist_ko text, journalist_en text,
   outlet text, handle text, cited_id text, cited_ko text, official boolean,
@@ -247,7 +254,7 @@ stable
 security definer
 set search_path = itk, public
 as $$
-  select a.id, a.url, a.title, a.snippet, a.source, a.published_at, a.tier,
+  select a.id, a.url, a.resolved_url, a.title, a.snippet, a.source, a.published_at, a.tier,
          a.title_ko, a.summary_ko, a.image_url, a.journalist_id,
          j.ko, j.en, j.outlet, j.x, a.cited_id, c.ko, a.official,
          coalesce(
@@ -476,6 +483,56 @@ begin
   return v_count;
 end $$;
 
+
+-- Articles the feed will show but that have nothing to expand: no summary and
+-- no image. Oldest-first within the window so a backlog drains predictably.
+create or replace function public.itk_hydrate_pending(p_limit integer default 60)
+returns table (id text, url text)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select a.id, a.url
+  from articles a
+  where a.hydrated_at is null
+    and coalesce(a.snippet, '') = ''
+    and a.published_at > now() - interval '14 days'
+    and (a.journalist_id is not null or a.cited_id is not null or a.official)
+  order by a.published_at desc
+  limit greatest(least(p_limit, 300), 1);
+$$;
+
+-- Writes back what the fetch found. Always stamps hydrated_at, including for
+-- rows that yielded nothing, so a dead link is not retried forever.
+create or replace function public.itk_hydrate_apply(p_rows jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  with incoming as (
+    select
+      x->>'id'           as id,
+      nullif(x->>'snippet', '')      as snippet,
+      nullif(x->>'image_url', '')    as image_url,
+      nullif(x->>'resolved_url', '') as resolved_url
+    from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) x
+  )
+  update articles a
+  set snippet      = coalesce(i.snippet, a.snippet),
+      image_url    = coalesce(a.image_url, i.image_url),
+      resolved_url = coalesce(i.resolved_url, a.resolved_url),
+      hydrated_at  = now()
+  from incoming i
+  where a.id = i.id;
+
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_feed_state_get(p_urls text[])
 returns table (url text, etag text, last_modified text, fail_count integer, updated_at timestamptz)
 language sql
@@ -538,17 +595,24 @@ end $$;
 
 create or replace function public.itk_pending_translations(
   p_limit    integer default 120,
-  p_max_tier real    default 3
+  p_max_tier real    default 3,
+  -- MyMemory's allowance barely covers headlines, so it asks for headlines
+  -- only. Handing it body-only rows it can never satisfy would let them refill
+  -- the limit every run and starve the headlines that still need work.
+  p_bodies   boolean default true
 )
-returns table (id text, title text, snippet text, source text, tier real, lang text)
+returns table (id text, title text, title_ko text, snippet text, source text, tier real, lang text)
 language sql
 stable
 security definer
 set search_path = itk, public
 as $$
-  select a.id, a.title, a.snippet, a.source, a.tier, a.lang
+  select a.id, a.title, a.title_ko, a.snippet, a.source, a.tier, a.lang
   from articles a
-  where a.title_ko is null
+  -- A hydrated summary arrives after the headline was translated, so a row
+  -- with a title but no body still needs a pass.
+  where (a.title_ko is null
+         or (p_bodies and a.summary_ko is null and coalesce(a.snippet, '') <> ''))
     and (a.tier is null or a.tier <= p_max_tier)
     -- Only what the feed actually shows. The free translation budget is about
     -- 700 headlines a day against 1,000+ collected, and two thirds of those
@@ -582,6 +646,52 @@ end $$;
 
 -- Drops anything older than the retention window. Transfer news has no value
 -- after a couple of months, and this keeps the free-tier database small.
+
+-- Rewrites the detected source language. Detection runs in the app because
+-- Postgres has no language guesser for these pairs.
+
+-- Headlines to run language detection over. Defaults to the ones still waiting
+-- on a translation, which is where a wrong tag actually costs something.
+create or replace function public.itk_articles_for_lang(
+  p_only_untranslated boolean default true,
+  -- PostgREST caps a response at 1,000 rows, so the caller pages through.
+  p_offset integer default 0
+)
+returns table (id text, title text, lang text)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select a.id, a.title, a.lang
+  from articles a
+  where (not p_only_untranslated or a.title_ko is null)
+    and (a.journalist_id is not null or a.cited_id is not null or a.official)
+    and a.published_at > now() - interval '30 days'
+  -- id breaks ties: dozens of rows share a minute, and an unstable sort would
+  -- make paging skip and repeat.
+  order by a.published_at desc, a.id desc
+  limit 1000
+  offset greatest(coalesce(p_offset, 0), 0);
+$$;
+
+create or replace function public.itk_set_langs(p_items jsonb)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  update articles a
+  set lang = t.lang
+  from jsonb_to_recordset(coalesce(p_items, '[]'::jsonb)) as t(id text, lang text)
+  where a.id = t.id and coalesce(t.lang, '') <> '' and a.lang is distinct from t.lang;
+
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_prune(p_days integer default 60)
 returns integer
 language plpgsql
@@ -790,12 +900,16 @@ declare
     'public.itk_feed_state_get(text[])',
     'public.itk_feed_state_set(jsonb)',
     'public.itk_record_run(jsonb)',
-    'public.itk_pending_translations(integer,real)',
+    'public.itk_pending_translations(integer,real,boolean)',
     'public.itk_apply_translations(jsonb)',
+    'public.itk_set_langs(jsonb)',
+    'public.itk_articles_for_lang(boolean,integer)',
     'public.itk_mark_notified(uuid,text[])',
     'public.itk_prune(integer)',
     'public.itk_add_subscription(text,text,text[],real,text,text)',
     'public.itk_claim_subscriptions(text,text)',
+    'public.itk_hydrate_apply(jsonb)',
+    'public.itk_hydrate_pending(integer)',
     'public.itk_list_subscriptions(text)',
     'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',
