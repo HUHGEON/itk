@@ -69,6 +69,8 @@ export async function addSubscription(input: {
   teams: string[];
   maxTier: number;
   label: string;
+  /** optional; set one to manage this destination from another device */
+  passphrase?: string;
 }): Promise<{ ok: true } | { ok: false; error: string }> {
   try {
     await rpc<string>("itk_add_subscription", {
@@ -77,6 +79,7 @@ export async function addSubscription(input: {
       p_teams: input.teams,
       p_max_tier: input.maxTier,
       p_label: input.label.trim(),
+      p_pass: input.passphrase?.trim() || null,
     });
     revalidatePath("/");
     return { ok: true };
@@ -95,4 +98,22 @@ export async function removeSubscription(
   const n = await rpc<number>("itk_remove_subscription", { p_owner: owner, p_id: id });
   revalidatePath("/");
   return { ok: n > 0 };
+}
+
+/** Re-attaches passphrase-protected destinations to this browser. */
+export async function claimSubscriptions(
+  owner: string,
+  passphrase: string,
+): Promise<{ ok: true; count: number } | { ok: false; error: string }> {
+  try {
+    const n = await rpc<number>("itk_claim_subscriptions", {
+      p_owner: owner,
+      p_pass: passphrase.trim(),
+    });
+    revalidatePath("/");
+    return { ok: true, count: n ?? 0 };
+  } catch (err) {
+    const raw = err instanceof Error ? err.message : String(err);
+    return { ok: false, error: raw.replace(/^itk_claim_subscriptions 실패: /, "") };
+  }
 }

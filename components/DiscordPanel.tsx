@@ -7,6 +7,7 @@ import { tierLabel } from "@/lib/format";
 import { ownerKey } from "@/lib/owner-key";
 import {
   addSubscription,
+  claimSubscriptions,
   listSubscriptions,
   removeSubscription,
   type Subscription,
@@ -30,7 +31,13 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   const [label, setLabel] = useState("");
   const [picked, setPicked] = useState<string[]>([]);
   const [maxTier, setMaxTier] = useState(1.5);
+  const [pass, setPass] = useState("");
   const [error, setError] = useState("");
+
+  // Recovery: pulls destinations registered elsewhere into this browser.
+  const [claimOpen, setClaimOpen] = useState(false);
+  const [claimPass, setClaimPass] = useState("");
+  const [claimMsg, setClaimMsg] = useState("");
 
   const refresh = useCallback(() => {
     const key = ownerKey();
@@ -50,6 +57,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     setLabel("");
     setPicked([]);
     setMaxTier(1.5);
+    setPass("");
     setError("");
   };
 
@@ -61,13 +69,43 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     }
     setError("");
     startTransition(async () => {
-      const res = await addSubscription({ owner: key, url, teams: picked, maxTier, label });
+      const res = await addSubscription({
+        owner: key,
+        url,
+        teams: picked,
+        maxTier,
+        label,
+        passphrase: pass,
+      });
       if (!res.ok) {
         setError(res.error);
         return;
       }
       reset();
       setOpen(false);
+      refresh();
+    });
+  };
+
+  const claim = () => {
+    const key = ownerKey();
+    if (!key) {
+      setClaimMsg("브라우저 저장소를 쓸 수 없습니다 (시크릿 모드?)");
+      return;
+    }
+    setClaimMsg("");
+    startTransition(async () => {
+      const res = await claimSubscriptions(key, claimPass);
+      if (!res.ok) {
+        setClaimMsg(res.error);
+        return;
+      }
+      if (res.count === 0) {
+        setClaimMsg("일치하는 알림이 없습니다");
+        return;
+      }
+      setClaimPass("");
+      setClaimOpen(false);
       refresh();
     });
   };
@@ -82,13 +120,22 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-[13px] font-bold">디스코드 알림</h2>
-        <button
-          type="button"
-          onClick={() => setOpen(true)}
-          className="text-[12px] font-semibold text-accent hover:underline"
-        >
-          + 추가
-        </button>
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setClaimOpen(true)}
+            className="text-[12px] text-muted hover:text-text"
+          >
+            불러오기
+          </button>
+          <button
+            type="button"
+            onClick={() => setOpen(true)}
+            className="text-[12px] font-semibold text-accent hover:underline"
+          >
+            + 추가
+          </button>
+        </div>
       </div>
 
       {subs === null ? (
@@ -97,7 +144,9 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
         <p className="mt-2 text-[11px] leading-relaxed text-muted">
           웹훅을 등록하면 브라우저를 닫아도 알림이 옵니다.
           <br />
-          <span className="text-[10px]">이 목록은 이 브라우저에서만 보입니다.</span>
+          <span className="text-[10px]">
+            다른 기기에서 등록했다면 <b>불러오기</b>로 가져올 수 있습니다.
+          </span>
         </p>
       ) : (
         <ul className="mt-3 space-y-2">
@@ -220,6 +269,24 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
             </p>
           </div>
 
+          <div>
+            <label className="text-[11px] font-semibold text-muted">
+              비밀번호 (선택)
+            </label>
+            <input
+              type="password"
+              value={pass}
+              onChange={(e) => setPass(e.target.value)}
+              placeholder="4자 이상"
+              autoComplete="new-password"
+              className="mt-1 w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
+            />
+            <p className="mt-1 text-[10px] leading-snug text-muted">
+              설정하면 다른 기기·브라우저에서도 이 알림을 불러와 수정·삭제할 수
+              있습니다. 비워두면 이 브라우저에서만 관리됩니다.
+            </p>
+          </div>
+
           {error && <p className="text-[11px] text-red-400">{error}</p>}
 
           <button
@@ -232,9 +299,45 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           </button>
 
           <p className="text-[10px] leading-snug text-muted">
-            등록 시점 이후의 새 기사만 전송됩니다. 이 목록은 이 브라우저에서만 보이고,
-            저장소를 지우면 목록은 사라지지만 알림은 계속 옵니다.
+            등록 시점 이후의 새 기사만 전송됩니다.
           </p>
+        </div>
+      </Modal>
+
+      <Modal
+        open={claimOpen}
+        onClose={() => {
+          setClaimOpen(false);
+          setClaimMsg("");
+        }}
+        title="알림 불러오기"
+      >
+        <div className="space-y-3">
+          <p className="text-[11px] leading-relaxed text-muted">
+            등록할 때 설정한 비밀번호를 넣으면 그 알림을 이 브라우저로 가져옵니다.
+            비밀번호 없이 등록한 알림은 불러올 수 없습니다.
+          </p>
+          <input
+            type="password"
+            value={claimPass}
+            onChange={(e) => setClaimPass(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && claimPass) claim();
+            }}
+            placeholder="비밀번호"
+            autoComplete="current-password"
+            autoFocus
+            className="w-full rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-muted focus:border-accent"
+          />
+          {claimMsg && <p className="text-[11px] text-red-400">{claimMsg}</p>}
+          <button
+            type="button"
+            onClick={claim}
+            disabled={pending || claimPass.length < 4}
+            className="w-full rounded-lg bg-accent px-3 py-2.5 text-[12px] font-bold text-black disabled:opacity-40"
+          >
+            {pending ? "확인 중…" : "불러오기"}
+          </button>
         </div>
       </Modal>
     </section>

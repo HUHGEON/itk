@@ -80,6 +80,9 @@ create table if not exists itk.subscriptions (
   -- enough for "only I see the destinations I registered": the site is public,
   -- and an unguarded list let any visitor read and delete everyone's.
   owner_key    text not null default '',
+  -- bcrypt, so the same destination can be managed from another device without
+  -- the browser token. Optional: without one, this browser is the only way in.
+  passphrase   text,
   label        text not null default '',
   webhook_url  text not null unique,
   teams        text[] not null default '{}',
@@ -145,6 +148,8 @@ alter table itk.articles add column if not exists official boolean not null defa
 -- gibberish or nothing.
 alter table itk.articles add column if not exists lang text not null default 'en';
 alter table itk.subscriptions add column if not exists owner_key text not null default '';
+alter table itk.subscriptions add column if not exists passphrase text;
+create extension if not exists pgcrypto with schema extensions;
 create index if not exists idx_subscriptions_owner on itk.subscriptions (owner_key);
 
 -- The notified table was keyed on article_id alone before subscriptions
@@ -607,7 +612,8 @@ create or replace function public.itk_add_subscription(
   p_url      text,
   p_teams    text[],
   p_max_tier real default 1.5,
-  p_label    text default ''
+  p_label    text default '',
+  p_pass     text default null
 )
 returns uuid
 language plpgsql
@@ -631,8 +637,10 @@ begin
     raise exception '구독이 너무 많습니다 (최대 10개)';
   end if;
 
-  insert into subscriptions (owner_key, webhook_url, teams, max_tier, label)
-  values (p_owner, p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''))
+  insert into subscriptions (owner_key, webhook_url, teams, max_tier, label, passphrase)
+  values (p_owner, p_url, p_teams, greatest(least(p_max_tier, 3), 0), coalesce(p_label, ''),
+          case when coalesce(length(p_pass), 0) >= 4
+               then extensions.crypt(p_pass, extensions.gen_salt('bf', 10)) end)
   -- Re-registering the same webhook updates it, but only for its owner; the
   -- where clause is what stops one visitor overwriting another's destination.
   on conflict (webhook_url) do update set
@@ -640,7 +648,8 @@ begin
     max_tier = excluded.max_tier,
     label = excluded.label,
     active = true,
-    fail_count = 0
+    fail_count = 0,
+    passphrase = coalesce(excluded.passphrase, subscriptions.passphrase)
   where subscriptions.owner_key = p_owner
   returning id into v_id;
 
@@ -667,6 +676,33 @@ as $$
   where s.owner_key = p_owner and coalesce(length(p_owner), 0) >= 16
   order by s.created_at
 $$;
+
+
+-- Adopts a destination on a new device. The browser token is the everyday
+-- path; this is the way back in after clearing site data or switching device.
+create or replace function public.itk_claim_subscriptions(p_owner text, p_pass text)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  if coalesce(length(p_owner), 0) < 16 then
+    raise exception '소유자 키가 없습니다';
+  end if;
+  if coalesce(length(p_pass), 0) < 4 then
+    raise exception '비밀번호가 너무 짧습니다';
+  end if;
+
+  update subscriptions
+  set owner_key = p_owner
+  where passphrase is not null
+    and passphrase = extensions.crypt(p_pass, passphrase);
+
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
 
 create or replace function public.itk_remove_subscription(p_owner text, p_id uuid)
 returns integer
@@ -758,7 +794,8 @@ declare
     'public.itk_apply_translations(jsonb)',
     'public.itk_mark_notified(uuid,text[])',
     'public.itk_prune(integer)',
-    'public.itk_add_subscription(text,text,text[],real,text)',
+    'public.itk_add_subscription(text,text,text[],real,text,text)',
+    'public.itk_claim_subscriptions(text,text)',
     'public.itk_list_subscriptions(text)',
     'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',
