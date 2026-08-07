@@ -10,7 +10,7 @@
  * 0티어는 매 실행마다, 아래 티어는 조각을 돌려가며 가져온다.
  */
 import "../lib/load-env";
-import { collect } from "../lib/collect";
+import { COLLECT_DAYS, collect } from "../lib/collect";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -39,7 +39,7 @@ async function main() {
       `매체 ${stats.outletsQueried}곳 / 구단공식 ${stats.clubsQueried}곳\n` +
       `  응답 ${stats.ok} · 변경없음(304) ${stats.notModified} · ` +
       `실패 ${stats.failed} · 쿨다운 ${stats.skipped}\n` +
-      `  수집 ${stats.itemsSeen}건 (2개월 초과 ${stats.tooOld}건 제외) → ` +
+      `  수집 ${stats.itemsSeen}건 (발행 ${COLLECT_DAYS}일 초과 ${stats.tooOld}건 제외) → ` +
       `중복 제거 ${stats.itemsUnique}건 → 신규 ${stats.inserted}건\n` +
       `  보존기간 지나 삭제 ${stats.pruned}건`,
   );

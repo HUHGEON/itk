@@ -275,9 +275,23 @@ const CHUNK = 250;
 
 /**
  * Transfer news is worthless after a couple of months, and the free Supabase
- * tier is 500MB. Old items are neither stored nor kept.
+ * tier is 500MB. Anything older than this is dropped from the database.
  */
 export const RETENTION_DAYS = 60;
+
+/**
+ * How recently a story must have been published for us to take it at all.
+ *
+ * Separate from retention, which says how long we keep what we took. Widening
+ * the Google News queries made the collector surface pieces from weeks back and
+ * store them as fresh arrivals — 29% of a recent intake was published more than
+ * a month earlier, and the notifier pushed a 9 July story on 7 August.
+ *
+ * Fourteen days is more than fifty times the longest collection interval (the
+ * cold band runs every six hours), so a run that fails, a feed that goes down,
+ * or a slice that rotates late still catches everything it should.
+ */
+export const COLLECT_DAYS = 14;
 
 async function persist(items: RawItem[]): Promise<number> {
   const byId = new Map(items.map((i) => [articleId(i.url), i]));
@@ -470,7 +484,7 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
     }
   }
 
-  const cutoff = Date.now() - RETENTION_DAYS * 86_400_000;
+  const cutoff = Date.now() - COLLECT_DAYS * 86_400_000;
   const fetched = results.flatMap((r) => r.items);
   const seen = fetched.filter((i) => i.publishedAt >= cutoff);
   const tooOld = fetched.length - seen.length;
