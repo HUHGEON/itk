@@ -74,8 +74,7 @@ function isKorean(text: string): boolean {
 /** Pairs MyMemory actually serves; anything else is treated as English. */
 const PAIRS = new Set(["en", "es", "it", "fr", "de", "nl", "pt"]);
 
-async function viaMyMemory(text: string, lang: string): Promise<string | null> {
-  const source = PAIRS.has(lang) ? lang : "en";
+async function askMyMemory(text: string, source: string): Promise<string | null> {
   const params = new URLSearchParams({ q: text, langpair: `${source}|ko` });
   if (process.env.MYMEMORY_EMAIL) params.set("de", process.env.MYMEMORY_EMAIL);
 
@@ -83,15 +82,22 @@ async function viaMyMemory(text: string, lang: string): Promise<string | null> {
     const res = await fetch(`https://api.mymemory.translated.net/get?${params}`, {
       signal: AbortSignal.timeout(15_000),
     });
+    // 429 is the daily allowance, not a bad headline.
+    if (res.status === 429) throw new Error("QUOTA");
     if (!res.ok) return null;
 
     const body = (await res.json()) as {
       responseData?: { translatedText?: string };
       responseStatus?: number | string;
+      responseDetails?: string;
       quotaFinished?: boolean;
     };
 
-    if (body.quotaFinished) throw new Error("QUOTA");
+    // The warning arrives as prose in a 200 as often as it does as a 429.
+    // Counting it as a failure marked good headlines untranslatable.
+    if (body.quotaFinished || /USED ALL AVAILABLE/i.test(body.responseDetails ?? "")) {
+      throw new Error("QUOTA");
+    }
     if (Number(body.responseStatus) !== 200) return null;
 
     const out = body.responseData?.translatedText?.trim();
@@ -102,6 +108,23 @@ async function viaMyMemory(text: string, lang: string): Promise<string | null> {
     if (err instanceof Error && err.message === "QUOTA") throw err;
     return null;
   }
+}
+
+/**
+ * MyMemory's own detector, with ours as the fallback.
+ *
+ * Asking for the wrong pair returns the input unchanged, and our detector is
+ * right about 91% of the time — `Autodetect` gets the remainder without a
+ * second request in the common case.
+ */
+async function viaMyMemory(text: string, lang: string): Promise<string | null> {
+  const auto = await askMyMemory(text, "Autodetect");
+  if (auto) return auto;
+
+  const source = PAIRS.has(lang) ? lang : "en";
+  if (source === "en") return null;
+  await sleep(GAP_MS);
+  return askMyMemory(text, source);
 }
 
 interface Translated {
@@ -215,14 +238,28 @@ async function main() {
   }
 
   const results: { id: string; title_ko: string }[] = [];
-  let chars = 0;
-  let failed = 0;
+  const misses: string[] = [];
   let saved = 0;
+  // Counted separately: flush() empties `misses`, so its length is not a total.
+  let failed = 0;
+
+  // The day's spend lives in the database. CI starts a fresh process every
+  // twenty minutes, and a counter in a local variable meant each of those runs
+  // believed it had the whole day's allowance to itself.
+  let spent = await rpc<number>("itk_translate_usage", { p_add: 0 });
+  const startedAt = spent;
+
+  const flush = async () => {
+    if (results.length) saved += await save(results.splice(0, results.length));
+    if (misses.length) {
+      await rpc<number>("itk_translate_failed", { p_ids: misses.splice(0, misses.length) });
+    }
+  };
 
   for (const item of pending) {
-    if (chars + item.title.length > MYMEMORY_DAILY_CHARS) {
+    if (spent + item.title.length > MYMEMORY_DAILY_CHARS) {
       console.log(
-        `  일일 한도(${MYMEMORY_DAILY_CHARS.toLocaleString()}자)에 도달해 중단합니다.` +
+        `  오늘 한도(${MYMEMORY_DAILY_CHARS.toLocaleString()}자)에 도달해 중단합니다.` +
           (process.env.MYMEMORY_EMAIL ? "" : " MYMEMORY_EMAIL을 넣으면 10배로 늘어납니다."),
       );
       break;
@@ -230,26 +267,33 @@ async function main() {
 
     try {
       const ko = await viaMyMemory(item.title, item.lang);
-      chars += item.title.length;
+      spent = await rpc<number>("itk_translate_usage", { p_add: item.title.length });
       if (ko) results.push({ id: item.id, title_ko: ko });
-      else failed++;
+      // Recorded, so a headline the provider cannot handle stops returning to
+      // the front of the queue and spending the budget again.
+      else {
+        misses.push(item.id);
+        failed++;
+      }
     } catch {
-      console.log("  MyMemory 쿼터 소진 — 중단합니다.");
+      // Park the rest of the day: the next CI run in twenty minutes would
+      // otherwise spend a request rediscovering the same limit.
+      spent = await rpc<number>("itk_translate_usage", { p_add: MYMEMORY_DAILY_CHARS });
+      console.log("  MyMemory 오늘 한도 소진 — 중단합니다 (내일 재개).");
       break;
     }
 
     // Flush periodically so a mid-run stop still saves progress.
-    if (results.length >= 25) {
-      saved += await save(results.splice(0, results.length));
-    }
+    if (results.length + misses.length >= 25) await flush();
     await sleep(GAP_MS);
   }
 
-  saved += await save(results);
+  await flush();
+
   console.log(
-    `✓ ${saved}건 번역 저장 · 사용 ${chars.toLocaleString()}자 / ` +
-      `한도 ${MYMEMORY_DAILY_CHARS.toLocaleString()}자` +
-      (failed ? ` · 실패 ${failed}건` : ""),
+    `✓ ${saved}건 번역 저장${failed ? ` · 실패 ${failed}건` : ""} · ` +
+      `오늘 사용 ${spent.toLocaleString()} / ${MYMEMORY_DAILY_CHARS.toLocaleString()}자` +
+      ` (이번 실행 ${(spent - startedAt).toLocaleString()}자)`,
   );
 }
 

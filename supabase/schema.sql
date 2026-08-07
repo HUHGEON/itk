@@ -122,6 +122,14 @@ create table if not exists itk.feed_state (
   updated_at     timestamptz not null default now()
 );
 
+-- MyMemory's allowance is per day and per account, but the translator counted
+-- characters in a local variable — and CI starts a fresh process every twenty
+-- minutes, so each run believed it had the full day's budget.
+create table if not exists itk.translate_usage (
+  day   date primary key,
+  chars integer not null default 0
+);
+
 -- One row per collection run — the only way to notice that recall quietly
 -- dropped because a source started 429ing.
 create table if not exists itk.collect_runs (
@@ -156,6 +164,9 @@ alter table itk.subscriptions add column if not exists owner_key text not null d
 alter table itk.subscriptions add column if not exists passphrase text;
 alter table itk.articles add column if not exists resolved_url text;
 alter table itk.articles add column if not exists hydrated_at timestamptz;
+-- Without a record of attempts, a headline the translator cannot handle sat at
+-- the head of the queue and consumed the run's budget on every pass.
+alter table itk.articles add column if not exists translate_tries integer not null default 0;
 create extension if not exists pgcrypto with schema extensions;
 create index if not exists idx_subscriptions_owner on itk.subscriptions (owner_key);
 
@@ -603,6 +614,43 @@ begin
   return v_id;
 end $$;
 
+
+-- Characters spent today, in UTC. The provider's own reset is what matters and
+-- it is not documented, so UTC is the honest approximation.
+create or replace function public.itk_translate_usage(p_add integer default 0)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_chars integer;
+begin
+  insert into translate_usage (day, chars)
+  values (current_date, greatest(coalesce(p_add, 0), 0))
+  on conflict (day) do update
+    set chars = translate_usage.chars + greatest(coalesce(p_add, 0), 0)
+  returning chars into v_chars;
+
+  delete from translate_usage where day < current_date - 7;
+  return v_chars;
+end $$;
+
+-- Marks an attempt that produced nothing, so the row drops down the queue
+-- instead of blocking it.
+create or replace function public.itk_translate_failed(p_ids text[])
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  update articles set translate_tries = translate_tries + 1
+  where id = any(coalesce(p_ids, '{}'));
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_pending_translations(
   p_limit    integer default 120,
   p_max_tier real    default 3,
@@ -623,6 +671,8 @@ as $$
   -- with a title but no body still needs a pass.
   where (a.title_ko is null
          or (p_bodies and a.summary_ko is null and coalesce(a.snippet, '') <> ''))
+    -- Three failures is the provider telling us it cannot translate this one.
+    and a.translate_tries < 3
     and (a.tier is null or a.tier <= p_max_tier)
     -- Only what the feed actually shows. The free translation budget is about
     -- 700 headlines a day against 1,000+ collected, and two thirds of those
@@ -706,6 +756,18 @@ begin
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
+
+
+-- Headlines with their outlet, for the language-detector benchmark.
+create or replace function public.itk_titles_for_bench(p_offset integer default 0)
+returns table (title text, source text)
+language sql stable security definer set search_path = itk, public
+as $$
+  select a.title, a.source from articles a
+  where a.published_at > now() - interval '60 days'
+  order by a.published_at desc, a.id desc
+  limit 1000 offset greatest(coalesce(p_offset, 0), 0);
+$$;
 
 create or replace function public.itk_articles_for_retag(p_offset integer default 0)
 returns table (id text, title text, snippet text, journalist_teams text[])
@@ -1058,6 +1120,8 @@ declare
     'public.itk_record_run(jsonb)',
     'public.itk_pending_translations(integer,real,boolean)',
     'public.itk_apply_translations(jsonb)',
+    'public.itk_translate_usage(integer)',
+    'public.itk_translate_failed(text[])',
     'public.itk_set_langs(jsonb)',
     'public.itk_articles_for_lang(boolean,integer)',
     'public.itk_journalist_counts()',
@@ -1071,6 +1135,7 @@ declare
     'public.itk_purge_junk()',
     'public.itk_retag(jsonb)',
     'public.itk_articles_for_retag(integer)',
+    'public.itk_titles_for_bench(integer)',
     'public.itk_list_subscriptions(text)',
     'public.itk_remove_subscription(text,uuid)',
     'public.itk_active_subscriptions()',

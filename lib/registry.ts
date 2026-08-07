@@ -102,6 +102,24 @@ function blank(match: string): string {
   return " ".repeat(match.length);
 }
 
+/**
+ * Nicknames more than one club answers to.
+ *
+ * "Reds" is Liverpool, Nottingham Forest and Salzburg; "Blues" is Chelsea,
+ * Everton, Birmingham and Ipswich; "Nerazzurri" is Inter and Atalanta. Inside
+ * an article the nickname refers back to whoever the headline is about, so on
+ * its own it is not evidence — a Forest match report was tagged Liverpool and
+ * an Everton one Chelsea. These count only as confirmation of a club the text
+ * has already named outright.
+ */
+const AMBIGUOUS_NICKNAMES = new Set(["reds", "blues", "nerazzurri", "afc"]);
+
+function isNickname(pattern: RegExp): boolean {
+  // The source is `\bAlias\b`; recover the alias to test it.
+  const alias = pattern.source.replace(/^\\b/, "").replace(/\\b$/, "");
+  return AMBIGUOUS_NICKNAMES.has(alias.toLowerCase());
+}
+
 function escapeRe(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 }
@@ -119,13 +137,25 @@ export function detectTeams(text: string): string[] {
   const found = new Set<string>();
   let rest = text.replace(SHIELDS, blank);
 
-  for (const { slug, pattern } of teamMatchers()) {
+  const matchers = teamMatchers();
+
+  for (const { slug, pattern } of matchers) {
+    if (isNickname(pattern)) continue;
     pattern.lastIndex = 0;
     if (!pattern.test(rest)) continue;
     found.add(slug);
     pattern.lastIndex = 0;
     rest = rest.replace(pattern, blank);
   }
+
+  // Second pass: a shared nickname adds nothing the proper name did not
+  // already establish, so it never introduces a club on its own.
+  for (const { slug, pattern } of matchers) {
+    if (!isNickname(pattern) || !found.has(slug)) continue;
+    pattern.lastIndex = 0;
+    rest = rest.replace(pattern, blank);
+  }
+
   return [...found];
 }
 
