@@ -99,9 +99,15 @@ export function ArticleCard({
           )}
 
           <div className="mt-1 flex items-start gap-2">
-            <h3 className="min-w-0 flex-1 text-[15px] leading-snug font-semibold text-text">
-              {title}
-            </h3>
+            <div className="min-w-0 flex-1">
+              <h3 className="text-[15px] leading-snug font-semibold text-text">{title}</h3>
+              {/* The machine translation mangles football phrasing often enough
+                  that the original has to stay readable at a glance, not be
+                  hidden behind an expand. */}
+              {translated && (
+                <p className="mt-0.5 text-[12px] leading-snug text-muted">{row.title}</p>
+              )}
+            </div>
             {expandable && (
               <span
                 aria-hidden
@@ -142,14 +148,6 @@ export function ArticleCard({
             )}
 
             {body && <p className="text-[13px] leading-relaxed text-text/80">{body}</p>}
-
-            {/* Original headline, kept out of the collapsed row where it only
-                doubled the noise. */}
-            {translated && (
-              <p className="mt-2 border-l-2 border-border pl-2 text-[11px] leading-snug text-muted">
-                {row.title}
-              </p>
-            )}
 
             <a
               href={row.url}
