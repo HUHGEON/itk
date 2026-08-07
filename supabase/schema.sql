@@ -656,12 +656,6 @@ end $$;
 -- Story count per reporter, counting both their own byline and the times an
 -- outlet credited them. Used by the audit to find names that never land.
 
-create or replace function public.itk_articles_by_id(p_ids text[])
-returns table (id text, journalist_id text, source text, published_at timestamptz)
-language sql stable security definer set search_path = itk, public
-as $$ select a.id, a.journalist_id, a.source, a.published_at
-      from articles a where a.id = any(p_ids); $$;
-
 create or replace function public.itk_journalist_counts()
 returns table (id text, n bigint)
 language sql
@@ -928,6 +922,7 @@ declare
     'public.itk_apply_translations(jsonb)',
     'public.itk_set_langs(jsonb)',
     'public.itk_articles_for_lang(boolean,integer)',
+    'public.itk_journalist_counts()',
     'public.itk_mark_notified(uuid,text[])',
     'public.itk_prune(integer)',
     'public.itk_add_subscription(text,text,text[],real,text,text)',
