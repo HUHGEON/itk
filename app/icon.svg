@@ -1,30 +1,30 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
   <!--
-    Tab icon. The full mark's panel work disappears at 16px, so this keeps only
-    what survives: a dark ball, one white pentagon, and the orange ribbon
-    breaking out into an arrow.
+    Tab icon. At 16px the panel work and the halo turn to mush, so this keeps
+    only what survives: a light ball, its centre pentagon, and the orange ribbon
+    breaking out into an arrow. Filled tile so it reads on a light browser chrome
+    as well as a dark one.
   -->
   <defs>
-    <linearGradient id="ball" x1="14" y1="14" x2="46" y2="52">
-      <stop offset="0" stop-color="#3C5170" />
-      <stop offset="1" stop-color="#0D1725" />
-    </linearGradient>
-    <linearGradient id="ribbon" x1="6" y1="54" x2="60" y2="6">
+    <radialGradient id="sphere" cx=".36" cy=".3" r=".78">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset=".55" stop-color="#DCE3EC" />
+      <stop offset="1" stop-color="#8A97A8" />
+    </radialGradient>
+    <linearGradient id="ribbon" x1="10" y1="86" x2="92" y2="10">
       <stop offset="0" stop-color="#C42A00" />
-      <stop offset=".5" stop-color="#F06000" />
-      <stop offset="1" stop-color="#FF9E3D" />
+      <stop offset=".45" stop-color="#F06000" />
+      <stop offset="1" stop-color="#FFB055" />
     </linearGradient>
   </defs>
 
-  <rect width="64" height="64" rx="14" fill="#0E1015" />
-  <circle cx="28" cy="34" r="15.5" fill="url(#ball)" />
-  <path d="M28 25l6.2 4.5-2.4 7.3h-7.6l-2.4-7.3z" fill="#EEF2F8" />
-  <path
-    d="M13.6 44.6A19.5 19.5 0 1 0 45.4 23.7"
-    stroke="url(#ribbon)"
-    stroke-width="6.4"
-    stroke-linecap="round"
-    fill="none"
-  />
-  <path d="M55.6 15.6 44.6 20.1l8.2 7.6z" fill="url(#ribbon)" />
+  <rect width="100" height="100" rx="22" fill="#0E1015" />
+  <circle cx="44" cy="52" r="27" fill="url(#sphere)" stroke="#0D1725" stroke-width="2" />
+  <g fill="#16233A">
+    <path d="M44 38.5l9.4 6.8-3.6 11h-11.6l-3.6-11z" />
+    <path d="M36.9 68h14.2l3.6 10.6a27 27 0 0 1-21.4 0z" opacity=".9" />
+  </g>
+  <path d="M24.6 76.4A31 31 0 1 0 68 33" stroke="url(#ribbon)" stroke-width="11"
+        stroke-linecap="round" fill="none" />
+  <path d="M79.6 21.4 60.9 24.7l15.5 15.5z" fill="url(#ribbon)" />
 </svg>

@@ -1,29 +1,26 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
-  <!--
-    Home-screen icon. iOS masks it to a squircle and paints no background of its
-    own, so the tile is drawn here and the mark sits inside the safe area.
-  -->
+  <!-- Home-screen icon. iOS masks to a squircle and paints no background of its
+       own, so the tile is drawn here. -->
   <defs>
-    <linearGradient id="ball" x1="46" y1="46" x2="130" y2="146">
-      <stop offset="0" stop-color="#3C5170" />
-      <stop offset="1" stop-color="#0D1725" />
-    </linearGradient>
-    <linearGradient id="ribbon" x1="24" y1="152" x2="164" y2="26">
+    <radialGradient id="sphere" cx=".36" cy=".3" r=".78">
+      <stop offset="0" stop-color="#FFFFFF" />
+      <stop offset=".55" stop-color="#DCE3EC" />
+      <stop offset="1" stop-color="#8A97A8" />
+    </radialGradient>
+    <linearGradient id="ribbon" x1="18" y1="155" x2="166" y2="18">
       <stop offset="0" stop-color="#C42A00" />
-      <stop offset=".5" stop-color="#F06000" />
-      <stop offset="1" stop-color="#FF9E3D" />
+      <stop offset=".45" stop-color="#F06000" />
+      <stop offset="1" stop-color="#FFB055" />
     </linearGradient>
   </defs>
 
   <rect width="180" height="180" fill="#0E1015" />
-  <circle cx="80" cy="96" r="44" fill="url(#ball)" />
-  <path d="M80 70l17.6 12.8-6.7 20.7H69.1l-6.7-20.7z" fill="#EEF2F8" />
-  <path
-    d="M39 125A55.5 55.5 0 1 0 129.4 66.6"
-    stroke="url(#ribbon)"
-    stroke-width="18"
-    stroke-linecap="round"
-    fill="none"
-  />
-  <path d="M157.6 43.4 126.4 56.2l23.2 21.6z" fill="url(#ribbon)" />
+  <circle cx="79" cy="94" r="48" fill="url(#sphere)" stroke="#0D1725" stroke-width="3.6" />
+  <g fill="#16233A">
+    <path d="M79 69l16.8 12.2-6.4 19.7H68.6l-6.4-19.7z" />
+    <path d="M66.4 121.6h25.2l6.4 18.8a48 48 0 0 1-38 0z" opacity=".9" />
+  </g>
+  <path d="M44.3 137.4A55 55 0 1 0 121.4 60" stroke="url(#ribbon)" stroke-width="19.5"
+        stroke-linecap="round" fill="none" />
+  <path d="M142.9 39.2 109.7 45l27.5 27.5z" fill="url(#ribbon)" />
 </svg>
