@@ -27,7 +27,12 @@ interface BskyPost {
   embed?: {
     images?: BskyImage[];
     media?: { images?: BskyImage[] };
-    external?: { uri?: string; thumb?: string; title?: string; description?: string };
+    external?: {
+      uri?: string;
+      thumb?: string;
+      title?: string;
+      description?: string;
+    };
   };
 }
 
@@ -54,13 +59,18 @@ function imageOf(post: BskyPost): string | null {
  */
 function splitText(text: string): { title: string; snippet: string } {
   const clean = text.replace(/\s+/g, " ").trim();
-  let firstLine = text.split("\n").find((l) => l.trim().length > 0)?.trim() ?? clean;
+  let firstLine =
+    text
+      .split("\n")
+      .find((l) => l.trim().length > 0)
+      ?.trim() ?? clean;
 
   // Plenty of posts open with a greeting or a label — "Hello friends.",
   // "The ratings." — and the news is on the next line. Taking that as the
   // headline put a card in the feed that said nothing, so fall back to the
   // whole post and let the length rules below trim it.
-  if (firstLine.length < 25 && clean.length > firstLine.length) firstLine = clean;
+  if (firstLine.length < 25 && clean.length > firstLine.length)
+    firstLine = clean;
 
   if (firstLine.length <= 140) {
     // Only keep a body when it actually adds something — a one-line post would
@@ -71,7 +81,10 @@ function splitText(text: string): { title: string; snippet: string } {
   // Cut at a sentence boundary when there is one, otherwise at a word.
   const stop = firstLine.slice(0, 140).lastIndexOf(". ");
   const cut = stop > 60 ? stop + 1 : firstLine.slice(0, 140).lastIndexOf(" ");
-  return { title: firstLine.slice(0, cut > 60 ? cut : 140) + "…", snippet: clean };
+  return {
+    title: firstLine.slice(0, cut > 60 ? cut : 140) + "…",
+    snippet: clean,
+  };
 }
 
 /**
@@ -82,7 +95,10 @@ function splitText(text: string): { title: string; snippet: string } {
 const FOOTBALL_POST =
   /transfer|signing|signed|sign |deal|contract|medical|agreed|loan|bid|fee|club|manager|head coach|squad|goal|lineup|kick-?off|fichaje|traspaso|cedido|mercato|acuerdo|wechsel|vertrag|ablöse|transferts?|prêt|overgang|contrato|#\w*fc\b|\bfc\b|\bcfc\b|\bmufc\b|\blfc\b|\bafc\b/i;
 
-export async function fetchBluesky(j: Journalist, limit = 30): Promise<RawItem[]> {
+export async function fetchBluesky(
+  j: Journalist,
+  limit = 30,
+): Promise<RawItem[]> {
   if (!j.bluesky) return [];
 
   const url = `${API}/app.bsky.feed.getAuthorFeed?${new URLSearchParams({
@@ -120,7 +136,9 @@ export async function fetchBluesky(j: Journalist, limit = 30): Promise<RawItem[]
         title,
         snippet,
         source: "Bluesky",
-        publishedAt: post.record.createdAt ? Date.parse(post.record.createdAt) : Date.now(),
+        publishedAt: post.record.createdAt
+          ? Date.parse(post.record.createdAt)
+          : Date.now(),
         journalistId: j.id,
         tier: j.tier,
         teams: detected.length > 0 ? detected : beatFallback(j.teams),

@@ -26,7 +26,9 @@ function readPrefs(): AlertPrefs {
   if (typeof window === "undefined") return DEFAULTS;
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<AlertPrefs>) } : DEFAULTS;
+    return raw
+      ? { ...DEFAULTS, ...(JSON.parse(raw) as Partial<AlertPrefs>) }
+      : DEFAULTS;
   } catch {
     return DEFAULTS;
   }
@@ -34,7 +36,8 @@ function readPrefs(): AlertPrefs {
 
 export function AlertPanel({ teams }: { teams: Team[] }) {
   const [prefs, setPrefs] = useState<AlertPrefs>(DEFAULTS);
-  const [permission, setPermission] = useState<NotificationPermission>("default");
+  const [permission, setPermission] =
+    useState<NotificationPermission>("default");
   const [open, setOpen] = useState(false);
   const [lastCheck, setLastCheck] = useState<number | null>(null);
   const [live, setLive] = useState(false);
@@ -45,7 +48,8 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
     const loaded = readPrefs();
     setPrefs(loaded);
     prefsRef.current = loaded;
-    if (typeof Notification !== "undefined") setPermission(Notification.permission);
+    if (typeof Notification !== "undefined")
+      setPermission(Notification.permission);
   }, []);
 
   const save = useCallback((next: AlertPrefs) => {
@@ -61,7 +65,11 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
   const check = useCallback(async () => {
     const p = prefsRef.current;
     if (p.teams.length === 0) return;
-    if (typeof Notification === "undefined" || Notification.permission !== "granted") return;
+    if (
+      typeof Notification === "undefined" ||
+      Notification.permission !== "granted"
+    )
+      return;
 
     const tiers = ALL_TIERS.filter((t) => t <= p.maxTier);
     const params = new URLSearchParams({
@@ -76,7 +84,14 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
       const res = await fetch(`/api/feed?${params}`, { cache: "no-store" });
       if (!res.ok) return;
       const { rows } = (await res.json()) as {
-        rows: { id: string; title: string; titleKo: string | null; journalistKo: string | null; tier: number | null; url: string }[];
+        rows: {
+          id: string;
+          title: string;
+          titleKo: string | null;
+          journalistKo: string | null;
+          tier: number | null;
+          url: string;
+        }[];
       };
 
       if (p.lastSeen) {
@@ -141,7 +156,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
   const selected = teams.filter((t) => prefs.teams.includes(t.slug));
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="rounded-[5px] border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
           팀 알림
@@ -167,12 +182,16 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
           onClick={requestPermission}
           className="mt-3 w-full rounded-lg bg-accent px-3 py-2 text-[12px] font-semibold text-black"
         >
-          {permission === "denied" ? "브라우저 설정에서 알림 허용 필요" : "브라우저 알림 켜기"}
+          {permission === "denied"
+            ? "브라우저 설정에서 알림 허용 필요"
+            : "브라우저 알림 켜기"}
         </button>
       )}
 
       <div className="mt-3">
-        <label className="text-[11px] font-semibold text-muted">최소 신뢰도</label>
+        <label className="text-[11px] font-semibold text-muted">
+          최소 신뢰도
+        </label>
         <div className="mt-1.5 flex gap-1">
           {ALL_TIERS.map((t) => (
             <button
@@ -209,7 +228,9 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
             >
               <TeamCrest team={t} size={16} />
               <span className="truncate">{t.ko}</span>
-              {prefs.teams.includes(t.slug) && <span className="ml-auto">✓</span>}
+              {prefs.teams.includes(t.slug) && (
+                <span className="ml-auto">✓</span>
+              )}
             </button>
           ))}
         </div>

@@ -17,7 +17,9 @@ const MAX_SNIPPET = 400;
 /** Numeric escapes matter here: og:description is full of &#8217; and &#x27;. */
 function decodeEntities(s: string): string {
   return s
-    .replace(/&#x([0-9a-f]+);/gi, (_, h) => String.fromCodePoint(parseInt(h, 16)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, h) =>
+      String.fromCodePoint(parseInt(h, 16)),
+    )
     .replace(/&#(\d+);/g, (_, d) => String.fromCodePoint(Number(d)))
     .replace(/&lt;/g, "<")
     .replace(/&gt;/g, ">")
@@ -40,7 +42,10 @@ export interface Hydrated {
   resolved_url: string;
 }
 
-async function get(url: string, timeoutMs = PAGE_TIMEOUT_MS): Promise<string | null> {
+async function get(
+  url: string,
+  timeoutMs = PAGE_TIMEOUT_MS,
+): Promise<string | null> {
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), timeoutMs);
   try {
@@ -80,8 +85,36 @@ export async function resolveGoogleNews(gUrl: string): Promise<string | null> {
   const inner = JSON.stringify([
     "garturlreq",
     [
-      ["X", "X", ["X", "X"], null, null, 1, 1, "US:en", null, 1, null, null, null, null, null, 0, 1],
-      "X", "X", 1, [1, 1, 1], 1, 1, null, 0, 0, null, 0,
+      [
+        "X",
+        "X",
+        ["X", "X"],
+        null,
+        null,
+        1,
+        1,
+        "US:en",
+        null,
+        1,
+        null,
+        null,
+        null,
+        null,
+        null,
+        0,
+        1,
+      ],
+      "X",
+      "X",
+      1,
+      [1, 1, 1],
+      1,
+      1,
+      null,
+      0,
+      0,
+      null,
+      0,
     ],
     id,
     Number(ts),
@@ -90,15 +123,18 @@ export async function resolveGoogleNews(gUrl: string): Promise<string | null> {
   const payload = JSON.stringify([[["Fbv4je", inner, null, "generic"]]]);
 
   try {
-    const res = await fetch("https://news.google.com/_/DotsSplashUi/data/batchexecute", {
-      method: "POST",
-      headers: {
-        "User-Agent": UA,
-        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+    const res = await fetch(
+      "https://news.google.com/_/DotsSplashUi/data/batchexecute",
+      {
+        method: "POST",
+        headers: {
+          "User-Agent": UA,
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
+        },
+        body: "f.req=" + encodeURIComponent(payload),
+        signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
       },
-      body: "f.req=" + encodeURIComponent(payload),
-      signal: AbortSignal.timeout(PAGE_TIMEOUT_MS),
-    });
+    );
     if (!res.ok) return null;
     const text = await res.text();
     const hit = text.match(/https?:\/\/(?!news\.google\.com)[^"\\]+/)?.[0];
@@ -140,10 +176,13 @@ function fromJsonLd(html: string): string {
     const body = block.replace(/^[\s\S]*?>/, "").replace(/<\/script>$/i, "");
     try {
       const seen = JSON.parse(body);
-      const nodes = Array.isArray(seen) ? seen : [seen, ...(seen["@graph"] ?? [])];
+      const nodes = Array.isArray(seen)
+        ? seen
+        : [seen, ...(seen["@graph"] ?? [])];
       for (const node of nodes) {
         const d = node?.description;
-        if (typeof d === "string" && d.trim().length > 40) return decodeEntities(d.trim());
+        if (typeof d === "string" && d.trim().length > 40)
+          return decodeEntities(d.trim());
       }
     } catch {
       // A malformed block is not a reason to skip the rest of the page.
@@ -159,7 +198,8 @@ function firstParagraph(html: string): string {
     const text = decodeEntities(stripTags(p)).replace(/\s+/g, " ").trim();
     if (text.length < 60) continue;
     // Cookie banners and subscription nags outnumber real ledes on some sites.
-    if (/cookie|subscri|sign in|newsletter|advertis|javascript/i.test(text)) continue;
+    if (/cookie|subscri|sign in|newsletter|advertis|javascript/i.test(text))
+      continue;
     return text;
   }
   return "";
@@ -167,11 +207,19 @@ function firstParagraph(html: string): string {
 
 export function extractMeta(html: string): { snippet: string; image: string } {
   const snippet =
-    metaContent(html, ["og:description", "twitter:description", "description"]) ||
+    metaContent(html, [
+      "og:description",
+      "twitter:description",
+      "description",
+    ]) ||
     fromJsonLd(html) ||
     firstParagraph(html);
 
-  const image = metaContent(html, ["og:image", "twitter:image", "twitter:image:src"]);
+  const image = metaContent(html, [
+    "og:image",
+    "twitter:image",
+    "twitter:image:src",
+  ]);
 
   return {
     snippet: snippet.replace(/\s+/g, " ").trim().slice(0, MAX_SNIPPET),
@@ -184,7 +232,10 @@ export function extractMeta(html: string): { snippet: string; image: string } {
  * because the caller stamps every attempt — retrying a paywall on every run
  * would spend the whole budget on the same dead links.
  */
-export async function hydrateOne(row: { id: string; url: string }): Promise<Hydrated> {
+export async function hydrateOne(row: {
+  id: string;
+  url: string;
+}): Promise<Hydrated> {
   const empty = { id: row.id, snippet: "", image_url: "", resolved_url: "" };
 
   let target = row.url;
@@ -195,7 +246,8 @@ export async function hydrateOne(row: { id: string; url: string }): Promise<Hydr
   }
 
   const html = await get(target);
-  if (!html) return { ...empty, resolved_url: target === row.url ? "" : target };
+  if (!html)
+    return { ...empty, resolved_url: target === row.url ? "" : target };
 
   const { snippet, image } = extractMeta(html);
   return {

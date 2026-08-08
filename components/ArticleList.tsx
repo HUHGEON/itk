@@ -81,7 +81,8 @@ export function ArticleList({
   // browsers without IntersectionObserver and for retrying after an error.
   useEffect(() => {
     const el = sentinel.current;
-    if (!el || done || error || typeof IntersectionObserver === "undefined") return;
+    if (!el || done || error || typeof IntersectionObserver === "undefined")
+      return;
 
     const io = new IntersectionObserver(
       (entries) => {

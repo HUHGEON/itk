@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { collectNow } from "@/app/actions";
+import { Refresh } from "./icons";
 
 /**
  * Collect now, without waiting for the next scheduled pass.
@@ -12,7 +13,9 @@ import { collectNow } from "@/app/actions";
  */
 export function CollectButton() {
   const router = useRouter();
-  const [state, setState] = useState<"idle" | "running" | "done" | "error">("idle");
+  const [state, setState] = useState<"idle" | "running" | "done" | "error">(
+    "idle",
+  );
   const [note, setNote] = useState("");
   const [, startTransition] = useTransition();
 
@@ -47,9 +50,10 @@ export function CollectButton() {
         onClick={() => run()}
         disabled={state === "running"}
         title="지금 수집 (0티어 + 매체 피드, 약 30초)"
-        className="rounded-full border border-border px-2.5 py-1 text-[11px] font-semibold text-muted transition-colors hover:text-text disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-[5px] border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted transition-colors hover:border-border-strong hover:text-text disabled:opacity-50"
       >
-        {state === "running" ? "수집 중…" : "↻ 수집"}
+        <Refresh className={state === "running" ? "animate-spin" : ""} />
+        {state === "running" ? "수집 중" : "수집"}
       </button>
     </div>
   );

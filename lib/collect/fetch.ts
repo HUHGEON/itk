@@ -104,7 +104,12 @@ export class FeedFetcher {
   private state = new Map<string, FeedState>();
   private updates = new Map<
     string,
-    { etag: string | null; lastModified: string | null; status: number | null; error: string | null }
+    {
+      etag: string | null;
+      lastModified: string | null;
+      status: number | null;
+      error: string | null;
+    }
   >();
 
   /** One round trip for every feed's HTTP state, instead of one per fetch. */
@@ -158,7 +163,8 @@ export class FeedFetcher {
 
       const headers: Record<string, string> = {
         "User-Agent": USER_AGENT,
-        Accept: "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
+        Accept:
+          "application/rss+xml, application/xml, text/xml;q=0.9, */*;q=0.8",
         "Accept-Encoding": "gzip, deflate",
       };
       if (prev?.etag) headers["If-None-Match"] = prev.etag;
@@ -185,9 +191,10 @@ export class FeedFetcher {
         if (res.status === 429 || res.status >= 500) {
           // Respect Retry-After when the server tells us how long to wait.
           const retryAfter = Number(res.headers.get("retry-after"));
-          const wait = Number.isFinite(retryAfter) && retryAfter > 0
-            ? Math.min(retryAfter * 1000, 60_000)
-            : backoffMs(attempt);
+          const wait =
+            Number.isFinite(retryAfter) && retryAfter > 0
+              ? Math.min(retryAfter * 1000, 60_000)
+              : backoffMs(attempt);
           lastError = `HTTP ${res.status}`;
           if (attempt < MAX_ATTEMPTS) {
             await sleep(wait);

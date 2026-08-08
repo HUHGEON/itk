@@ -4,11 +4,19 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useMemo, useState, useTransition } from "react";
 import type { Team, League, Journalist } from "@/lib/types";
 import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
-import { tierColor, tierLabel } from "@/lib/format";
+import { tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
+import { Close, Search } from "./icons";
 
-const LEAGUES: League[] = ["EPL", "LaLiga", "Bundesliga", "SerieA", "Ligue1", "Eredivisie"];
+const LEAGUES: League[] = [
+  "EPL",
+  "LaLiga",
+  "Bundesliga",
+  "SerieA",
+  "Ligue1",
+  "Eredivisie",
+];
 
 type Activity = Record<string, { count: number; bestTier: number | null }>;
 
@@ -47,7 +55,9 @@ export function Filters({
   const toggleIn = (key: string, value: string) =>
     push((p) => {
       const cur = (p.get(key) ?? "").split(",").filter(Boolean);
-      const next = cur.includes(value) ? cur.filter((v) => v !== value) : [...cur, value];
+      const next = cur.includes(value)
+        ? cur.filter((v) => v !== value)
+        : [...cur, value];
       if (next.length) p.set(key, next.join(","));
       else p.delete(key);
     });
@@ -55,7 +65,10 @@ export function Filters({
   const grouped = useMemo(() => {
     return LEAGUES.map((l) => {
       const members = teams.filter((t) => t.league === l);
-      const count = members.reduce((n, t) => n + (activity[t.slug]?.count ?? 0), 0);
+      const count = members.reduce(
+        (n, t) => n + (activity[t.slug]?.count ?? 0),
+        0,
+      );
       const best = members.reduce<number | null>((b, t) => {
         const bt = activity[t.slug]?.bestTier;
         if (bt === null || bt === undefined) return b;
@@ -79,10 +92,16 @@ export function Filters({
   const selected = teams.filter((t) => selectedTeams.includes(t.slug));
   const openGroup = grouped.find((g) => g.league === league) ?? null;
   const hasAnyFilter =
-    selectedTiers.length > 0 || selectedTeams.length > 0 || league || query || who;
+    selectedTiers.length > 0 ||
+    selectedTeams.length > 0 ||
+    league ||
+    query ||
+    who;
 
   const activeSummary = [
-    selectedTiers.length ? selectedTiers.map((t) => tierLabel(Number(t))).join(", ") : null,
+    selectedTiers.length
+      ? selectedTiers.map((t) => tierLabel(Number(t))).join(", ")
+      : null,
     league ? LEAGUE_LABEL[league as League] : null,
     selected.length ? selected.map((t) => t.ko).join(", ") : null,
     who ? journalists.find((j) => j.id === who)?.ko : null,
@@ -92,11 +111,13 @@ export function Filters({
     .join(" · ");
 
   return (
-    <div className={`border-b border-border bg-surface ${pending ? "opacity-60" : ""}`}>
+    <div
+      className={`border-b border-border bg-surface ${pending ? "opacity-60" : ""}`}
+    >
       {/* What's currently applied, plus the way out of it */}
       {hasAnyFilter && (
-        <div className="flex items-center gap-2 border-b border-border px-3 py-1.5">
-          <span className="min-w-0 flex-1 truncate text-[12px] text-muted">
+        <div className="flex items-center gap-2 border-b border-border bg-surface-2/40 px-4 py-2 sm:px-5">
+          <span className="min-w-0 flex-1 truncate text-[12px] text-text/80">
             {activeSummary}
           </span>
           <button
@@ -105,32 +126,44 @@ export function Filters({
               setQuery("");
               startTransition(() => router.push("/", { scroll: false }));
             }}
-            className="shrink-0 text-[11px] text-muted hover:text-text"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted transition-colors hover:border-border-strong hover:text-text"
           >
+            <Close size={10} />
             초기화
           </button>
         </div>
       )}
 
-      {/* Tier chips */}
-      <ScrollRail className="flex items-center gap-1.5 px-3 py-2.5">
-        <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">신뢰도</span>
+      {/* Trust is the spine of the app, so it leads — one hue at five
+          strengths rather than five unrelated colours. */}
+      <ScrollRail className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
+        <span className="shrink-0 pr-1.5 text-[11px] tracking-wide text-faint">
+          신뢰도
+        </span>
         {ALL_TIERS.map((t) => {
           const key = String(t);
           const on = selectedTiers.includes(key);
-          const color = tierColor(t);
+          const st = tierStyle(t);
           return (
             <button
               key={key}
               type="button"
               onClick={() => toggleIn("tier", key)}
               aria-pressed={on}
-              className="shrink-0 rounded-full border px-2.5 py-1 text-[12px] font-semibold"
-              style={{
-                color: on ? "#0e0f12" : color,
-                backgroundColor: on ? color : "transparent",
-                borderColor: on ? color : `color-mix(in srgb, ${color} 40%, transparent)`,
-              }}
+              className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
+              style={
+                on
+                  ? {
+                      backgroundColor: st.bg,
+                      borderColor: st.border,
+                      color: st.ink,
+                    }
+                  : {
+                      backgroundColor: "transparent",
+                      borderColor: "var(--border)",
+                      color: "var(--muted)",
+                    }
+              }
             >
               {tierLabel(t)}
             </button>
@@ -140,9 +173,13 @@ export function Filters({
 
       {selectedTiers.length > 0 && (
         <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
-          <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">기자</span>
+          <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">
+            기자
+          </span>
           {tierReporters.length === 0 ? (
-            <span className="text-[12px] text-muted">최근 기사가 있는 기자가 없습니다</span>
+            <span className="text-[12px] text-muted">
+              최근 기사가 있는 기자가 없습니다
+            </span>
           ) : (
             tierReporters.map(({ j, n }) => {
               const on = who === j.id;
@@ -155,22 +192,14 @@ export function Filters({
                   }
                   aria-pressed={on}
                   title={`${j.en}${j.outlet ? ` · ${j.outlet}` : ""}`}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full border px-2.5 py-1 text-[12px] whitespace-nowrap ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
                     on
-                      ? "border-accent bg-accent/15 font-semibold text-accent"
-                      : "border-border bg-surface-2 text-muted hover:text-text"
+                      ? "border-accent/50 bg-accent/10 font-medium text-accent"
+                      : "border-border text-muted hover:border-border-strong hover:text-text"
                   }`}
                 >
                   {j.ko}
-                  <span
-                    className="rounded-full px-1.5 text-[10px] font-bold"
-                    style={{
-                      color: tierColor(j.tier),
-                      backgroundColor: `color-mix(in srgb, ${tierColor(j.tier)} 18%, transparent)`,
-                    }}
-                  >
-                    {n}
-                  </span>
+                  <span className="tnum text-[10px] text-faint">{n}</span>
                 </button>
               );
             })
@@ -180,8 +209,11 @@ export function Filters({
 
       {/* League tabs across the top; picking one drops its clubs in below. */}
       <div className="border-t border-border">
-        <ScrollRail className="flex gap-1 px-3 pt-2">
-          <LeagueTab active={!league} onClick={() => push((p) => p.delete("league"))}>
+        <ScrollRail className="flex gap-0.5 px-4 sm:px-5">
+          <LeagueTab
+            active={!league}
+            onClick={() => push((p) => p.delete("league"))}
+          >
             전체
           </LeagueTab>
           {grouped.map((g) => (
@@ -189,10 +221,11 @@ export function Filters({
               key={g.league}
               active={league === g.league}
               badge={g.count > 0 ? g.count : undefined}
-              badgeColor={tierColor(g.best)}
               onClick={() =>
                 push((p) =>
-                  league === g.league ? p.delete("league") : p.set("league", g.league),
+                  league === g.league
+                    ? p.delete("league")
+                    : p.set("league", g.league),
                 )
               }
             >
@@ -204,7 +237,7 @@ export function Filters({
         {/* Clubs of the open league — plus any picks made in another league, so
             a selection never disappears when the tab changes. */}
         {(openGroup || selected.length > 0) && (
-          <ScrollRail className="flex items-center gap-1.5 px-3 py-2.5">
+          <ScrollRail className="flex items-center gap-1.5 border-t border-border px-4 py-3 sm:px-5">
             {(openGroup?.members ?? selected).map((t) => {
               const on = selectedTeams.includes(t.slug);
               const act = activity[t.slug];
@@ -214,22 +247,16 @@ export function Filters({
                   type="button"
                   onClick={() => toggleIn("team", t.slug)}
                   aria-pressed={on}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-full border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
                     on
-                      ? "border-accent bg-accent/15 font-semibold text-accent"
-                      : "border-border bg-surface-2 text-muted hover:text-text"
+                      ? "border-accent/50 bg-accent/10 font-medium text-accent"
+                      : "border-border text-muted hover:border-border-strong hover:text-text"
                   }`}
                 >
                   <TeamCrest team={t} size={16} />
                   {t.ko}
                   {act && act.count > 0 && (
-                    <span
-                      className="ml-0.5 rounded-full px-1.5 text-[10px] font-bold"
-                      style={{
-                        color: tierColor(act.bestTier),
-                        backgroundColor: `color-mix(in srgb, ${tierColor(act.bestTier)} 18%, transparent)`,
-                      }}
-                    >
+                    <span className="tnum ml-0.5 text-[10px] text-faint">
                       {act.count}
                     </span>
                   )}
@@ -247,13 +274,11 @@ export function Filters({
                     type="button"
                     onClick={() => toggleIn("team", t.slug)}
                     title="선택 해제"
-                    className="flex shrink-0 items-center gap-1 rounded-full border border-accent bg-accent/15 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
+                    className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-medium text-accent"
                   >
                     <TeamCrest team={t} size={16} />
                     {t.ko}
-                    <span aria-hidden className="opacity-70">
-                      ×
-                    </span>
+                    <Close size={10} className="opacity-70" />
                   </button>
                 ))}
           </ScrollRail>
@@ -261,17 +286,33 @@ export function Filters({
       </div>
 
       {/* Search */}
-      <div className="flex items-center gap-2 border-t border-border px-3 py-2.5">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key !== "Enter") return;
-            push((p) => (query ? p.set("q", query) : p.delete("q")));
-          }}
-          placeholder="선수·팀·키워드 검색 후 Enter"
-          className="min-w-0 flex-1 rounded-lg border border-border bg-surface-2 px-3 py-2 text-[13px] outline-none placeholder:text-muted focus:border-accent"
-        />
+      <div className="border-t border-border px-4 py-3 sm:px-5">
+        <div className="flex items-center gap-2.5 rounded-[5px] border border-border bg-surface-2 px-3 py-2 transition-colors focus-within:border-border-strong">
+          <Search className="shrink-0 text-faint" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter") return;
+              push((p) => (query ? p.set("q", query) : p.delete("q")));
+            }}
+            placeholder="선수·팀·키워드"
+            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => {
+                setQuery("");
+                push((p) => p.delete("q"));
+              }}
+              aria-label="검색어 지우기"
+              className="shrink-0 text-faint hover:text-text"
+            >
+              <Close size={12} />
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -280,13 +321,11 @@ export function Filters({
 function LeagueTab({
   active,
   badge,
-  badgeColor,
   onClick,
   children,
 }: {
   active: boolean;
   badge?: number;
-  badgeColor?: string;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -295,21 +334,15 @@ function LeagueTab({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex shrink-0 items-center gap-1.5 rounded-t-lg border-b-2 px-3 py-2 text-[13px] font-semibold ${
-        active ? "border-accent text-text" : "border-transparent text-muted hover:text-text"
+      className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] transition-colors ${
+        active
+          ? "border-accent font-semibold text-text"
+          : "border-transparent text-muted hover:text-text"
       }`}
     >
       {children}
       {badge !== undefined && (
-        <span
-          className="rounded-full px-1.5 text-[10px] font-bold"
-          style={{
-            color: badgeColor,
-            backgroundColor: `color-mix(in srgb, ${badgeColor} 18%, transparent)`,
-          }}
-        >
-          {badge}
-        </span>
+        <span className="tnum text-[10px] text-faint">{badge}</span>
       )}
     </button>
   );

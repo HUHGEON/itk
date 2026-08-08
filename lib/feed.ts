@@ -77,8 +77,15 @@ function orNull<T>(v: T | undefined | null): T | null {
 
 export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
   const {
-    tiers, teams, journalistId, league, q,
-    limit = 60, cursor, after, tieredOnly = false,
+    tiers,
+    teams,
+    journalistId,
+    league,
+    q,
+    limit = 60,
+    cursor,
+    after,
+    tieredOnly = false,
   } = filters;
 
   const rows = await rpc<FeedRpcRow[]>("itk_feed", {
@@ -144,20 +151,22 @@ export async function getJournalistActivity(
 
 /** Article counts per team, likewise scoped to the other active filters. */
 export async function getTeamActivity(
-  filters: Pick<FeedFilters, "tiers" | "journalistId" | "league" | "q" | "tieredOnly"> = {},
+  filters: Pick<
+    FeedFilters,
+    "tiers" | "journalistId" | "league" | "q" | "tieredOnly"
+  > = {},
   hours = 48,
 ) {
-  const rows = await rpc<{ slug: string; n: number; best_tier: number | null }[]>(
-    "itk_team_activity",
-    {
-      p_hours: hours,
-      p_tiers: filters.tiers?.length ? filters.tiers : null,
-      p_journalist_id: orNull(filters.journalistId),
-      p_league: orNull(filters.league),
-      p_q: filters.q?.trim() ? filters.q.trim() : null,
-      p_tiered_only: filters.tieredOnly ?? false,
-    },
-  );
+  const rows = await rpc<
+    { slug: string; n: number; best_tier: number | null }[]
+  >("itk_team_activity", {
+    p_hours: hours,
+    p_tiers: filters.tiers?.length ? filters.tiers : null,
+    p_journalist_id: orNull(filters.journalistId),
+    p_league: orNull(filters.league),
+    p_q: filters.q?.trim() ? filters.q.trim() : null,
+    p_tiered_only: filters.tieredOnly ?? false,
+  });
 
   const map: Record<string, { count: number; bestTier: number | null }> = {};
   for (const r of rows ?? []) {

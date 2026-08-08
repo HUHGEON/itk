@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { Close } from "./icons";
 
 /**
  * A dialog rendered with the native `<dialog>` element, so focus trapping and
@@ -60,20 +61,24 @@ export function Modal({
       <div className="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
         <div
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md rounded-t-2xl border border-border bg-surface text-text shadow-2xl sm:rounded-2xl"
+          className="w-full max-w-md rounded-t-xl border border-border bg-surface text-text shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] sm:rounded-xl"
         >
-          <div className="flex items-center justify-between border-b border-border px-4 py-3">
-            <h2 className="text-[14px] font-bold">{title}</h2>
+          <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
+            <h2 className="text-[14px] font-semibold tracking-tight">
+              {title}
+            </h2>
             <button
               type="button"
               onClick={onClose}
               aria-label="닫기"
-              className="rounded px-1.5 text-[16px] leading-none text-muted hover:text-text"
+              className="rounded p-1 text-muted transition-colors hover:text-text"
             >
-              ×
+              <Close />
             </button>
           </div>
-          <div className="max-h-[70vh] overflow-y-auto px-4 py-3">{children}</div>
+          <div className="max-h-[70vh] overflow-y-auto px-4 py-3">
+            {children}
+          </div>
         </div>
       </div>
     </dialog>

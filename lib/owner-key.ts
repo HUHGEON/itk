@@ -20,7 +20,9 @@ export function ownerKey(): string {
 
     const bytes = new Uint8Array(24);
     crypto.getRandomValues(bytes);
-    const key = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    const key = Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join(
+      "",
+    );
     window.localStorage.setItem(STORAGE_KEY, key);
     return key;
   } catch {

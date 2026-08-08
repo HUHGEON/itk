@@ -3,16 +3,20 @@
 import { useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import type { Team } from "@/lib/types";
-import { tierColor, tierLabel, timeAgo } from "@/lib/format";
+import { tierLabel, tierRule, tierStyle, timeAgo } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
+import { Chevron } from "./icons";
 
 /**
  * One story, read in place.
  *
- * Collapsed rows render **no** `<img>` at all — with 80 cards on screen,
- * mounting every article image at once stalled the page. The image only enters
- * the DOM (and downloads) when the card opens, and is height-capped there: a
- * full-bleed photo pushed everything else off screen.
+ * The headline carries the row. Everything else — who filed it, where, when —
+ * sits on one quiet line above it, so a column of these scans as headlines with
+ * provenance attached rather than as a stack of equally loud cards.
+ *
+ * Collapsed rows render **no** `<img>` at all: with 80 on screen, mounting every
+ * article image at once stalled the page. The image enters the DOM only when the
+ * card opens, and is height-capped there.
  */
 export function ArticleCard({
   row,
@@ -26,153 +30,167 @@ export function ArticleCard({
   const [open, setOpen] = useState(false);
   const [imageOk, setImageOk] = useState(true);
 
-  const accent = tierColor(row.tier);
+  const tier = tierStyle(row.tier, row.official);
   const rowTeams = row.teams
     .map((s) => teams.get(s))
     .filter((t): t is Team => Boolean(t));
-  const rawBody = row.summaryKo ?? row.snippet;
-  // Translation happens during collection and is stored, so there is nothing
-  // to resolve at render time — either the row has Korean or it does not.
+
+  const body = row.summaryKo ?? row.snippet;
+  // Translation happens during collection and is stored, so there is nothing to
+  // resolve at render time — either the row has Korean or it does not.
   const title = row.titleKo ?? row.title;
-  const body = row.summaryKo ?? rawBody;
   const translated = title !== row.title;
   const showImage = Boolean(row.imageUrl) && imageOk;
-  const expandable = Boolean(rawBody) || showImage;
+  const expandable = Boolean(body) || showImage;
 
   // Byline first; failing that, the reporter an outlet credited.
   const byline = row.journalistKo ?? row.citedKo;
+  const outlet =
+    row.outlet && row.outlet !== row.source ? row.outlet : row.source;
 
   return (
-    <article className="relative border-b border-border last:border-b-0">
+    <article className="group relative">
+      {/* Presence, not decoration: the bar is only as strong as the tier. */}
       <span
         aria-hidden
-        className="absolute top-0 bottom-0 left-0 w-1"
-        style={{ backgroundColor: accent }}
+        className="absolute inset-y-0 left-0 w-[3px]"
+        style={{ backgroundColor: tierRule(row.tier, row.official) }}
       />
 
-      <div className="pl-3">
-        <button
-          type="button"
-          onClick={() => expandable && setOpen((v) => !v)}
-          aria-expanded={expandable ? open : undefined}
-          className={`block w-full px-3 py-2.5 text-left ${
-            expandable ? "cursor-pointer hover:bg-surface-2" : "cursor-default"
-          }`}
-        >
-          {/* Who said it, and how much that's worth — the whole premise of the
-              app, so it leads the card rather than sitting in fine print. */}
-          <div className="flex items-baseline gap-2">
-            {/* Tier is a property of a reporter, so a club's own announcement
-                gets its own label rather than borrowing "0티어". */}
-            <span
-              className="shrink-0 rounded px-1.5 py-0.5 text-[11px] font-black tracking-tight"
-              style={{ color: "#0e0f12", backgroundColor: accent }}
-            >
-              {row.official ? "공식" : tierLabel(row.tier)}
-            </span>
+      <button
+        type="button"
+        onClick={() => expandable && setOpen((v) => !v)}
+        aria-expanded={expandable ? open : undefined}
+        className={`block w-full px-4 py-3.5 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
+          expandable ? "cursor-pointer hover:bg-surface-2/60" : "cursor-default"
+        }`}
+      >
+        {/* Provenance line — small, single row, never wraps into the headline */}
+        <div className="flex items-center gap-2 text-[11px]">
+          <span
+            className="shrink-0 rounded-[3px] border px-1.5 py-[2px] text-[10px] font-semibold tracking-tight"
+            style={{
+              backgroundColor: tier.bg,
+              borderColor: tier.border,
+              color: tier.ink,
+            }}
+          >
+            {row.official ? "공식" : tierLabel(row.tier)}
+          </span>
 
-            {row.official ? (
-              <span className="min-w-0 truncate text-[13px] font-bold text-text">
-                {row.source}
-              </span>
-            ) : byline ? (
-              <span className="min-w-0 truncate text-[13px] font-bold text-text">
-                {byline}
-                {!row.journalistKo && (
-                  <span className="ml-1 text-[11px] font-normal text-muted">
-                    인용
-                  </span>
-                )}
-              </span>
-            ) : (
-              <span className="text-[13px] text-muted">기자 미확인</span>
-            )}
-
-            <time
-              className="ml-auto shrink-0 text-[11px] text-muted tabular-nums"
-              dateTime={new Date(row.publishedAt).toISOString()}
-            >
-              {timeAgo(row.publishedAt, now)}
-            </time>
-          </div>
-
-          {!row.official && (
-            <div className="mt-0.5 truncate text-[11px] text-muted">
-              {row.outlet && row.outlet !== row.source
-                ? `${row.outlet} · `
-                : ""}
-              {row.source}
-            </div>
-          )}
-
-          <div className="mt-1 flex items-start gap-2">
-            <div className="min-w-0 flex-1">
-              <h3 className="text-[15px] leading-snug font-semibold text-text">
-                {title}
-              </h3>
-              {/* The machine translation mangles football phrasing often enough
-                  that the original has to stay readable at a glance, not be
-                  hidden behind an expand. */}
-              {translated && (
-                <p className="mt-0.5 text-[12px] leading-snug text-muted">
-                  {row.title}
-                </p>
+          {byline || row.official ? (
+            <span className="min-w-0 truncate font-medium text-text/90">
+              {row.official ? row.source : byline}
+              {!row.official && !row.journalistKo && (
+                <span className="ml-1 font-normal text-faint">인용</span>
               )}
-            </div>
-            {expandable && (
-              <span
-                aria-hidden
-                className={`mt-1 shrink-0 text-[9px] text-muted transition-transform ${
-                  open ? "rotate-90" : ""
-                }`}
-              >
-                ▶
+            </span>
+          ) : (
+            <span className="text-faint">기자 미확인</span>
+          )}
+
+          {!row.official && outlet && (
+            <>
+              <span aria-hidden className="text-faint">
+                ·
               </span>
+              <span className="hidden min-w-0 truncate text-muted sm:inline">
+                {outlet}
+              </span>
+            </>
+          )}
+
+          <time
+            className="tnum ml-auto shrink-0 text-faint"
+            dateTime={new Date(row.publishedAt).toISOString()}
+          >
+            {timeAgo(row.publishedAt, now)}
+          </time>
+        </div>
+
+        <div className="mt-2 flex items-start gap-3">
+          <div className="min-w-0 flex-1">
+            <h3 className="text-[16px] leading-[1.45] font-semibold text-text sm:text-[17px]">
+              {title}
+            </h3>
+            {/* The machine translation mangles football phrasing often enough
+                that the original has to stay readable at a glance, not be
+                hidden behind an expand. */}
+            {translated && (
+              <p className="mt-1 text-[12.5px] leading-snug text-muted">
+                {row.title}
+              </p>
             )}
           </div>
 
-          {rowTeams.length > 0 && (
-            <div className="mt-1.5 flex flex-wrap items-center gap-1">
-              {rowTeams.slice(0, 4).map((t) => (
-                <span
-                  key={t.slug}
-                  className="inline-flex items-center gap-1 rounded bg-surface-3 py-px pr-1.5 pl-1 text-[10px] text-muted"
-                >
-                  <TeamCrest team={t} size={12} />
-                  {t.ko}
-                </span>
-              ))}
-            </div>
+          {expandable && (
+            <Chevron
+              className={`mt-1.5 shrink-0 text-faint transition-transform duration-150 group-hover:text-muted ${
+                open ? "rotate-90" : ""
+              }`}
+            />
           )}
-        </button>
+        </div>
 
-        {open && (
-          <div className="px-3 pb-3">
-            {showImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={row.imageUrl!}
-                alt=""
-                onError={() => setImageOk(false)}
-                className="mb-2.5 h-44 w-full rounded-lg bg-surface-3 object-cover sm:h-56"
-              />
-            )}
-
-            {body && (
-              <p className="text-[13px] leading-relaxed text-text/80">{body}</p>
-            )}
-
-            <a
-              href={row.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-2.5 inline-flex items-center gap-1 rounded-lg border border-border px-3 py-1.5 text-[12px] font-medium text-accent hover:bg-surface-2"
-            >
-              원문 보기 ↗
-            </a>
+        {rowTeams.length > 0 && (
+          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+            {rowTeams.slice(0, 4).map((t) => (
+              <span
+                key={t.slug}
+                className="inline-flex items-center gap-1.5 text-[11px] text-muted"
+              >
+                <TeamCrest team={t} size={13} />
+                {t.ko}
+              </span>
+            ))}
           </div>
         )}
-      </div>
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 pl-5 sm:px-5 sm:pl-6">
+          {showImage && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={row.imageUrl!}
+              alt=""
+              onError={() => setImageOk(false)}
+              className="mb-3 h-44 w-full rounded-md bg-surface-3 object-cover sm:h-60"
+            />
+          )}
+
+          {body && (
+            <p className="max-w-[68ch] text-[14px] leading-[1.7] text-text/75">
+              {body}
+            </p>
+          )}
+
+          <a
+            href={row.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mt-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent underline-offset-4 hover:underline"
+          >
+            원문 보기
+            <svg
+              width="11"
+              height="11"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden
+              className="translate-y-px"
+            >
+              <path
+                d="M3 9L9 3M9 3H4.5M9 3v4.5"
+                stroke="currentColor"
+                strokeWidth="1.4"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </a>
+        </div>
+      )}
     </article>
   );
 }

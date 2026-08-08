@@ -1,40 +1,39 @@
 @import "tailwindcss";
 
-/* Dark is the default — FotMob's feed reads as a dark, dense board. */
+/*
+ * A wire desk, not a dashboard.
+ *
+ * The palette is deliberately narrow: a neutral near-black paper, warm off-white
+ * type, hairline rules, and exactly one chromatic colour. Tier is the only thing
+ * on the page that earns colour, and it earns it by weight — a 0-tier byline is
+ * a solid block of amber, a 3-tier one is grey text. Five unrelated hues read as
+ * five unrelated categories; one hue at five strengths reads as a ladder, which
+ * is what the tier list actually is.
+ */
 :root {
-  --bg: #0e0f12;
-  --surface: #17191e;
-  --surface-2: #1e2127;
-  --surface-3: #262a32;
-  --border: #2a2e36;
-  --text: #e9ecf1;
-  --muted: #9198a5;
-  --accent: #00b86b;
+  /* Neutral blacks. A blue-grey cast is the default of every dark UI kit and
+     makes club crests — which are saturated — look muddy against it. */
+  --bg: #0a0a0b;
+  --surface: #101012;
+  --surface-2: #17171a;
+  --surface-3: #1f1f23;
+  --border: #26262a;
+  --border-strong: #34343a;
 
-  /* Tier identity: gold at the top, fading to grey at the bottom. */
-  --tier-0: #ffb020;
-  --tier-1: #2fcf7a;
-  --tier-15: #35b7d8;
-  --tier-2: #8b95a5;
-  --tier-3: #5c6470;
+  /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
+     contrast to stare at. */
+  --text: #f2f0ec;
+  --muted: #8a8992;
+  --faint: #5e5d66;
+
+  --accent: #ffa72e;
+  --accent-ink: #1a1206;
+
+  /* Club announcements are facts, not reports, so they sit outside the tier
+     ladder entirely and take the one cool tone on the page. */
+  --official: #7fb2ff;
 
   color-scheme: dark;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    --bg: #f2f4f7;
-    --surface: #ffffff;
-    --surface-2: #f6f8fa;
-    --surface-3: #eceff3;
-    --border: #dfe3e9;
-    --text: #12151a;
-    --muted: #5c6673;
-    --tier-2: #6b7583;
-    --tier-3: #8892a0;
-
-    color-scheme: light;
-  }
 }
 
 @theme inline {
@@ -43,26 +42,36 @@
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);
   --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
   --color-text: var(--text);
   --color-muted: var(--muted);
+  --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-accent-ink: var(--accent-ink);
+  --color-official: var(--official);
 
-  --color-tier-0: var(--tier-0);
-  --color-tier-1: var(--tier-1);
-  --color-tier-15: var(--tier-15);
-  --color-tier-2: var(--tier-2);
-  --color-tier-3: var(--tier-3);
+  --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+}
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, "Apple SD Gothic Neo",
-    "Pretendard", sans-serif;
+html {
+  scroll-behavior: smooth;
 }
 
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, "Apple SD Gothic Neo",
-    "Pretendard", sans-serif;
+  font-family: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* Korean headlines break mid-word without this. */
+  word-break: keep-all;
+}
+
+/* Korean numerals in a proportional face jitter as the clock ticks. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
 }
 
 /* Chip rails scroll horizontally without showing a bar. */
@@ -71,4 +80,25 @@ body {
 }
 .no-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+/* A hairline that reads as a rule rather than a box edge. */
+.rule {
+  background-image: linear-gradient(
+    to right,
+    var(--border) 0%,
+    var(--border) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
 }

@@ -1,10 +1,26 @@
 import type { Metadata } from "next";
-import { Geist } from "next/font/google";
+import { IBM_Plex_Sans_KR, IBM_Plex_Mono } from "next/font/google";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+/*
+ * Geist is Vercel's house face and reads as "a Next.js app" before it reads as
+ * anything else. Plex has a drawn, editorial quality that suits a news wire,
+ * and the KR cut means Korean headlines and English ones share one skeleton
+ * instead of falling back to whatever the OS supplies.
+ */
+const sans = IBM_Plex_Sans_KR({
+  variable: "--font-plex-kr",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
+});
+
+/* Timestamps and counts only — a proportional face makes them jitter. */
+const mono = IBM_Plex_Mono({
+  variable: "--font-plex-mono",
+  subsets: ["latin"],
+  weight: ["400", "500"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
@@ -24,7 +40,9 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${geistSans.variable} antialiased`}>{children}</body>
+      <body className={`${sans.variable} ${mono.variable} antialiased`}>
+        {children}
+      </body>
     </html>
   );
 }

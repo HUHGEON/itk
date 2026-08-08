@@ -30,8 +30,16 @@ export interface ClubFeed {
 
 export const CLUB_SITEMAPS: ClubFeed[] = [
   // News sitemaps — real titles
-  { slug: "roma", name: "AS Roma", url: "https://www.asroma.com/sitemaps/news-sitemap-en.xml" },
-  { slug: "inter", name: "Inter", url: "https://www.inter.it/sitemap-news-detail-en.xml" },
+  {
+    slug: "roma",
+    name: "AS Roma",
+    url: "https://www.asroma.com/sitemaps/news-sitemap-en.xml",
+  },
+  {
+    slug: "inter",
+    name: "Inter",
+    url: "https://www.inter.it/sitemap-news-detail-en.xml",
+  },
   {
     slug: "barcelona",
     name: "FC Barcelona",
@@ -39,7 +47,11 @@ export const CLUB_SITEMAPS: ClubFeed[] = [
   },
 
   // Plain sitemaps — title recovered from the slug
-  { slug: "chelsea", name: "Chelsea", url: "https://www.chelseafc.com/en/sitemap.xml" },
+  {
+    slug: "chelsea",
+    name: "Chelsea",
+    url: "https://www.chelseafc.com/en/sitemap.xml",
+  },
   {
     slug: "arsenal",
     name: "Arsenal",
@@ -52,9 +64,21 @@ export const CLUB_SITEMAPS: ClubFeed[] = [
     url: "https://www.manutd.com/sitemap.xml",
     submap: /sitemap\/0\.xml|news/,
   },
-  { slug: "man-city", name: "Manchester City", url: "https://www.mancity.com/sitemap.xml" },
-  { slug: "aston-villa", name: "Aston Villa", url: "https://www.avfc.co.uk/sitemap.xml" },
-  { slug: "psg", name: "Paris Saint-Germain", url: "https://www.psg.fr/sitemap.xml" },
+  {
+    slug: "man-city",
+    name: "Manchester City",
+    url: "https://www.mancity.com/sitemap.xml",
+  },
+  {
+    slug: "aston-villa",
+    name: "Aston Villa",
+    url: "https://www.avfc.co.uk/sitemap.xml",
+  },
+  {
+    slug: "psg",
+    name: "Paris Saint-Germain",
+    url: "https://www.psg.fr/sitemap.xml",
+  },
 ];
 
 const UA =
@@ -106,14 +130,18 @@ function decode(s: string): string {
 function titleFromSlug(url: string): string | null {
   const last = url.replace(/\/+$/, "").split("/").pop() ?? "";
   // Some slugs are CMS artefacts — an author's email, a bare id.
-  if (!last || last.includes("%40") || last.includes("@") || /^\d+$/.test(last)) return null;
+  if (!last || last.includes("%40") || last.includes("@") || /^\d+$/.test(last))
+    return null;
 
   const words = decodeURIComponent(last)
     .replace(/\.(html?|aspx)$/i, "")
     // Trailing CMS id: arsenal.com appends one to every slug, and it was
     // landing in the headline — "Christian norgaard joins everton a7fZT9g6dECY".
     // Both cases plus a digit is what separates an id from a real word.
-    .replace(/[-_](?=[A-Za-z0-9]{8,}$)(?=[A-Za-z0-9]*[0-9])(?=[A-Za-z0-9]*[A-Z])[A-Za-z0-9]+$/, "")
+    .replace(
+      /[-_](?=[A-Za-z0-9]{8,}$)(?=[A-Za-z0-9]*[0-9])(?=[A-Za-z0-9]*[A-Z])[A-Za-z0-9]+$/,
+      "",
+    )
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
@@ -160,28 +188,30 @@ export async function fetchClubSitemap(feed: ClubFeed): Promise<RawItem[]> {
   // Whole-history sitemaps: sort before truncating or we'd keep 2015.
   rows.sort((a, b) => b.at - a.at);
 
-  return rows
-    // Filter before truncating. Slicing first meant a club whose newest 40
-    // posts were all ticket info and match previews — Man City and PSG both
-    // are — yielded nothing at all, silently.
-    .filter((r) => SQUAD_NEWS.test(r.title))
-    .slice(0, MAX_PER_CLUB)
-    .map((r) => {
-      const detected = detectTeams(r.title);
-      return {
-        url: r.link,
-        title: r.title,
-        snippet: "",
-        source: feed.name,
-        publishedAt: r.at,
-        // No byline — but a club announcing its own business is as confirmed as
-        // football news gets, so it sits at the top of the trust scale.
-        journalistId: null,
-        tier: 0,
-        teams: detected.length > 0 ? detected : [feed.slug],
-        imageUrl: r.image,
-        citedId: null,
-        official: true,
-      };
-    });
+  return (
+    rows
+      // Filter before truncating. Slicing first meant a club whose newest 40
+      // posts were all ticket info and match previews — Man City and PSG both
+      // are — yielded nothing at all, silently.
+      .filter((r) => SQUAD_NEWS.test(r.title))
+      .slice(0, MAX_PER_CLUB)
+      .map((r) => {
+        const detected = detectTeams(r.title);
+        return {
+          url: r.link,
+          title: r.title,
+          snippet: "",
+          source: feed.name,
+          publishedAt: r.at,
+          // No byline — but a club announcing its own business is as confirmed as
+          // football news gets, so it sits at the top of the trust scale.
+          journalistId: null,
+          tier: 0,
+          teams: detected.length > 0 ? detected : [feed.slug],
+          imageUrl: r.image,
+          citedId: null,
+          official: true,
+        };
+      })
+  );
 }

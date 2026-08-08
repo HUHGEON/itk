@@ -73,21 +73,23 @@ export default async function Home({
     <div className="min-h-screen bg-bg">
       {/* Opaque, not translucent: a backdrop-blur header let article text
             bleed through it while scrolling. */}
-      <header className="sticky top-0 z-30 border-b border-border bg-bg">
-        <div className="mx-auto flex max-w-5xl items-center gap-2.5 px-4 py-2.5">
+      <header className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-sm">
+        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-5">
           {/* ITK — In The Know, transfer-market slang for someone with real
                 sources, which is what the tier list ranks. Doubles as the way
                 back to an unfiltered feed. */}
           <Link
             href="/"
             title="필터 초기화"
-            className="flex shrink-0 items-center rounded bg-accent px-1.5 py-0.5 text-[13px] font-black tracking-tight text-black transition-opacity hover:opacity-80"
+            className="group flex shrink-0 items-baseline gap-2"
           >
-            ITK+
+            <span className="rounded-[3px] bg-accent px-1.5 py-0.5 text-[14px] font-bold tracking-[-0.02em] text-accent-ink transition-opacity group-hover:opacity-85">
+              ITK+
+            </span>
+            <span className="hidden text-[11px] tracking-wide text-faint sm:inline">
+              In The Know
+            </span>
           </Link>
-          <span className="hidden text-[12px] text-muted sm:inline">
-            In The Know
-          </span>
 
           <div className="ml-auto flex items-center gap-2">
             <CollectButton />
@@ -95,11 +97,9 @@ export default async function Home({
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl gap-4 lg:flex lg:px-4 lg:py-4">
-        <main className="min-w-0 flex-1 overflow-hidden lg:rounded-xl lg:border lg:border-border lg:bg-surface">
-          <Suspense
-            fallback={<div className="p-4 text-muted">필터 불러오는 중…</div>}
-          >
+      <div className="mx-auto max-w-5xl gap-5 lg:flex lg:px-5 lg:py-5">
+        <main className="min-w-0 flex-1 overflow-hidden border-border lg:rounded-lg lg:border lg:bg-surface">
+          <Suspense fallback={<FilterSkeleton />}>
             <Filters
               teams={teams}
               activity={activity}
@@ -123,10 +123,40 @@ export default async function Home({
           )}
         </main>
 
-        <aside className="w-full shrink-0 space-y-4 px-4 pb-6 lg:w-64 lg:px-0">
+        <aside className="w-full shrink-0 space-y-4 px-4 pt-5 pb-8 lg:w-[248px] lg:px-0 lg:pt-0">
           <DiscordPanel teams={teams} />
           <AlertPanel teams={teams} />
         </aside>
+      </div>
+    </div>
+  );
+}
+
+/** Same height as the real bar, so the feed does not jump when it arrives. */
+function FilterSkeleton() {
+  return (
+    <div aria-hidden className="animate-pulse border-b border-border">
+      <div className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
+        <div className="h-3 w-8 rounded bg-surface-3" />
+        {[44, 40, 52, 40, 40].map((w, i) => (
+          <div
+            key={i}
+            className="h-[26px] rounded-[4px] bg-surface-2"
+            style={{ width: w }}
+          />
+        ))}
+      </div>
+      <div className="flex gap-4 border-t border-border px-4 py-3 sm:px-5">
+        {[32, 60, 44, 52, 40].map((w, i) => (
+          <div
+            key={i}
+            className="h-4 rounded bg-surface-2"
+            style={{ width: w }}
+          />
+        ))}
+      </div>
+      <div className="border-t border-border px-4 py-3 sm:px-5">
+        <div className="h-[38px] rounded-[5px] bg-surface-2" />
       </div>
     </div>
   );

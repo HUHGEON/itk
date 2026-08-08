@@ -9,7 +9,12 @@ import {
 } from "../registry";
 import type { Journalist } from "../types";
 import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
-import { OTHER_SPORT, OUTLET_FEEDS, googleNewsUrl, isJunkTitle } from "./sources";
+import {
+  OTHER_SPORT,
+  OUTLET_FEEDS,
+  googleNewsUrl,
+  isJunkTitle,
+} from "./sources";
 import { fetchBluesky } from "./bluesky";
 import { CLUB_SITEMAPS, fetchClubSitemap } from "./clubs";
 import { detectLang, langForCountry } from "./lang";
@@ -63,12 +68,15 @@ async function pool<T, R>(
   const results = new Array<R>(items.length);
   let cursor = 0;
 
-  const runners = Array.from({ length: Math.min(size, items.length) }, async () => {
-    while (cursor < items.length) {
-      const idx = cursor++;
-      results[idx] = await worker(items[idx]);
-    }
-  });
+  const runners = Array.from(
+    { length: Math.min(size, items.length) },
+    async () => {
+      while (cursor < items.length) {
+        const idx = cursor++;
+        results[idx] = await worker(items[idx]);
+      }
+    },
+  );
 
   await Promise.all(runners);
   return results;
@@ -142,7 +150,9 @@ function ownFeedItems(j: Journalist, items: FeedItem[]): RawItem[] {
 
     if (isJunkTitle(title)) return [];
 
-    const snippet = item.contentSnippet ? stripHtml(item.contentSnippet).slice(0, 400) : "";
+    const snippet = item.contentSnippet
+      ? stripHtml(item.contentSnippet).slice(0, 400)
+      : "";
     const detected = detectTeams(`${title} ${snippet}`);
 
     return [
@@ -203,7 +213,10 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
  * Matches an outlet byline against the registry. Exact full-name match first —
  * substring matching on its own produced too many wrong attributions.
  */
-function matchByline(creator: string, journalists: Journalist[]): Journalist | null {
+function matchByline(
+  creator: string,
+  journalists: Journalist[],
+): Journalist | null {
   const cleaned = creator.replace(/\s+/g, " ").trim().toLowerCase();
   if (!cleaned) return null;
 
@@ -235,7 +248,9 @@ function outletItems(
     if (isJunkTitle(title)) return [];
 
     const match = item.creator ? matchByline(item.creator, journalists) : null;
-    const snippet = item.contentSnippet ? stripHtml(item.contentSnippet).slice(0, 400) : "";
+    const snippet = item.contentSnippet
+      ? stripHtml(item.contentSnippet).slice(0, 400)
+      : "";
     const text = `${title} ${snippet}`;
 
     // A tracked journalist's byline outranks everything; otherwise drop stories
@@ -355,26 +370,36 @@ export interface CollectStats {
   durationMs: number;
 }
 
-export async function collect(opts: CollectOptions = {}): Promise<CollectStats> {
+export async function collect(
+  opts: CollectOptions = {},
+): Promise<CollectStats> {
   const { maxTier = 3, skipOutlets = false, slice, concurrency = 4 } = opts;
   const started = Date.now();
 
   const all = loadJournalists();
   let journalists = all.filter((j) => j.active && j.tier <= maxTier);
   if (slice && slice.of > 1) {
-    journalists = journalists.filter((_, i) => i % slice.of === slice.index % slice.of);
+    journalists = journalists.filter(
+      (_, i) => i % slice.of === slice.index % slice.of,
+    );
   }
 
   const teams = loadTeams();
   const teamEn = new Map(teams.map((t) => [t.slug, t.en]));
 
-  const jobs: { label: string; url: string; parse: (items: FeedItem[]) => RawItem[] }[] = [
+  const jobs: {
+    label: string;
+    url: string;
+    parse: (items: FeedItem[]) => RawItem[];
+  }[] = [
     ...journalists.map((j) => ({
       label: `기자:${j.en}`,
       url: googleNewsUrl({
         name: j.en,
         country: j.country,
-        teamNames: j.teams.map((s) => teamEn.get(s)).filter((n): n is string => Boolean(n)),
+        teamNames: j.teams
+          .map((s) => teamEn.get(s))
+          .filter((n): n is string => Boolean(n)),
       }),
       parse: (items: FeedItem[]) => journalistItems(j, items),
     })),
@@ -405,12 +430,20 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
       const label = `bsky:${j.ko}`;
       const url = `https://bsky.app/profile/${j.bluesky}`;
       try {
-        return { label, url, outcome: { kind: "ok", items: [] }, items: await fetchBluesky(j) };
+        return {
+          label,
+          url,
+          outcome: { kind: "ok", items: [] },
+          items: await fetchBluesky(j),
+        };
       } catch (err) {
         return {
           label,
           url,
-          outcome: { kind: "failed", error: err instanceof Error ? err.message : String(err) },
+          outcome: {
+            kind: "failed",
+            error: err instanceof Error ? err.message : String(err),
+          },
           items: [],
         };
       }
@@ -523,7 +556,10 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
   try {
     await fetcher.flush();
   } catch (err) {
-    console.warn("feed_state 기록 실패:", err instanceof Error ? err.message : err);
+    console.warn(
+      "feed_state 기록 실패:",
+      err instanceof Error ? err.message : err,
+    );
   }
   const pruned = await rpc<number>("itk_prune", { p_days: RETENTION_DAYS });
   // Journalist feed URLs are derived from name, country and clubs, so changing
@@ -566,6 +602,9 @@ async function recordRun(s: CollectStats): Promise<void> {
     });
   } catch (err) {
     // Observability must never break collection.
-    console.warn("collect_runs 기록 실패:", err instanceof Error ? err.message : err);
+    console.warn(
+      "collect_runs 기록 실패:",
+      err instanceof Error ? err.message : err,
+    );
   }
 }

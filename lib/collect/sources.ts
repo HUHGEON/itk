@@ -24,17 +24,48 @@ export interface OutletFeed {
  */
 export const OTHER_SPORT = new RegExp(
   [
-    "cricket", "wicket", "batsman", "bowler", "test match", "the hundred",
-    "rugby", "scrum", "six nations",
-    "golf", "ryder cup", "pga", "birdie",
-    "tennis", "wimbledon", "atp ", "wta ",
-    "\\bf1\\b", "formula 1", "grand prix", "motogp",
-    "boxing", "\\bufc\\b", "darts", "snooker", "nfl", "\\bnba\\b", "olympic",
-    "cyclisme", "radsport", "ciclismo",
+    "cricket",
+    "wicket",
+    "batsman",
+    "bowler",
+    "test match",
+    "the hundred",
+    "rugby",
+    "scrum",
+    "six nations",
+    "golf",
+    "ryder cup",
+    "pga",
+    "birdie",
+    "tennis",
+    "wimbledon",
+    "atp ",
+    "wta ",
+    "\\bf1\\b",
+    "formula 1",
+    "grand prix",
+    "motogp",
+    "boxing",
+    "\\bufc\\b",
+    "darts",
+    "snooker",
+    "nfl",
+    "\\bnba\\b",
+    "olympic",
+    "cyclisme",
+    "radsport",
+    "ciclismo",
     // Basketball shares surnames with football reporters — a Google News query
     // for "Ferran Martínez" returned his namesake's ACB player profile.
-    "basketball", "baloncesto", "\\bacb\\b", "euroleague", "euroliga",
-    "pallacanestro", "\\bnhl\\b", "handball", "balonmano",
+    "basketball",
+    "baloncesto",
+    "\\bacb\\b",
+    "euroleague",
+    "euroliga",
+    "pallacanestro",
+    "\\bnhl\\b",
+    "handball",
+    "balonmano",
   ].join("|"),
   "i",
 );
@@ -63,53 +94,181 @@ export function isJunkTitle(title: string): boolean {
 
 export const OUTLET_FEEDS: OutletFeed[] = [
   // England — nationals
-  { name: "BBC Sport", url: "https://feeds.bbci.co.uk/sport/football/rss.xml", lang: "en" },
-  { name: "The Guardian", url: "https://www.theguardian.com/football/rss", lang: "en" },
-  { name: "Sky Sports", url: "https://www.skysports.com/rss/11095", lang: "en" },
-  { name: "The Telegraph", url: "https://www.telegraph.co.uk/football/rss.xml", lang: "en" },
-  { name: "The Independent", url: "https://www.independent.co.uk/sport/football/rss", lang: "en" },
-  { name: "Daily Mail", url: "https://www.dailymail.co.uk/sport/football/index.rss", lang: "en" },
-  { name: "Mirror Football", url: "https://www.mirror.co.uk/sport/football/?service=rss", lang: "en" },
-  { name: "Evening Standard", url: "https://www.standard.co.uk/sport/football/rss", lang: "en" },
-  { name: "Express Sport", url: "https://www.express.co.uk/posts/rss/65/sport", lang: "en" },
+  {
+    name: "BBC Sport",
+    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
+    lang: "en",
+  },
+  {
+    name: "The Guardian",
+    url: "https://www.theguardian.com/football/rss",
+    lang: "en",
+  },
+  {
+    name: "Sky Sports",
+    url: "https://www.skysports.com/rss/11095",
+    lang: "en",
+  },
+  {
+    name: "The Telegraph",
+    url: "https://www.telegraph.co.uk/football/rss.xml",
+    lang: "en",
+  },
+  {
+    name: "The Independent",
+    url: "https://www.independent.co.uk/sport/football/rss",
+    lang: "en",
+  },
+  {
+    name: "Daily Mail",
+    url: "https://www.dailymail.co.uk/sport/football/index.rss",
+    lang: "en",
+  },
+  {
+    name: "Mirror Football",
+    url: "https://www.mirror.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "Evening Standard",
+    url: "https://www.standard.co.uk/sport/football/rss",
+    lang: "en",
+  },
+  {
+    name: "Express Sport",
+    url: "https://www.express.co.uk/posts/rss/65/sport",
+    lang: "en",
+  },
   { name: "90min", url: "https://www.90min.com/posts.rss", lang: "en" },
-  { name: "FourFourTwo", url: "https://www.fourfourtwo.com/feeds/all", lang: "en" },
+  {
+    name: "FourFourTwo",
+    url: "https://www.fourfourtwo.com/feeds/all",
+    lang: "en",
+  },
   // The Athletic publishes no RSS of its own, but its football coverage flows
   // into the NYT soccer feed — bylines and images included.
-  { name: "NYT Soccer", url: "https://rss.nytimes.com/services/xml/rss/nyt/Soccer.xml", lang: "en" },
+  {
+    name: "NYT Soccer",
+    url: "https://rss.nytimes.com/services/xml/rss/nyt/Soccer.xml",
+    lang: "en",
+  },
 
   // England — the regional titles that break most club news
-  { name: "Manchester Evening News", url: "https://www.manchestereveningnews.co.uk/sport/football/?service=rss", lang: "en" },
-  { name: "Liverpool Echo", url: "https://www.liverpoolecho.co.uk/sport/football/?service=rss", lang: "en" },
-  { name: "football.london", url: "https://www.football.london/?service=rss", lang: "en" },
-  { name: "ChronicleLive", url: "https://www.chroniclelive.co.uk/sport/football/?service=rss", lang: "en" },
-  { name: "BirminghamLive", url: "https://www.birminghammail.co.uk/sport/football/?service=rss", lang: "en" },
-  { name: "LeedsLive", url: "https://www.leeds-live.co.uk/sport/?service=rss", lang: "en" },
-  { name: "NottinghamshireLive", url: "https://www.nottinghampost.com/sport/football/?service=rss", lang: "en" },
-  { name: "Daily Record", url: "https://www.dailyrecord.co.uk/sport/football/?service=rss", lang: "en" },
+  {
+    name: "Manchester Evening News",
+    url: "https://www.manchestereveningnews.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "Liverpool Echo",
+    url: "https://www.liverpoolecho.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "football.london",
+    url: "https://www.football.london/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "ChronicleLive",
+    url: "https://www.chroniclelive.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "BirminghamLive",
+    url: "https://www.birminghammail.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "LeedsLive",
+    url: "https://www.leeds-live.co.uk/sport/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "NottinghamshireLive",
+    url: "https://www.nottinghampost.com/sport/football/?service=rss",
+    lang: "en",
+  },
+  {
+    name: "Daily Record",
+    url: "https://www.dailyrecord.co.uk/sport/football/?service=rss",
+    lang: "en",
+  },
 
   // Spain
-  { name: "MARCA", url: "https://e00-marca.uecdn.es/rss/futbol/mas-futbol.xml", lang: "es" },
+  {
+    name: "MARCA",
+    url: "https://e00-marca.uecdn.es/rss/futbol/mas-futbol.xml",
+    lang: "es",
+  },
   { name: "AS", url: "https://as.com/rss/futbol/portada.xml", lang: "es" },
-  { name: "Mundo Deportivo", url: "https://www.mundodeportivo.com/feed/rss/futbol", lang: "es" },
-  { name: "SPORT", url: "https://www.sport.es/es/rss/futbol/rss.xml", lang: "es" },
+  {
+    name: "Mundo Deportivo",
+    url: "https://www.mundodeportivo.com/feed/rss/futbol",
+    lang: "es",
+  },
+  {
+    name: "SPORT",
+    url: "https://www.sport.es/es/rss/futbol/rss.xml",
+    lang: "es",
+  },
 
   // Italy
-  { name: "Gazzetta dello Sport", url: "https://www.gazzetta.it/rss/calcio.xml", lang: "it" },
-  { name: "Corriere dello Sport", url: "https://www.corrieredellosport.it/rss/calcio", lang: "it" },
-  { name: "Tuttosport", url: "https://www.tuttosport.com/rss/calcio", lang: "it" },
-  { name: "Football Italia", url: "https://football-italia.net/feed/", lang: "it" },
+  {
+    name: "Gazzetta dello Sport",
+    url: "https://www.gazzetta.it/rss/calcio.xml",
+    lang: "it",
+  },
+  {
+    name: "Corriere dello Sport",
+    url: "https://www.corrieredellosport.it/rss/calcio",
+    lang: "it",
+  },
+  {
+    name: "Tuttosport",
+    url: "https://www.tuttosport.com/rss/calcio",
+    lang: "it",
+  },
+  {
+    name: "Football Italia",
+    url: "https://football-italia.net/feed/",
+    lang: "it",
+  },
 
   // Germany
-  { name: "kicker", url: "https://newsfeed.kicker.de/news/fussball", lang: "de" },
+  {
+    name: "kicker",
+    url: "https://newsfeed.kicker.de/news/fussball",
+    lang: "de",
+  },
   { name: "WAZ", url: "https://www.waz.de/rss", lang: "de" },
-  { name: "Ruhr Nachrichten", url: "https://www.ruhrnachrichten.de/feed/", lang: "de" },
+  {
+    name: "Ruhr Nachrichten",
+    url: "https://www.ruhrnachrichten.de/feed/",
+    lang: "de",
+  },
 
   // France
-  { name: "L'Équipe", url: "https://dwh.lequipe.fr/api/edito/rss?path=/Football", lang: "fr" },
-  { name: "RMC Sport", url: "https://rmcsport.bfmtv.com/rss/football/", lang: "fr" },
-  { name: "Foot Mercato", url: "https://www.footmercato.net/flux-rss", lang: "fr" },
-  { name: "Ouest-France", url: "https://www.ouest-france.fr/rss/sport", lang: "fr" },
+  {
+    name: "L'Équipe",
+    url: "https://dwh.lequipe.fr/api/edito/rss?path=/Football",
+    lang: "fr",
+  },
+  {
+    name: "RMC Sport",
+    url: "https://rmcsport.bfmtv.com/rss/football/",
+    lang: "fr",
+  },
+  {
+    name: "Foot Mercato",
+    url: "https://www.footmercato.net/flux-rss",
+    lang: "fr",
+  },
+  {
+    name: "Ouest-France",
+    url: "https://www.ouest-france.fr/rss/sport",
+    lang: "fr",
+  },
 
   // Netherlands / Belgium
   { name: "Voetbal International", url: "https://www.vi.nl/rss", lang: "nl" },
@@ -122,16 +281,32 @@ export const OUTLET_FEEDS: OutletFeed[] = [
   // publishes almost exclusively on X and Instagram, both closed to free
   // access, so these are the fastest legitimate route to what he breaks —
   // paired with the citation detection in the collector.
-  { name: "CaughtOffside", url: "https://www.caughtoffside.com/feed/", lang: "en" },
+  {
+    name: "CaughtOffside",
+    url: "https://www.caughtoffside.com/feed/",
+    lang: "en",
+  },
   { name: "GiveMeSport", url: "https://www.givemesport.com/feed/", lang: "en" },
   { name: "SempreMilan", url: "https://sempremilan.com/feed", lang: "en" },
-  { name: "FC Inter 1908", url: "https://www.fcinter1908.it/feed/", lang: "it" },
+  {
+    name: "FC Inter 1908",
+    url: "https://www.fcinter1908.it/feed/",
+    lang: "it",
+  },
   { name: "SOS Fanta", url: "https://www.sosfanta.com/feed/", lang: "it" },
 
   // Portugal / South America
   { name: "Record", url: "https://www.record.pt/rss", lang: "pt" },
-  { name: "Globo Esporte", url: "https://ge.globo.com/rss/ge/futebol/", lang: "pt" },
-  { name: "Olé", url: "https://www.ole.com.ar/rss/futbol-internacional/", lang: "es" },
+  {
+    name: "Globo Esporte",
+    url: "https://ge.globo.com/rss/ge/futebol/",
+    lang: "pt",
+  },
+  {
+    name: "Olé",
+    url: "https://www.ole.com.ar/rss/futbol-internacional/",
+    lang: "es",
+  },
 ];
 
 /**

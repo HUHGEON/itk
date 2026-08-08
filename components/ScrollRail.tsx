@@ -1,6 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { Chevron, ChevronLeft } from "./icons";
 
 /**
  * A horizontally scrolling row that a mouse can actually operate.
@@ -48,7 +55,10 @@ export function ScrollRail({
       const max = el.scrollWidth - el.clientWidth;
       if (max <= 0) return;
       // At either end, let the gesture fall through to the page.
-      if ((e.deltaY < 0 && el.scrollLeft <= 0) || (e.deltaY > 0 && el.scrollLeft >= max)) {
+      if (
+        (e.deltaY < 0 && el.scrollLeft <= 0) ||
+        (e.deltaY > 0 && el.scrollLeft >= max)
+      ) {
         return;
       }
       e.preventDefault();
@@ -66,26 +76,40 @@ export function ScrollRail({
   const nudge = (dir: -1 | 1) => {
     const el = ref.current;
     if (!el) return;
-    el.scrollBy({ left: dir * Math.max(el.clientWidth * 0.7, 160), behavior: "smooth" });
+    el.scrollBy({
+      left: dir * Math.max(el.clientWidth * 0.7, 160),
+      behavior: "smooth",
+    });
   };
 
   const hasOverflow = !atStart || !atEnd;
 
   return (
     <div className="relative">
-      <div ref={ref} className={`no-scrollbar overflow-x-auto scroll-smooth ${className}`}>
+      <div
+        ref={ref}
+        className={`no-scrollbar overflow-x-auto scroll-smooth ${className}`}
+      >
         {children}
       </div>
 
       {hasOverflow && !atStart && (
         <RailButton side="left" onClick={() => nudge(-1)} />
       )}
-      {hasOverflow && !atEnd && <RailButton side="right" onClick={() => nudge(1)} />}
+      {hasOverflow && !atEnd && (
+        <RailButton side="right" onClick={() => nudge(1)} />
+      )}
     </div>
   );
 }
 
-function RailButton({ side, onClick }: { side: "left" | "right"; onClick: () => void }) {
+function RailButton({
+  side,
+  onClick,
+}: {
+  side: "left" | "right";
+  onClick: () => void;
+}) {
   const isLeft = side === "left";
   return (
     <button
@@ -95,12 +119,12 @@ function RailButton({ side, onClick }: { side: "left" | "right"; onClick: () => 
       // Fades into the surface so it reads as an affordance on the rail rather
       // than a control floating over the content.
       className={`absolute inset-y-0 z-10 flex w-9 items-center ${
-        isLeft ? "left-0 justify-start bg-gradient-to-r" : "right-0 justify-end bg-gradient-to-l"
+        isLeft
+          ? "left-0 justify-start bg-gradient-to-r"
+          : "right-0 justify-end bg-gradient-to-l"
       } from-surface via-surface/80 to-transparent text-muted transition-colors hover:text-text`}
     >
-      <span aria-hidden className="text-[13px]">
-        {isLeft ? "‹" : "›"}
-      </span>
+      {isLeft ? <ChevronLeft /> : <Chevron size={14} />}
     </button>
   );
 }

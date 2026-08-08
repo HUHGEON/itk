@@ -201,7 +201,9 @@ function citationMatchers() {
 }
 
 /** The most-trusted journalist cited in `text`, or null. */
-export function detectCitation(text: string): { id: string; tier: number } | null {
+export function detectCitation(
+  text: string,
+): { id: string; tier: number } | null {
   let best: { id: string; tier: number } | null = null;
   for (const m of citationMatchers()) {
     if (!m.pattern.test(text)) continue;
