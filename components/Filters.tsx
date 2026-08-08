@@ -179,7 +179,8 @@ export function Filters({
               className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
               // Unselected chips still carry their hue: the rail is where you
               // learn which colour means which tier, and five identical grey
-              // pills teach nothing.
+              // pills teach nothing. Dimming with opacity rather than mixing
+              // toward grey keeps all five equally legible against the black.
               style={
                 on
                   ? {
@@ -189,9 +190,6 @@ export function Filters({
                     }
                   : {
                       backgroundColor: "transparent",
-                      // Two custom properties inside one color-mix() resolves to
-                      // black in WebKit, so the unselected state mixes with
-                      // `transparent` only and dims via opacity instead.
                       borderColor: `color-mix(in srgb, ${st.color} 30%, transparent)`,
                       color: st.color,
                       opacity: 0.78,
