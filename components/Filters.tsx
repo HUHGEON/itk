@@ -142,7 +142,7 @@ export function Filters({
     >
       {/* What's currently applied, plus the way out of it */}
       {hasAnyFilter && (
-        <div className="flex items-center gap-2 border-b border-border bg-surface-2/40 px-4 py-2 sm:px-5">
+        <div className="flex items-center gap-2 border-b border-border bg-surface-2/40 px-[var(--gutter)] py-2">
           <span className="min-w-0 flex-1 truncate text-[12px] text-text/80">
             {activeSummary}
           </span>
@@ -161,7 +161,7 @@ export function Filters({
 
       {/* Trust is the spine of the app, so it leads — one hue at five
           strengths rather than five unrelated colours. */}
-      <ScrollRail className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
+      <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
         <span className="shrink-0 pr-1.5 text-[11px] tracking-wide text-faint">
           신뢰도
         </span>
@@ -239,7 +239,7 @@ export function Filters({
 
       {/* League tabs across the top; picking one drops its clubs in below. */}
       <div className="border-t border-border">
-        <ScrollRail className="flex gap-0.5 px-4 sm:px-5">
+        <ScrollRail className="flex gap-0.5 px-[var(--gutter)]">
           <LeagueTab
             active={!league}
             onClick={() => push((p) => p.delete("league"))}
@@ -268,7 +268,7 @@ export function Filters({
         {/* Clubs of the open league — plus any picks made in another league, so
             a selection never disappears when the tab changes. */}
         {(openGroup || selected.length > 0) && (
-          <ScrollRail className="flex items-center gap-1.5 border-t border-border px-4 py-3 sm:px-5">
+          <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
             {(openGroup?.members ?? selected).map((t) => {
               const on = selectedTeams.includes(t.slug);
               const act = activity[t.slug];

@@ -65,7 +65,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
       : "지금 수집 (약 30초)";
 
   return (
-    <div className="flex items-center gap-1.5">
+    <div className="flex w-full flex-col gap-1">
       {note && (
         <span
           className={`text-[11px] ${state === "error" ? "text-red-400" : "text-muted"}`}
@@ -78,7 +78,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         onClick={() => run()}
         disabled={state === "running"}
         title={title}
-        className={`inline-flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+        className={`inline-flex w-full items-center justify-center gap-1.5 rounded-[5px] px-3 py-2 text-[11.5px] font-semibold transition-colors disabled:opacity-50 ${
           due
             ? "text-accent-ink hover:opacity-90"
             : "border border-border text-muted hover:border-border-strong hover:text-text"

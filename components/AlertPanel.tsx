@@ -156,7 +156,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
   const selected = teams.filter((t) => prefs.teams.includes(t.slug));
 
   return (
-    <section className="rounded-[5px] border border-border bg-surface p-4">
+    <section className="border-b border-border px-[var(--gutter)] py-4">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-1.5 text-[13px] font-semibold">
           <span

@@ -280,7 +280,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   };
 
   return (
-    <section className="rounded-xl border border-border bg-surface p-4">
+    <section className="border-b border-border px-[var(--gutter)] py-4">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-2 text-[13px] font-semibold">
           <span

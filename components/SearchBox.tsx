@@ -35,7 +35,7 @@ export function SearchBox({ state }: { state: FilterState }) {
 
   return (
     <div
-      className={`flex min-w-0 flex-1 items-center gap-2 rounded-[5px] border border-border bg-surface-2 px-2.5 py-1.5 transition-colors focus-within:border-border-strong sm:max-w-xs ${
+      className={`flex min-w-0 flex-1 items-center gap-2 rounded-[5px] border border-border bg-surface-2 px-2.5 py-1.5 transition-colors focus-within:border-border-strong ${
         pending ? "opacity-60" : ""
       }`}
     >

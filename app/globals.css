@@ -89,8 +89,8 @@
  * extremes.
  */
 :root {
-  --rail: clamp(15rem, 21vw, 19rem);
-  --gutter: clamp(0.875rem, 2.2vw, 1.75rem);
+  --rail: clamp(13rem, 17vw, 16rem);
+  --gutter: clamp(0.75rem, 1.4vw, 1.125rem);
   --headerh: 4rem;
 }
 
