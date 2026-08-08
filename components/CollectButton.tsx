@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { collectNow } from "@/app/actions";
 import { Refresh } from "./icons";
+import { timeAgo } from "@/lib/format";
 
 /**
  * Collect now, without waiting for the next scheduled pass.
@@ -11,13 +12,34 @@ import { Refresh } from "./icons";
  * Goes through a Server Action rather than a fetch: the route-handler version
  * was callable by anyone, and each run fans out ~50 outbound requests.
  */
-export function CollectButton() {
+
+/**
+ * Whether the button lights up.
+ *
+ * There is no way to know a feed has something new without asking it, so the
+ * signal is how long it has been since anyone did. The scheduled pass runs
+ * every twenty minutes; inside that window a manual run almost always comes
+ * back empty, so the button stays quiet and the ribbon means something.
+ */
+const DUE_MS = 20 * 60_000;
+
+export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
   const router = useRouter();
   const [state, setState] = useState<"idle" | "running" | "done" | "error">(
     "idle",
   );
   const [note, setNote] = useState("");
   const [, startTransition] = useTransition();
+
+  // Re-evaluated on a timer, so the button lights up on its own once the
+  // window passes rather than waiting for a navigation.
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const due = state === "idle" && (!lastCollect || now - lastCollect >= DUE_MS);
 
   const run = () => {
     setState("running");
@@ -36,6 +58,12 @@ export function CollectButton() {
     });
   };
 
+  const title = due
+    ? "지금 수집 (약 30초)"
+    : lastCollect
+      ? `${timeAgo(lastCollect, now)} 수집함 · 지금 눌러도 새 기사가 없을 가능성이 큽니다`
+      : "지금 수집 (약 30초)";
+
   return (
     <div className="flex items-center gap-1.5">
       {note && (
@@ -49,9 +77,13 @@ export function CollectButton() {
         type="button"
         onClick={() => run()}
         disabled={state === "running"}
-        title="지금 수집 (0티어 + 매체 피드, 약 30초)"
-        className="inline-flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[11px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
-        style={{ background: "var(--ribbon)" }}
+        title={title}
+        className={`inline-flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[11px] font-semibold transition-colors disabled:opacity-50 ${
+          due
+            ? "text-accent-ink hover:opacity-90"
+            : "border border-border text-muted hover:border-border-strong hover:text-text"
+        }`}
+        style={due ? { background: "var(--ribbon)" } : undefined}
       >
         <Refresh className={state === "running" ? "animate-spin" : ""} />
         {state === "running" ? "수집 중" : "수집"}

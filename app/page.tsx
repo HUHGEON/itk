@@ -112,7 +112,7 @@ export default async function Home({
 
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">
             <SearchBox state={filterState} />
-            <CollectButton />
+            <CollectButton lastCollect={pulse.lastCollect} />
           </div>
         </div>
         <div
