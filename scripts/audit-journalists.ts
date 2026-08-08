@@ -13,10 +13,15 @@ import "../lib/load-env";
 import { rpc } from "../lib/supabase";
 import { loadJournalists, loadTeams } from "../lib/registry";
 import { googleNewsUrl } from "../lib/collect/sources";
+import { COLLECT_DAYS } from "../lib/collect";
 import fs from "node:fs";
 
-/** Anything older than this is dropped at collection time anyway. */
-const FRESH_DAYS = 60;
+/**
+ * Must match the collector, or the verdicts lie: this said 60 days while
+ * COLLECT_DAYS was 14, so reporters whose newest piece was a month old came
+ * back as "수집가능" and never produced a single article.
+ */
+const FRESH_DAYS = COLLECT_DAYS;
 
 type Verdict =
   | "구단필터가좁음"   // fresh hits exist, but only without the club filter
