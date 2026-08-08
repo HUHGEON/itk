@@ -79,13 +79,7 @@ export function LogoMark({
 /**
  * `size` is the cap size of "itk"; everything else is proportional to it.
  */
-export function Logo({
-  size = 82,
-  withTagline = true,
-}: {
-  size?: number;
-  withTagline?: boolean;
-}) {
+export function Logo({ size = 82 }: { size?: number }) {
   return (
     <span
       className="flex select-none items-center"
@@ -141,24 +135,6 @@ export function Logo({
             plus
           </span>
         </span>
-
-        {withTagline && (
-          <span
-            className="not-italic"
-            style={{
-              fontFamily: "var(--font-strapline)",
-              fontWeight: 700,
-              fontSize: "0.171em",
-              letterSpacing: "0.143em",
-              marginTop: "0.061em",
-              color: "#FFFFFF",
-              textShadow:
-                "0.071em 0.143em 0.214em rgba(0,0,0,0.8), 0 0 0.143em rgba(0,0,0,0.5)",
-            }}
-          >
-            FOOTBALL INSIDER NEWS
-          </span>
-        )}
       </span>
     </span>
   );

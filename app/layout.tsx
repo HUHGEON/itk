@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_KR, Montserrat, Oswald } from "next/font/google";
+import { IBM_Plex_Sans_KR, Montserrat } from "next/font/google";
 import "./globals.css";
 
 /*
@@ -23,22 +23,15 @@ const sans = IBM_Plex_Sans_KR({
 });
 
 /*
- * Logo only. Loaded through next/font so they are self-hosted at build time —
- * the supplied CSS pulled them from fonts.googleapis.com on every page view,
- * which is a render-blocking request to a third party for eight glyphs.
+ * Wordmark only — seven glyphs. Loaded through next/font so it is self-hosted
+ * at build time; the supplied CSS pulled it from fonts.googleapis.com on every
+ * page view, a render-blocking request to a third party.
  */
 const wordmark = Montserrat({
   variable: "--font-wordmark",
   subsets: ["latin"],
   weight: ["900"],
   style: ["italic"],
-  display: "swap",
-});
-
-const strapline = Oswald({
-  variable: "--font-strapline",
-  subsets: ["latin"],
-  weight: ["700"],
   display: "swap",
 });
 
@@ -64,9 +57,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body
-        className={`${sans.variable} ${wordmark.variable} ${strapline.variable} antialiased`}
-      >
+      <body className={`${sans.variable} ${wordmark.variable} antialiased`}>
         {children}
       </body>
     </html>
