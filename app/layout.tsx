@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_KR, Montserrat } from "next/font/google";
+import { IBM_Plex_Sans_KR } from "next/font/google";
 import "./globals.css";
 
 /*
@@ -22,18 +22,6 @@ const sans = IBM_Plex_Sans_KR({
   display: "swap",
 });
 
-/*
- * Wordmark only — seven glyphs. Loaded through next/font so it is self-hosted
- * at build time; the supplied CSS pulled it from fonts.googleapis.com on every
- * page view, a render-blocking request to a third party.
- */
-const wordmark = Montserrat({
-  variable: "--font-wordmark",
-  subsets: ["latin"],
-  weight: ["900"],
-  style: ["italic"],
-  display: "swap",
-});
 
 export const viewport: Viewport = {
   themeColor: "#08090c",
@@ -57,7 +45,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${sans.variable} ${wordmark.variable} antialiased`}>
+      <body className={`${sans.variable} antialiased`}>
         {children}
       </body>
     </html>
