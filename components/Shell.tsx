@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Close, Menu } from "./icons";
-import { Logo } from "./Logo";
+import { Logo, LogoFluid } from "./Logo";
 
 /**
  * The app shell.
@@ -65,36 +65,24 @@ export function Shell({
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* The mark had a whole 4rem band to itself and read as a placeholder.
-            The premise it stands for goes under it — it is the one line that
-            explains why the rail below is sorted by person and not by outlet. */}
-        <div className="shrink-0 border-b border-border px-[var(--gutter)] pt-3.5 pb-3">
-          <div className="flex items-start gap-2">
-            <Link
-              href="/"
-              aria-label="ITK plus 홈 · 필터 초기화"
-              title="필터 초기화"
-              className="-m-1.5 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
-            >
-              <Logo height={30} />
-            </Link>
-            <button
-              type="button"
-              onClick={() => setOpen(false)}
-              aria-label="메뉴 닫기"
-              className="ml-auto rounded p-1.5 text-muted transition-colors hover:text-text lg:hidden"
-            >
-              <Close />
-            </button>
-          </div>
-          <p className="mt-2.5 flex items-center gap-1.5 text-[11px] tracking-wide text-faint">
-            <span
-              aria-hidden
-              className="h-[11px] w-[2px] rounded-full"
-              style={{ background: "var(--ribbon)" }}
-            />
-            매체보다 <span className="font-semibold text-muted">저자</span>
-          </p>
+        {/* The mark takes the band rather than sitting in a corner of it. */}
+        <div className="relative shrink-0 border-b border-border px-[var(--gutter)] py-3.5">
+          <Link
+            href="/"
+            aria-label="ITK plus 홈 · 필터 초기화"
+            title="필터 초기화"
+            className="block rounded-md transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          >
+            <LogoFluid />
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen(false)}
+            aria-label="메뉴 닫기"
+            className="absolute top-2 right-2 rounded p-1.5 text-muted transition-colors hover:text-text lg:hidden"
+          >
+            <Close />
+          </button>
         </div>
 
         {/* Search and collect belong with the controls, not floating over the

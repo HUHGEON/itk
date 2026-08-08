@@ -112,11 +112,6 @@ export function ArticleCard({
             </span>
             <span className="min-w-0 truncate bg-surface-2 px-2 py-[3px] text-[12.5px] leading-[1.35] font-bold text-text">
               {row.official ? officialName : (byline ?? "기자 미확인")}
-              {!row.official && byline && !row.journalistKo && (
-                <span className="ml-1 text-[10px] font-normal text-faint">
-                  인용
-                </span>
-              )}
             </span>
           </span>
 

@@ -42,6 +42,25 @@ export function Logo({ height = 38 }: { height?: number }) {
   );
 }
 
+/**
+ * Driven by the width it is given rather than a fixed height.
+ *
+ * In the rail the mark is the only thing in its band, and a 30px lockup left
+ * two thirds of that band empty. Here it takes the column.
+ */
+export function LogoFluid() {
+  return (
+    <Image
+      src="/itk-plus.png"
+      alt="itk plus"
+      width={W}
+      height={H}
+      priority
+      className="block h-auto w-full select-none"
+    />
+  );
+}
+
 /** Ball and ribbon only — for places too small for the wordmark. */
 export function LogoMark({ size = 32 }: { size?: number }) {
   return (
