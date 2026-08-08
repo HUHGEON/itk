@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   getFeed,
   getJournalistActivity,
@@ -10,9 +9,10 @@ import type { Team } from "@/lib/types";
 import { Filters } from "@/components/Filters";
 import { ArticleList } from "@/components/ArticleList";
 import { AlertPanel } from "@/components/AlertPanel";
+import { Suspense } from "react";
+import { Shell } from "@/components/Shell";
 import { CollectButton } from "@/components/CollectButton";
 import { SearchBox } from "@/components/SearchBox";
-import { Logo } from "@/components/Logo";
 import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 
@@ -88,88 +88,45 @@ export default async function Home({
   ).toString();
 
   return (
-    <div className="flex min-h-screen flex-col bg-bg lg:block">
-      {/*
-        An app shell, not a page with a sidebar bolted on. The rail owns the
-        left edge and carries the logo at its head, so the mark lines up with
-        the column it belongs to instead of floating over the feed. Search and
-        collect sit in the content header, above what they act on.
+    <Suspense fallback={null}>
+      <Shell
+        rail={
+          <>
+            <PulsePanel pulse={pulse} now={now} />
+            <DiscordPanel teams={teams} />
+            <AlertPanel teams={teams} />
+          </>
+        }
+        actions={
+          <>
+            <SearchBox state={filterState} />
+            <CollectButton lastCollect={pulse.lastCollect} />
+          </>
+        }
+      >
+        <Filters
+          teams={teams}
+          activity={activity}
+          journalists={journalists}
+          journalistActivity={journalistActivity}
+          state={filterState}
+        />
 
-        Widths come from --rail and --gutter, both clamped: the proportion
-        holds as the window changes, but the rail never eats a laptop screen
-        and the gutter never collapses on a phone.
-      */}
-      <aside className="order-last w-full shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:order-none lg:w-[var(--rail)] lg:overflow-y-auto lg:border-r lg:border-border lg:bg-surface no-scrollbar">
-        <div className="hidden h-[var(--headerh)] shrink-0 items-center border-b border-border px-[var(--gutter)] lg:flex">
-          <Link
-            href="/"
-            aria-label="ITK plus 홈 · 필터 초기화"
-            title="필터 초기화"
-            className="-m-1.5 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
-          >
-            <Logo height={34} />
-          </Link>
-        </div>
-
-        <div className="space-y-4 px-[var(--gutter)] pt-5 pb-8 lg:py-5">
-          <PulsePanel pulse={pulse} now={now} />
-          <DiscordPanel teams={teams} />
-          <AlertPanel teams={teams} />
-        </div>
-      </aside>
-
-      <div className="lg:pl-[var(--rail)]">
-        <header className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
-          <div className="flex h-[var(--headerh)] items-center gap-3 px-[var(--gutter)]">
-            {/* On a phone there is no rail, so the mark rides the header. */}
-            <Link
-              href="/"
-              aria-label="ITK plus 홈 · 필터 초기화"
-              title="필터 초기화"
-              className="-m-1.5 shrink-0 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:hidden"
-            >
-              <Logo height={30} />
-            </Link>
-
-            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">
-              <SearchBox state={filterState} />
-              <CollectButton lastCollect={pulse.lastCollect} />
-            </div>
-          </div>
-          <div
-            aria-hidden
-            className="h-[2px] w-full"
-            style={{ background: "var(--ribbon)" }}
+        {rows.length === 0 ? (
+          <EmptyState
+            tieredOnly={tieredOnly}
+            hasJournalists={journalists.length > 0}
           />
-        </header>
-
-        <main className="px-0 py-0 sm:px-[var(--gutter)] sm:py-[var(--gutter)]">
-          <div className="mx-auto max-w-3xl overflow-hidden sm:rounded-xl sm:border sm:border-border sm:bg-surface">
-            <Filters
-              teams={teams}
-              activity={activity}
-              journalists={journalists}
-              journalistActivity={journalistActivity}
-              state={filterState}
-            />
-
-            {rows.length === 0 ? (
-              <EmptyState
-                tieredOnly={tieredOnly}
-                hasJournalists={journalists.length > 0}
-              />
-            ) : (
-              <ArticleList
-                initialRows={rows}
-                teams={teamMap}
-                now={now}
-                query={feedQuery}
-              />
-            )}
-          </div>
-        </main>
-      </div>
-    </div>
+        ) : (
+          <ArticleList
+            initialRows={rows}
+            teams={teamMap}
+            now={now}
+            query={feedQuery}
+          />
+        )}
+      </Shell>
+    </Suspense>
   );
 }
 

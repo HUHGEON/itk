@@ -117,3 +117,23 @@ export function Refresh({ className, size = 13 }: Props) {
     </svg>
   );
 }
+
+export function Menu({ className, size = 16 }: Props) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 16 16"
+      fill="none"
+      aria-hidden
+      className={className}
+    >
+      <path
+        d="M2.5 4h11M2.5 8h11M2.5 12h11"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
