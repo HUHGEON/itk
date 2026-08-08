@@ -122,7 +122,7 @@ export default async function Home({
         />
       </header>
 
-      <div className="lg:flex">
+      <div className="flex flex-col lg:flex-row">
         {/* Flush to the window edge and pinned under the header, with a rule
             instead of a gap. The panels are reference — what the day looks
             like, where alerts go — and they were scrolling away from a feed
