@@ -88,76 +88,84 @@ export default async function Home({
   ).toString();
 
   return (
-    <div className="min-h-screen bg-bg">
-      {/* Opaque, not translucent: a backdrop-blur header let article text
-            bleed through it while scrolling. */}
-      {/* The rule under the header is the ribbon, not a grey hairline — the
-          one place the brand colour spans the whole width. */}
-      <header className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-5">
-          {/* ITK — In The Know, transfer-market slang for someone with real
-                sources, which is what the tier list ranks. Doubles as the way
-                back to an unfiltered feed. */}
-          {/* The whole mark is the control — wordmark included — not just a
-              hit area around it. -m + p keeps the tap target comfortable
-              without pushing the header taller. */}
+    <div className="flex min-h-screen flex-col bg-bg lg:block">
+      {/*
+        An app shell, not a page with a sidebar bolted on. The rail owns the
+        left edge and carries the logo at its head, so the mark lines up with
+        the column it belongs to instead of floating over the feed. Search and
+        collect sit in the content header, above what they act on.
+
+        Widths come from --rail and --gutter, both clamped: the proportion
+        holds as the window changes, but the rail never eats a laptop screen
+        and the gutter never collapses on a phone.
+      */}
+      <aside className="order-last w-full shrink-0 lg:fixed lg:inset-y-0 lg:left-0 lg:z-40 lg:order-none lg:w-[var(--rail)] lg:overflow-y-auto lg:border-r lg:border-border lg:bg-surface no-scrollbar">
+        <div className="hidden h-[var(--headerh)] shrink-0 items-center border-b border-border px-[var(--gutter)] lg:flex">
           <Link
             href="/"
             aria-label="ITK plus 홈 · 필터 초기화"
             title="필터 초기화"
-            className="-m-1.5 shrink-0 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="-m-1.5 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
-            <Logo height={38} />
+            <Logo height={34} />
           </Link>
-
-          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">
-            <SearchBox state={filterState} />
-            <CollectButton lastCollect={pulse.lastCollect} />
-          </div>
         </div>
-        <div
-          aria-hidden
-          className="h-[2px] w-full"
-          style={{ background: "var(--ribbon)" }}
-        />
-      </header>
 
-      <div className="flex flex-col lg:flex-row">
-        {/* Flush to the window edge and pinned under the header, with a rule
-            instead of a gap. The panels are reference — what the day looks
-            like, where alerts go — and they were scrolling away from a feed
-            that is effectively endless. */}
-        <aside className="order-last w-full space-y-4 px-4 pt-5 pb-8 lg:order-first lg:fixed lg:inset-y-0 lg:top-[64px] lg:left-0 lg:w-[264px] lg:overflow-y-auto lg:border-r lg:border-border lg:bg-surface lg:px-4 lg:py-5 no-scrollbar">
+        <div className="space-y-4 px-[var(--gutter)] pt-5 pb-8 lg:py-5">
           <PulsePanel pulse={pulse} now={now} />
           <DiscordPanel teams={teams} />
           <AlertPanel teams={teams} />
-        </aside>
+        </div>
+      </aside>
 
-        <main className="min-w-0 flex-1 lg:ml-[264px]">
-          <div className="mx-auto max-w-3xl lg:py-5">
-            <div className="overflow-hidden lg:rounded-xl lg:border lg:border-border lg:bg-surface">
-              <Filters
-                teams={teams}
-                activity={activity}
-                journalists={journalists}
-                journalistActivity={journalistActivity}
-                state={filterState}
-              />
+      <div className="lg:pl-[var(--rail)]">
+        <header className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
+          <div className="flex h-[var(--headerh)] items-center gap-3 px-[var(--gutter)]">
+            {/* On a phone there is no rail, so the mark rides the header. */}
+            <Link
+              href="/"
+              aria-label="ITK plus 홈 · 필터 초기화"
+              title="필터 초기화"
+              className="-m-1.5 shrink-0 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:hidden"
+            >
+              <Logo height={30} />
+            </Link>
 
-              {rows.length === 0 ? (
-                <EmptyState
-                  tieredOnly={tieredOnly}
-                  hasJournalists={journalists.length > 0}
-                />
-              ) : (
-                <ArticleList
-                  initialRows={rows}
-                  teams={teamMap}
-                  now={now}
-                  query={feedQuery}
-                />
-              )}
+            <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">
+              <SearchBox state={filterState} />
+              <CollectButton lastCollect={pulse.lastCollect} />
             </div>
+          </div>
+          <div
+            aria-hidden
+            className="h-[2px] w-full"
+            style={{ background: "var(--ribbon)" }}
+          />
+        </header>
+
+        <main className="px-0 py-0 sm:px-[var(--gutter)] sm:py-[var(--gutter)]">
+          <div className="mx-auto max-w-3xl overflow-hidden sm:rounded-xl sm:border sm:border-border sm:bg-surface">
+            <Filters
+              teams={teams}
+              activity={activity}
+              journalists={journalists}
+              journalistActivity={journalistActivity}
+              state={filterState}
+            />
+
+            {rows.length === 0 ? (
+              <EmptyState
+                tieredOnly={tieredOnly}
+                hasJournalists={journalists.length > 0}
+              />
+            ) : (
+              <ArticleList
+                initialRows={rows}
+                teams={teamMap}
+                now={now}
+                query={feedQuery}
+              />
+            )}
           </div>
         </main>
       </div>

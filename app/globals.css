@@ -80,6 +80,20 @@
   --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
 }
 
+/*
+ * The shell's two measurements, in one place.
+ *
+ * Both are fluid but bounded. A fixed 264px rail was a third of a laptop screen
+ * and a sliver of a monitor; a raw percentage went the other way and let the
+ * gutter collapse on a phone. clamp() keeps the proportion while refusing the
+ * extremes.
+ */
+:root {
+  --rail: clamp(15rem, 21vw, 19rem);
+  --gutter: clamp(0.875rem, 2.2vw, 1.75rem);
+  --headerh: 4rem;
+}
+
 html {
   scroll-behavior: smooth;
 }
