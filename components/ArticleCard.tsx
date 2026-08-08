@@ -86,7 +86,7 @@ export function ArticleCard({
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full px-4 py-3.5 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
+        className={`block w-full p-4 pl-[19px] text-left transition-colors sm:p-5 sm:pl-[23px] ${
           expandable
             ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
             : "cursor-default"
@@ -188,7 +188,7 @@ export function ArticleCard({
       </button>
 
       {open && (
-        <div className="px-4 pb-4 pl-5 sm:px-5 sm:pl-6">
+        <div className="px-4 pb-4 pl-[19px] sm:px-5 sm:pl-[23px]">
           {/* Beside the text rather than above it. A full-bleed photo pushed the
               summary — the reason the card opens — below the fold, and stock
               agency shots earn less room than the words do. */}
