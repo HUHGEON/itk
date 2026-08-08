@@ -16,11 +16,16 @@ import Image from "next/image";
  *
  * Sized by height, not width: the header's rhythm is vertical, and the wordmark
  * stacks "plus" under "itk" so the width follows from however tall it may be.
+ *
+ * The artwork itself was shortened 15%. The wordmark is squashed on the
+ * vertical only — its width is what makes "itk plus" readable at 38px — while
+ * the mark is scaled evenly, because a ball squashed the same way reads as a
+ * rugby ball.
  */
 
 /** Intrinsic size of public/itk-plus.png. */
-const W = 637;
-const H = 276;
+const W = 601;
+const H = 235;
 
 export function Logo({ height = 38 }: { height?: number }) {
   const width = Math.round((height * W) / H);
