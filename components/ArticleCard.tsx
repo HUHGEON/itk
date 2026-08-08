@@ -48,6 +48,13 @@ export function ArticleCard({
   const outlet =
     row.outlet && row.outlet !== row.source ? row.outlet : row.source;
 
+  // A club posts under its English name, and everything around it is Korean.
+  const officialName = row.official
+    ? (rowTeams.find((t) => t.en === row.source)?.ko ??
+      rowTeams[0]?.ko ??
+      row.source)
+    : row.source;
+
   return (
     <article className="group relative">
       {/* Presence, not decoration: the bar is only as strong as the tier. */}
@@ -80,7 +87,7 @@ export function ArticleCard({
 
           {byline || row.official ? (
             <span className="min-w-0 truncate font-medium text-text/90">
-              {row.official ? row.source : byline}
+              {row.official ? officialName : byline}
               {!row.official && !row.journalistKo && (
                 <span className="ml-1 font-normal text-faint">인용</span>
               )}

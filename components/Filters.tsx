@@ -13,7 +13,7 @@ import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
 import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
-import { Close, Search } from "./icons";
+import { Close } from "./icons";
 
 const LEAGUES: League[] = [
   "EPL",
@@ -60,7 +60,7 @@ export function Filters({
   const selectedTeams = state.teams;
   const league = state.league;
   const who = state.who;
-  const [query, setQuery] = useState(state.q);
+  const query = state.q;
 
   const push = useCallback(
     (mutate: (p: URLSearchParams) => void) => {
@@ -148,10 +148,9 @@ export function Filters({
           </span>
           <button
             type="button"
-            onClick={() => {
-              setQuery("");
-              startTransition(() => router.push("/", { scroll: false }));
-            }}
+            onClick={() =>
+              startTransition(() => router.push("/", { scroll: false }))
+            }
             className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted transition-colors hover:border-border-strong hover:text-text"
           >
             <Close size={10} />
@@ -315,36 +314,6 @@ export function Filters({
                 ))}
           </ScrollRail>
         )}
-      </div>
-
-      {/* Search */}
-      <div className="border-t border-border px-4 py-3 sm:px-5">
-        <div className="flex items-center gap-2.5 rounded-[5px] border border-border bg-surface-2 px-3 py-2 transition-colors focus-within:border-border-strong">
-          <Search className="shrink-0 text-faint" />
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key !== "Enter") return;
-              push((p) => (query ? p.set("q", query) : p.delete("q")));
-            }}
-            placeholder="선수·팀·키워드"
-            className="min-w-0 flex-1 bg-transparent text-[13px] outline-none placeholder:text-faint"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => {
-                setQuery("");
-                push((p) => p.delete("q"));
-              }}
-              aria-label="검색어 지우기"
-              className="shrink-0 text-faint hover:text-text"
-            >
-              <Close size={12} />
-            </button>
-          )}
-        </div>
       </div>
     </div>
   );

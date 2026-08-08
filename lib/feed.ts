@@ -35,11 +35,8 @@ export interface FeedRow {
   titleKo: string | null;
   summaryKo: string | null;
   imageUrl: string | null;
-  journalistId: string | null;
   journalistKo: string | null;
-  journalistEn: string | null;
   outlet: string | null;
-  x: string | null;
   /** journalist the story credits, when it isn't their own byline */
   citedKo: string | null;
   /** the club's own announcement */
@@ -112,11 +109,8 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
     titleKo: r.title_ko,
     summaryKo: r.summary_ko,
     imageUrl: r.image_url,
-    journalistId: r.journalist_id,
     journalistKo: r.journalist_ko,
-    journalistEn: r.journalist_en,
     outlet: r.outlet,
-    x: r.handle,
     citedKo: r.cited_ko,
     official: Boolean(r.official),
     teams: r.teams ?? [],

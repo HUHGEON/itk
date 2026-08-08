@@ -6,6 +6,7 @@ import { Filters } from "@/components/Filters";
 import { ArticleList } from "@/components/ArticleList";
 import { AlertPanel } from "@/components/AlertPanel";
 import { CollectButton } from "@/components/CollectButton";
+import { SearchBox } from "@/components/SearchBox";
 import { DiscordPanel } from "@/components/DiscordPanel";
 
 export const dynamic = "force-dynamic";
@@ -100,7 +101,8 @@ export default async function Home({
             </span>
           </Link>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">
+            <SearchBox state={filterState} />
             <CollectButton />
           </div>
         </div>
