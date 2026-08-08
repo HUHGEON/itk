@@ -86,7 +86,7 @@ export function ArticleCard({
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full px-4 py-3 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
+        className={`block w-full px-4 py-3.5 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
           expandable
             ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
             : "cursor-default"
@@ -139,8 +139,11 @@ export function ArticleCard({
           </time>
         </div>
 
-        <div className="mt-1.5 flex items-start gap-3">
-          <div className="min-w-0 flex-1">
+        <div className="mt-1.5 flex items-start gap-4">
+          {/* A measure, not the full column. With the sidebar moved the feed is
+              ~880px wide, and a headline running the whole way is tiring to
+              read — the eye loses the line on the way back. */}
+          <div className="min-w-0 flex-1 sm:max-w-[54ch]">
             <h3 className="text-[16px] leading-[1.45] font-semibold text-text sm:text-[17px]">
               {title}
             </h3>
@@ -156,7 +159,7 @@ export function ArticleCard({
 
           {expandable && (
             <Chevron
-              className={`mt-1.5 shrink-0 text-faint transition-transform duration-150 group-hover:text-muted ${
+              className={`mt-1.5 ml-auto shrink-0 text-faint transition-transform duration-150 group-hover:text-muted ${
                 open ? "rotate-90" : ""
               }`}
             />

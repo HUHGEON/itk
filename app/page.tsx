@@ -122,7 +122,18 @@ export default async function Home({
         />
       </header>
 
-      <div className="mx-auto max-w-5xl gap-5 lg:flex lg:px-5 lg:py-5">
+      <div className="mx-auto max-w-6xl gap-5 lg:flex lg:px-5 lg:py-5">
+        {/* Left and pinned. The panels are reference — what the day looks like,
+            where alerts go — and they were scrolling away from a feed that is
+            effectively endless. `self-start` is what lets sticky work inside a
+            flex row; without it the aside stretches to the feed's height and
+            has nothing to stick within. */}
+        <aside className="order-last w-full shrink-0 space-y-4 px-4 pt-5 pb-8 lg:order-first lg:w-[252px] lg:self-start lg:px-0 lg:pt-0 lg:pb-0 lg:sticky lg:top-[76px] lg:max-h-[calc(100vh-96px)] lg:overflow-y-auto lg:pr-1 no-scrollbar">
+          <PulsePanel pulse={pulse} now={now} />
+          <DiscordPanel teams={teams} />
+          <AlertPanel teams={teams} />
+        </aside>
+
         <main className="min-w-0 flex-1 overflow-hidden border-border lg:rounded-xl lg:border lg:bg-surface">
           <Filters
             teams={teams}
@@ -146,12 +157,6 @@ export default async function Home({
             />
           )}
         </main>
-
-        <aside className="w-full shrink-0 space-y-4 px-4 pt-5 pb-8 lg:w-[248px] lg:px-0 lg:pt-0">
-          <PulsePanel pulse={pulse} now={now} />
-          <DiscordPanel teams={teams} />
-          <AlertPanel teams={teams} />
-        </aside>
       </div>
     </div>
   );
