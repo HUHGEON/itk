@@ -12,6 +12,7 @@ import { ArticleList } from "@/components/ArticleList";
 import { AlertPanel } from "@/components/AlertPanel";
 import { CollectButton } from "@/components/CollectButton";
 import { SearchBox } from "@/components/SearchBox";
+import { Logo } from "@/components/Logo";
 import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 
@@ -98,14 +99,9 @@ export default async function Home({
           <Link
             href="/"
             title="필터 초기화"
-            className="group flex shrink-0 items-baseline gap-2"
+            className="shrink-0 transition-opacity hover:opacity-85"
           >
-            <span className="rounded-[3px] bg-accent px-1.5 py-0.5 text-[14px] font-semibold tracking-[-0.02em] text-accent-ink transition-opacity group-hover:opacity-85">
-              ITK+
-            </span>
-            <span className="hidden text-[11px] tracking-wide text-faint sm:inline">
-              In The Know
-            </span>
+            <Logo size={30} withTagline />
           </Link>
 
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">

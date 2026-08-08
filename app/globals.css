@@ -11,14 +11,15 @@
  * is what the tier list actually is.
  */
 :root {
-  /* Neutral blacks. A blue-grey cast is the default of every dark UI kit and
-     makes club crests — which are saturated — look muddy against it. */
-  --bg: #0a0a0b;
-  --surface: #101012;
-  --surface-2: #17171a;
-  --surface-3: #1f1f23;
-  --border: #26262a;
-  --border-strong: #34343a;
+  /* Near-black with a trace of the navy in the mark's ball. Enough to tie the
+     page to the logo, not enough to read as the blue-grey every dark UI kit
+     ships by default. */
+  --bg: #08090c;
+  --surface: #0e1015;
+  --surface-2: #14171d;
+  --surface-3: #1c2028;
+  --border: #232830;
+  --border-strong: #323945;
 
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
      contrast to stare at. */
@@ -26,14 +27,18 @@
   --muted: #8a8992;
   --faint: #5e5d66;
 
-  --accent: #ffa72e;
-  --accent-ink: #16100a;
+  /* Straight from the mark's ribbon. */
+  --accent: #f06000;
+  --accent-soft: #ff9e3d;
+  --accent-ink: #150802;
+  /* The ball, used where a cool counterweight is wanted. */
+  --navy: #2b3d55;
 
   /* Tier gets its own hue *and* its own weight. Hue alone made five unrelated
      categories; weight alone made them hard to tell apart at a glance, which is
      the one thing a tier badge has to do. So: distinct colours, and a treatment
      that fades from a solid block at the top to bare text at the bottom. */
-  --tier-0: #ffa72e;
+  --tier-0: #ff7a1a;
   --tier-1: #5fd68a;
   --tier-15: #54c8e8;
   --tier-2: #9aa4b5;
@@ -57,7 +62,9 @@
   --color-muted: var(--muted);
   --color-faint: var(--faint);
   --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
+  --color-navy: var(--navy);
   --color-official: var(--official);
   --color-tier-0: var(--tier-0);
   --color-tier-1: var(--tier-1);
