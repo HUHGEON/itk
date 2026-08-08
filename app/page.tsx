@@ -101,7 +101,7 @@ export default async function Home({
             title="필터 초기화"
             className="shrink-0 transition-opacity hover:opacity-85"
           >
-            <Logo size={30} withTagline />
+            <Logo size={26} />
           </Link>
 
           <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2.5">

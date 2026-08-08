@@ -73,6 +73,8 @@
   --color-tier-3: var(--tier-3);
 
   --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
+  --font-wordmark: var(--font-wordmark), ui-sans-serif, sans-serif;
+  --font-strapline: var(--font-strapline), ui-sans-serif, sans-serif;
 }
 
 html {

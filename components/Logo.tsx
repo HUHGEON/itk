@@ -1,17 +1,17 @@
 /**
- * The mark, drawn rather than shipped.
+ * The mark, as supplied — SVG for the ball and ribbon, live text for the
+ * wordmark.
  *
- * The artwork arrived as a 322KB raster with a transparency checkerboard baked
- * into it. At header size that would be a blurry downscale, it could not follow
- * the theme, and it cost more bytes than the article payload. This redraws it so
- * it stays sharp at any size and weighs a few hundred bytes.
- *
- * A first pass got the structure wrong — a dark ball, and the wordmark set on
- * one line. The ball is light with dark panels, and "plus" sits under "itk".
+ * Two changes from the source it came from. Every measurement is in `em` off a
+ * single container font-size, so the header can run it at a third of its
+ * natural size without a transform and without the layout box lying about how
+ * much room it takes. And the two display faces load through next/font instead
+ * of an `@import` from fonts.googleapis.com, which was a render-blocking
+ * request to a third party for eight glyphs.
  */
 
 export function LogoMark({
-  size = 34,
+  size = 120,
   className = "",
 }: {
   size?: number;
@@ -19,110 +19,142 @@ export function LogoMark({
 }) {
   return (
     <svg
+      viewBox="0 0 200 200"
       width={size}
       height={size}
-      viewBox="0 0 100 100"
-      fill="none"
       aria-hidden
       className={className}
     >
       <defs>
-        <radialGradient id="itkGlow" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0.55" stopColor="#F06000" stopOpacity="0.5" />
-          <stop offset="1" stopColor="#F06000" stopOpacity="0" />
-        </radialGradient>
-        <radialGradient id="itkSphere" cx="0.36" cy="0.3" r="0.78">
-          <stop offset="0" stopColor="#FFFFFF" />
-          <stop offset="0.55" stopColor="#DCE3EC" />
-          <stop offset="1" stopColor="#8A97A8" />
-        </radialGradient>
-        <linearGradient id="itkRibbon" x1="10" y1="86" x2="92" y2="10">
-          <stop offset="0" stopColor="#C42A00" />
-          <stop offset="0.45" stopColor="#F06000" />
-          <stop offset="1" stopColor="#FFB055" />
+        <linearGradient id="itkOrange" x1="0%" y1="100%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor="#FF3E00" />
+          <stop offset="50%" stopColor="#FF6B00" />
+          <stop offset="100%" stopColor="#FFAE00" />
         </linearGradient>
+
+        {/* Declared here rather than mid-document: a forward reference works in
+            browsers but not in every SVG rasteriser. */}
+        <radialGradient id="itkBall" cx="30%" cy="30%" r="70%">
+          <stop offset="0%" stopColor="#FFFFFF" />
+          <stop offset="60%" stopColor="#CBD5E1" />
+          <stop offset="100%" stopColor="#475569" />
+        </radialGradient>
+
+        <filter id="itkShadow" x="-20%" y="-20%" width="140%" height="140%">
+          <feDropShadow
+            dx="2"
+            dy="4"
+            stdDeviation="3"
+            floodColor="#000"
+            floodOpacity="0.4"
+          />
+        </filter>
       </defs>
 
-      {/* The original sits in a warm halo; without it the ball floats. */}
-      <circle cx="44" cy="52" r="42" fill="url(#itkGlow)" />
+      <circle cx="90" cy="110" r="65" fill="#1E2838" filter="url(#itkShadow)" />
+      <circle cx="90" cy="110" r="62" fill="url(#itkBall)" />
 
-      <circle
-        cx="44"
-        cy="52"
-        r="30"
-        fill="url(#itkSphere)"
-        stroke="#0D1725"
-        strokeWidth="2"
-      />
-      <g fill="#16233A">
-        <path d="M44 36l10.5 7.6-4 12.3H37.5l-4-12.3z" />
-        <path d="M44 24.5l7.8 5.7-2.2 6.6-5.6-4-5.6 4-2.2-6.6z" opacity="0.9" />
-        <path
-          d="M17.6 46.6l7.6 5.5-2.9 8.9-7.4-.1a30 30 0 0 1 2.7-14.3z"
-          opacity="0.9"
-        />
-        <path
-          d="M70.4 46.6a30 30 0 0 1 2.6 14.2l-7.3.1-2.9-8.8z"
-          opacity="0.9"
-        />
-        <path d="M36.5 68.9h15l4.3 12.6a30 30 0 0 1-23.6 0z" opacity="0.9" />
-      </g>
+      <polygon points="90,75 72,88 78,108 102,108 108,88" fill="#1E293B" />
+      <polygon points="90,75 72,88 55,78 62,60 80,60" fill="#334155" />
+      <polygon points="108,88 102,108 120,118 130,100 122,82" fill="#334155" />
+      <polygon points="78,108 60,120 68,138 88,138 98,122" fill="#334155" />
 
-      {/* One ribbon, one arrowhead, joined. Drawn as two shapes at first, which
-          read as two pieces the moment the mark was scaled up. */}
       <path
-        d="M23.1 78.8A34 34 0 1 0 70.8 31.1"
-        stroke="url(#itkRibbon)"
-        strokeWidth="12"
-        strokeLinecap="round"
+        d="M 35 125 C 30 160, 80 175, 125 150 C 160 130, 165 70, 155 40"
         fill="none"
+        stroke="url(#itkOrange)"
+        strokeWidth="22"
+        strokeLinecap="round"
+        filter="url(#itkShadow)"
       />
-      <path d="M82.8 19 62.3 22.6l17 17z" fill="url(#itkRibbon)" />
+      <path
+        d="M 135 45 L 165 25 L 165 65 Z"
+        fill="#FF5500"
+        filter="url(#itkShadow)"
+      />
     </svg>
   );
 }
 
 /**
- * Mark plus wordmark, stacked the way the original is: "itk" over "plus" over
- * the strapline. The lettering is live text rather than paths so it takes the
- * page font and stays selectable; the slant is a transform because the Korean
- * cut of Plex ships no true italic.
+ * `size` is the cap size of "itk"; everything else is proportional to it.
  */
 export function Logo({
-  size = 34,
+  size = 82,
   withTagline = true,
 }: {
   size?: number;
   withTagline?: boolean;
 }) {
   return (
-    <span className="flex items-center gap-2">
-      <LogoMark size={size} />
-      <span className="flex flex-col leading-[0.92]">
+    <span
+      className="flex select-none items-center"
+      style={{ fontSize: size, gap: "0.183em" }}
+    >
+      <LogoMark size={size * 1.463} className="shrink-0" />
+
+      <span
+        className="flex flex-col italic"
+        style={{
+          fontFamily: "var(--font-wordmark)",
+          fontWeight: 900,
+          lineHeight: 0.85,
+        }}
+      >
         <span
-          className="font-semibold tracking-[-0.04em] text-text"
           style={{
-            fontSize: size * 0.47,
-            transform: "skewX(-12deg)",
-            transformOrigin: "left",
+            fontSize: "1em",
+            letterSpacing: "-0.037em",
+            background:
+              "linear-gradient(180deg, #FFFFFF 0%, #E2E8F0 60%, #94A3B8 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0.024em 0.049em 0.061em rgba(0,0,0,0.5))",
           }}
         >
           itk
         </span>
-        <span
-          className="mt-[1px] font-semibold tracking-[-0.03em] text-accent"
-          style={{
-            fontSize: size * 0.4,
-            transform: "skewX(-12deg)",
-            transformOrigin: "left",
-          }}
-        >
-          plus
+
+        <span className="flex items-center" style={{ marginTop: "-0.122em" }}>
+          <span
+            style={{
+              fontSize: "0.61em",
+              marginRight: "0.024em",
+              color: "#FF5500",
+              WebkitTextStroke: "0.012em #CC4400",
+              filter: "drop-shadow(0.033em 0.049em 0.049em rgba(0,0,0,0.4))",
+            }}
+          >
+            +
+          </span>
+          <span
+            style={{
+              fontSize: "0.829em",
+              letterSpacing: "-0.024em",
+              background:
+                "linear-gradient(180deg, #FF6B00 0%, #FF3E00 50%, #D93000 100%)",
+              WebkitBackgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+              filter: "drop-shadow(0.024em 0.049em 0.049em rgba(0,0,0,0.4))",
+            }}
+          >
+            plus
+          </span>
         </span>
+
         {withTagline && (
           <span
-            className="mt-[3px] font-medium tracking-[0.16em] text-muted"
-            style={{ fontSize: Math.max(6.5, size * 0.1) }}
+            className="not-italic"
+            style={{
+              fontFamily: "var(--font-strapline)",
+              fontWeight: 700,
+              fontSize: "0.171em",
+              letterSpacing: "0.143em",
+              marginTop: "0.061em",
+              color: "#FFFFFF",
+              textShadow:
+                "0.071em 0.143em 0.214em rgba(0,0,0,0.8), 0 0 0.143em rgba(0,0,0,0.5)",
+            }}
           >
             FOOTBALL INSIDER NEWS
           </span>

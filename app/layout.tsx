@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { IBM_Plex_Sans_KR } from "next/font/google";
+import { IBM_Plex_Sans_KR, Montserrat, Oswald } from "next/font/google";
 import "./globals.css";
 
 /*
@@ -14,6 +14,26 @@ const sans = IBM_Plex_Sans_KR({
   // 700 was used six times and 600 reads as bold enough at these sizes. Each
   // weight is ~100 subset files for Korean, so dropping one is real bytes.
   weight: ["400", "500", "600"],
+  display: "swap",
+});
+
+/*
+ * Logo only. Loaded through next/font so they are self-hosted at build time —
+ * the supplied CSS pulled them from fonts.googleapis.com on every page view,
+ * which is a render-blocking request to a third party for eight glyphs.
+ */
+const wordmark = Montserrat({
+  variable: "--font-wordmark",
+  subsets: ["latin"],
+  weight: ["900"],
+  style: ["italic"],
+  display: "swap",
+});
+
+const strapline = Oswald({
+  variable: "--font-strapline",
+  subsets: ["latin"],
+  weight: ["700"],
   display: "swap",
 });
 
@@ -39,7 +59,11 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${sans.variable} antialiased`}>{children}</body>
+      <body
+        className={`${sans.variable} ${wordmark.variable} ${strapline.variable} antialiased`}
+      >
+        {children}
+      </body>
     </html>
   );
 }

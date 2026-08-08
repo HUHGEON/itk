@@ -1,30 +1,28 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
-  <!--
-    Tab icon. At 16px the panel work and the halo turn to mush, so this keeps
-    only what survives: a light ball, its centre pentagon, and the orange ribbon
-    breaking out into an arrow. Filled tile so it reads on a light browser chrome
-    as well as a dark one.
-  -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200">
+  <!-- Tab icon: the mark, cropped to the ball and ribbon and nudged to fill the
+       tile. The drop shadows and the small patches are dropped — at 16px they
+       only muddy it. -->
   <defs>
-    <radialGradient id="sphere" cx=".36" cy=".3" r=".78">
-      <stop offset="0" stop-color="#FFFFFF" />
-      <stop offset=".55" stop-color="#DCE3EC" />
-      <stop offset="1" stop-color="#8A97A8" />
-    </radialGradient>
-    <linearGradient id="ribbon" x1="10" y1="86" x2="92" y2="10">
-      <stop offset="0" stop-color="#C42A00" />
-      <stop offset=".45" stop-color="#F06000" />
-      <stop offset="1" stop-color="#FFB055" />
+    <linearGradient id="o" x1="0%" y1="100%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#FF3E00" />
+      <stop offset="50%" stop-color="#FF6B00" />
+      <stop offset="100%" stop-color="#FFAE00" />
     </linearGradient>
+    <radialGradient id="b" cx="30%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#FFFFFF" />
+      <stop offset="60%" stop-color="#CBD5E1" />
+      <stop offset="100%" stop-color="#475569" />
+    </radialGradient>
   </defs>
 
-  <rect width="100" height="100" rx="22" fill="#0E1015" />
-  <circle cx="44" cy="52" r="27" fill="url(#sphere)" stroke="#0D1725" stroke-width="2" />
-  <g fill="#16233A">
-    <path d="M44 38.5l9.4 6.8-3.6 11h-11.6l-3.6-11z" />
-    <path d="M36.9 68h14.2l3.6 10.6a27 27 0 0 1-21.4 0z" opacity=".9" />
+  <rect width="200" height="200" rx="44" fill="#0E1015" />
+  <g transform="translate(8,-6)">
+    <circle cx="90" cy="110" r="65" fill="#1E2838" />
+    <circle cx="90" cy="110" r="62" fill="url(#b)" />
+    <polygon points="90,75 72,88 78,108 102,108 108,88" fill="#1E293B" />
+    <polygon points="78,108 60,120 68,138 88,138 98,122" fill="#334155" />
+    <path d="M 35 125 C 30 160, 80 175, 125 150 C 160 130, 165 70, 155 40"
+          fill="none" stroke="url(#o)" stroke-width="22" stroke-linecap="round" />
+    <path d="M 135 45 L 165 25 L 165 65 Z" fill="#FF5500" />
   </g>
-  <path d="M24.6 76.4A31 31 0 1 0 68 33" stroke="url(#ribbon)" stroke-width="11"
-        stroke-linecap="round" fill="none" />
-  <path d="M79.6 21.4 60.9 24.7l15.5 15.5z" fill="url(#ribbon)" />
 </svg>
