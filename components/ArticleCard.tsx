@@ -130,10 +130,10 @@ export function ArticleCard({
                 <span
                   key={t.slug}
                   title={t.ko}
-                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 p-[2px] text-[10.5px] text-muted sm:pr-2"
+                  className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-3 p-[2px] text-[11px] font-medium text-text sm:pr-2.5"
                 >
-                  <span className="flex size-[16px] items-center justify-center rounded-full bg-surface-3">
-                    <TeamCrest team={t} size={13} />
+                  <span className="flex size-[18px] items-center justify-center rounded-full bg-surface">
+                    <TeamCrest team={t} size={15} />
                   </span>
                   {/* The name is what makes a dark crest legible, but on a
                       phone the line has no room for it and the crest alone
@@ -148,10 +148,8 @@ export function ArticleCard({
               // can never be tagged with one — but the reporter who filed it
               // covers the Premier League, and that is the category it sits
               // under. Without this the row simply had nothing.
-              // Same weight as a club chip — it answers the same question, and
-              // an outlined badge in `faint` sat so close to the page that the
-              // label read as absent rather than as quiet.
-              <span className="hidden shrink-0 rounded-full bg-surface-2 px-2 py-[3px] text-[10.5px] text-muted sm:inline">
+              // Same weight as a club chip — it answers the same question.
+              <span className="hidden shrink-0 rounded-full border border-border-strong bg-surface-3 px-2.5 py-[3px] text-[11px] font-medium text-text sm:inline">
                 {leagueLabel}
               </span>
             )
