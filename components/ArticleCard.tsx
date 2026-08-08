@@ -148,7 +148,10 @@ export function ArticleCard({
               // can never be tagged with one — but the reporter who filed it
               // covers the Premier League, and that is the category it sits
               // under. Without this the row simply had nothing.
-              <span className="hidden shrink-0 rounded-full border border-border px-2 py-[2px] text-[10.5px] text-faint sm:inline">
+              // Same weight as a club chip — it answers the same question, and
+              // an outlined badge in `faint` sat so close to the page that the
+              // label read as absent rather than as quiet.
+              <span className="hidden shrink-0 rounded-full bg-surface-2 px-2 py-[3px] text-[10.5px] text-muted sm:inline">
                 {leagueLabel}
               </span>
             )
