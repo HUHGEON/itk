@@ -58,18 +58,24 @@ export function ArticleCard({
   return (
     <article
       // A hairline between rows: without one a column of headlines ran together
-      // and the eye had to find each boundary from the text alone. An open row
-      // gets a lit surface and a brighter rule so it is obvious which story is
-      // being read.
-      className={`group relative border-b border-border/70 transition-colors last:border-b-0 ${
-        open ? "bg-surface-2/70" : ""
+      // and the eye had to find each boundary from the text alone.
+      //
+      // The open row is ringed in the brand orange and lifted off the page. A
+      // tinted background alone was not enough to say "this is the one you
+      // opened" — it read as a hover state.
+      className={`group relative transition-colors ${
+        open
+          ? "z-10 my-1 rounded-lg border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
+          : "border-b border-border last:border-b-0"
       }`}
     >
       {/* Presence, not decoration: the bar is only as strong as the tier — and
           it widens when the row is open. */}
       <span
         aria-hidden
-        className={`absolute inset-y-0 left-0 transition-all ${open ? "w-[5px]" : "w-[3px]"}`}
+        className={`absolute inset-y-0 left-0 transition-all ${
+          open ? "w-[5px] rounded-l-lg" : "w-[3px]"
+        }`}
         style={{
           backgroundColor: tierRule(row.tier, row.official),
           opacity: open ? 1 : 0.85,

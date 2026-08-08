@@ -24,7 +24,6 @@ const sans = IBM_Plex_Sans_KR({
   display: "swap",
 });
 
-
 export const viewport: Viewport = {
   themeColor: "#08090c",
   colorScheme: "dark",
@@ -47,9 +46,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${sans.variable} antialiased`}>
-        {children}
-      </body>
+      <body className={`${sans.variable} antialiased`}>{children}</body>
     </html>
   );
 }

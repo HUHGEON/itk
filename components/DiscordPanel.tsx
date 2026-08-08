@@ -282,7 +282,14 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-semibold">디스코드 알림</h2>
+        <h2 className="flex items-center gap-2 text-[13px] font-semibold">
+          <span
+            aria-hidden
+            className="h-[13px] w-[3px] rounded-full"
+            style={{ background: "var(--ribbon)" }}
+          />
+          디스코드 알림
+        </h2>
         <button
           type="button"
           onClick={openAdd}
@@ -412,7 +419,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
               type="button"
               onClick={unlock}
               disabled={pending || loading || !auth}
-              className="w-full rounded-[5px] bg-accent px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+              style={{ background: "var(--ribbon)" }}
+              className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {loading ? "확인 중…" : "확인"}
             </button>
@@ -602,7 +610,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
               type="button"
               onClick={submit}
               disabled={pending || loading || !url || picked.length === 0}
-              className="w-full rounded-[5px] bg-accent px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+              style={{ background: "var(--ribbon)" }}
+              className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
             >
               {pending ? "저장 중…" : editing ? "수정" : "등록"}
             </button>
@@ -680,7 +689,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
             type="button"
             onClick={claim}
             disabled={pending || claimPass.length < 4}
-            className="w-full rounded-[5px] bg-accent px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+            style={{ background: "var(--ribbon)" }}
+            className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
           >
             {pending ? "확인 중…" : "불러오기"}
           </button>

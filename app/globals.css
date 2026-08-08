@@ -27,6 +27,11 @@
   --muted: #8d8880;
   --faint: #625d56;
 
+  /* The ribbon itself, for the places the brand should actually show up:
+     the rule under the header, the primary button, the panel markers. A flat
+     swatch of the accent was too quiet to read as the logo's colour. */
+  --ribbon: linear-gradient(90deg, #da7c04 0%, #f1800b 45%, #f69230 100%);
+
   /* Sampled from the ribbon in the artwork rather than guessed at. */
   --accent: #f1800b;
   --accent-soft: #f69230;

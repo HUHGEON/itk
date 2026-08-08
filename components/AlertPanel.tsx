@@ -159,6 +159,11 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
     <section className="rounded-[5px] border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="flex items-center gap-1.5 text-[13px] font-semibold">
+          <span
+            aria-hidden
+            className="mr-0.5 h-[13px] w-[3px] rounded-full"
+            style={{ background: "var(--ribbon)" }}
+          />
           팀 알림
           <span
             title={live ? "실시간 연결됨" : "폴링 모드"}

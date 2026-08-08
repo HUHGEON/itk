@@ -50,7 +50,8 @@ export function CollectButton() {
         onClick={() => run()}
         disabled={state === "running"}
         title="지금 수집 (0티어 + 매체 피드, 약 30초)"
-        className="inline-flex items-center gap-1.5 rounded-[5px] border border-border px-2.5 py-1.5 text-[11px] font-medium text-muted transition-colors hover:border-border-strong hover:text-text disabled:opacity-50"
+        className="inline-flex items-center gap-1.5 rounded-[5px] px-3 py-1.5 text-[11px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-50"
+        style={{ background: "var(--ribbon)" }}
       >
         <Refresh className={state === "running" ? "animate-spin" : ""} />
         {state === "running" ? "수집 중" : "수집"}

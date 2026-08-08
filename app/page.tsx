@@ -91,7 +91,9 @@ export default async function Home({
     <div className="min-h-screen bg-bg">
       {/* Opaque, not translucent: a backdrop-blur header let article text
             bleed through it while scrolling. */}
-      <header className="sticky top-0 z-30 border-b border-border bg-bg/95 backdrop-blur-sm">
+      {/* The rule under the header is the ribbon, not a grey hairline — the
+          one place the brand colour spans the whole width. */}
+      <header className="sticky top-0 z-30 bg-bg/95 backdrop-blur-sm">
         <div className="mx-auto flex max-w-5xl items-center gap-3 px-4 py-3 sm:px-5">
           {/* ITK — In The Know, transfer-market slang for someone with real
                 sources, which is what the tier list ranks. Doubles as the way
@@ -113,6 +115,11 @@ export default async function Home({
             <CollectButton />
           </div>
         </div>
+        <div
+          aria-hidden
+          className="h-[2px] w-full"
+          style={{ background: "var(--ribbon)" }}
+        />
       </header>
 
       <div className="mx-auto max-w-5xl gap-5 lg:flex lg:px-5 lg:py-5">

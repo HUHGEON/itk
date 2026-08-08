@@ -24,7 +24,14 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
   return (
     <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-baseline justify-between">
-        <h2 className="text-[13px] font-semibold">최근 24시간</h2>
+        <h2 className="flex items-center gap-2 text-[13px] font-semibold">
+          <span
+            aria-hidden
+            className="h-[13px] w-[3px] rounded-full"
+            style={{ background: "var(--ribbon)" }}
+          />
+          최근 24시간
+        </h2>
         <span className="tnum text-[11px] text-faint">{pulse.total}건</span>
       </div>
 
