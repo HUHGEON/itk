@@ -526,6 +526,10 @@ export async function collect(opts: CollectOptions = {}): Promise<CollectStats> 
     console.warn("feed_state 기록 실패:", err instanceof Error ? err.message : err);
   }
   const pruned = await rpc<number>("itk_prune", { p_days: RETENTION_DAYS });
+  // Journalist feed URLs are derived from name, country and clubs, so changing
+  // how the query is built strands the old rows. Left alone they read as
+  // sources that have stopped responding.
+  await rpc<number>("itk_prune_feed_state", { p_days: 3 }).catch(() => 0);
   const durationMs = Date.now() - started;
 
   const stats: CollectStats = {

@@ -5,7 +5,6 @@ import type { FeedRow } from "@/lib/feed";
 import type { Team } from "@/lib/types";
 import { tierColor, tierLabel, timeAgo } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
-import { useKorean } from "./TranslationProvider";
 
 /**
  * One story, read in place.
@@ -28,10 +27,14 @@ export function ArticleCard({
   const [imageOk, setImageOk] = useState(true);
 
   const accent = tierColor(row.tier);
-  const rowTeams = row.teams.map((s) => teams.get(s)).filter((t): t is Team => Boolean(t));
+  const rowTeams = row.teams
+    .map((s) => teams.get(s))
+    .filter((t): t is Team => Boolean(t));
   const rawBody = row.summaryKo ?? row.snippet;
-  const title = useKorean(row.title, row.titleKo);
-  const body = useKorean(rawBody, row.summaryKo);
+  // Translation happens during collection and is stored, so there is nothing
+  // to resolve at render time — either the row has Korean or it does not.
+  const title = row.titleKo ?? row.title;
+  const body = row.summaryKo ?? rawBody;
   const translated = title !== row.title;
   const showImage = Boolean(row.imageUrl) && imageOk;
   const expandable = Boolean(rawBody) || showImage;
@@ -76,7 +79,9 @@ export function ArticleCard({
               <span className="min-w-0 truncate text-[13px] font-bold text-text">
                 {byline}
                 {!row.journalistKo && (
-                  <span className="ml-1 text-[11px] font-normal text-muted">인용</span>
+                  <span className="ml-1 text-[11px] font-normal text-muted">
+                    인용
+                  </span>
                 )}
               </span>
             ) : (
@@ -93,19 +98,25 @@ export function ArticleCard({
 
           {!row.official && (
             <div className="mt-0.5 truncate text-[11px] text-muted">
-              {row.outlet && row.outlet !== row.source ? `${row.outlet} · ` : ""}
+              {row.outlet && row.outlet !== row.source
+                ? `${row.outlet} · `
+                : ""}
               {row.source}
             </div>
           )}
 
           <div className="mt-1 flex items-start gap-2">
             <div className="min-w-0 flex-1">
-              <h3 className="text-[15px] leading-snug font-semibold text-text">{title}</h3>
+              <h3 className="text-[15px] leading-snug font-semibold text-text">
+                {title}
+              </h3>
               {/* The machine translation mangles football phrasing often enough
                   that the original has to stay readable at a glance, not be
                   hidden behind an expand. */}
               {translated && (
-                <p className="mt-0.5 text-[12px] leading-snug text-muted">{row.title}</p>
+                <p className="mt-0.5 text-[12px] leading-snug text-muted">
+                  {row.title}
+                </p>
               )}
             </div>
             {expandable && (
@@ -147,7 +158,9 @@ export function ArticleCard({
               />
             )}
 
-            {body && <p className="text-[13px] leading-relaxed text-text/80">{body}</p>}
+            {body && (
+              <p className="text-[13px] leading-relaxed text-text/80">{body}</p>
+            )}
 
             <a
               href={row.url}

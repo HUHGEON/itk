@@ -560,6 +560,37 @@ as $$
   from feed_state f where f.url = any(p_urls)
 $$;
 
+
+
+-- Drops HTTP state for sources we no longer ask for.
+--
+-- Every journalist has a Google News URL built from their name, country and
+-- clubs, so changing how that query is built orphans the old row. After one
+-- such change 250 of 543 rows were for URLs nothing fetches — enough to make
+-- "73 feeds have not responded in a week" read as an outage.
+--
+-- Three days against a measured worst case of 10.2 hours between fetches — the
+-- cold band runs every six hours and thirds the roster. Pruning a live feed by
+-- mistake costs only its ETag, so it refetches in full once.
+create or replace function public.itk_prune_feed_state(p_days integer default 3)
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from feed_state
+  where updated_at < now() - make_interval(days => greatest(p_days, 2));
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
+create or replace function public.itk_feed_state_all()
+returns table (url text, fail_count integer, last_error text, updated_at timestamptz)
+language sql stable security definer set search_path = itk, public
+as $$ select f.url, f.fail_count, f.last_error, f.updated_at from feed_state f; $$;
+
 create or replace function public.itk_feed_state_set(p_items jsonb)
 returns integer
 language plpgsql
@@ -1291,6 +1322,8 @@ declare
     'public.itk_seed_journalists(jsonb)',
     'public.itk_feed_state_get(text[])',
     'public.itk_feed_state_set(jsonb)',
+    'public.itk_feed_state_all()',
+    'public.itk_prune_feed_state(integer)',
     'public.itk_record_run(jsonb)',
     'public.itk_pending_translations(integer,real,boolean)',
     'public.itk_apply_translations(jsonb)',

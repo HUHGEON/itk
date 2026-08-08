@@ -110,6 +110,10 @@ function titleFromSlug(url: string): string | null {
 
   const words = decodeURIComponent(last)
     .replace(/\.(html?|aspx)$/i, "")
+    // Trailing CMS id: arsenal.com appends one to every slug, and it was
+    // landing in the headline — "Christian norgaard joins everton a7fZT9g6dECY".
+    // Both cases plus a digit is what separates an id from a real word.
+    .replace(/[-_](?=[A-Za-z0-9]{8,}$)(?=[A-Za-z0-9]*[0-9])(?=[A-Za-z0-9]*[A-Z])[A-Za-z0-9]+$/, "")
     .replace(/[-_]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();

@@ -104,7 +104,6 @@ export const OUTLET_FEEDS: OutletFeed[] = [
   { name: "kicker", url: "https://newsfeed.kicker.de/news/fussball", lang: "de" },
   { name: "WAZ", url: "https://www.waz.de/rss", lang: "de" },
   { name: "Ruhr Nachrichten", url: "https://www.ruhrnachrichten.de/feed/", lang: "de" },
-  { name: "Transfermarkt", url: "https://www.transfermarkt.de/rss/news", lang: "de" },
 
   // France
   { name: "L'Équipe", url: "https://dwh.lequipe.fr/api/edito/rss?path=/Football", lang: "fr" },
