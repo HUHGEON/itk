@@ -111,24 +111,8 @@ export function ArticleCard({
             </span>
           )}
 
-          {rowTeams.length > 0 && (
-            <span className="ml-auto flex shrink-0 items-center gap-1.5">
-              {rowTeams.slice(0, 4).map((t) => (
-                <span
-                  key={t.slug}
-                  title={t.ko}
-                  // Most crests are dark navy or maroon and vanished against the
-                  // near-black page. A faint disc behind them restores the edge.
-                  className="flex size-[22px] items-center justify-center rounded-full bg-surface-3/80"
-                >
-                  <TeamCrest team={t} size={16} title={t.ko} />
-                </span>
-              ))}
-            </span>
-          )}
-
           <time
-            className={`tnum shrink-0 text-faint ${rowTeams.length > 0 ? "" : "ml-auto"}`}
+            className="tnum ml-auto shrink-0 text-faint"
             dateTime={new Date(row.publishedAt).toISOString()}
           >
             {timeAgo(row.publishedAt, now)}
@@ -158,6 +142,26 @@ export function ArticleCard({
             />
           )}
         </div>
+
+        {/* Under the headline, with names. Squeezing them onto the metadata
+            line as bare 14px icons saved a row and cost the one thing they are
+            for — most crests are dark navy or maroon and simply disappeared
+            against a near-black page at that size. */}
+        {rowTeams.length > 0 && (
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            {rowTeams.slice(0, 4).map((t) => (
+              <span
+                key={t.slug}
+                className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 py-[3px] pr-2.5 pl-[3px] text-[11.5px] text-muted"
+              >
+                <span className="flex size-[19px] items-center justify-center rounded-full bg-surface-3">
+                  <TeamCrest team={t} size={15} />
+                </span>
+                {t.ko}
+              </span>
+            ))}
+          </div>
+        )}
       </button>
 
       {open && (
