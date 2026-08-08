@@ -133,11 +133,12 @@ export function ArticleCard({
             {timeAgo(row.publishedAt, now)}
           </time>
         </div>
-        <div className="mt-1.5 flex items-start gap-4">
-          {/* A measure, not the full column. With the sidebar moved the feed is
-              ~880px wide, and a headline running the whole way is tiring to
-              read — the eye loses the line on the way back. */}
-          <div className="min-w-0 flex-1 sm:max-w-[54ch]">
+        <div className="mt-1.5 flex items-start gap-3">
+          {/* The full column. Capping the headline at a 54ch measure left the
+              right third of every row empty and pushed headlines onto a third
+              line to buy nothing — these are one- and two-line headlines, not
+              body copy, and the reading-measure argument does not apply. */}
+          <div className="min-w-0 flex-1">
             <h3
               className={`text-[15.5px] leading-[1.38] font-semibold text-text sm:text-[16.5px] ${
                 open ? "" : "line-clamp-3"
