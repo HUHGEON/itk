@@ -40,6 +40,8 @@ export interface Hydrated {
   snippet: string;
   image_url: string;
   resolved_url: string;
+  /** the fetched page revealed this is women's football */
+  womens?: boolean;
 }
 
 async function get(
@@ -228,6 +230,43 @@ export function extractMeta(html: string): { snippet: string; image: string } {
 }
 
 /**
+ * Women's football that the headline never admits to.
+ *
+ * A club posts "Confirmed Chelsea line up vs Auckland FC" under the same URL
+ * shape as the men's team; only the body ("Katie McCabe makes her maiden
+ * Chelsea start") and the image path give it away. The image path is the
+ * reliable half — clubs file women's-team photos in their own folder — so this
+ * runs after the fetch rather than on the title.
+ */
+function looksWomens(snippet: string, image: string, url: string): boolean {
+  const path = decodeURIComponent(image + " " + url).toLowerCase();
+  if (
+    /wom[ae]n|\bcfcw\b|\bmufcw\b|femenin|femminil|féminin|frauen|vrouwen/.test(
+      path,
+    )
+  ) {
+    return true;
+  }
+
+  const t = snippet.toLowerCase();
+  // Football business is not the women's game: a takeover led by a woman, or a
+  // chairman whose story merely mentions one, kept getting swept up.
+  if (
+    /shareholder|stake|co-owner|consortium|takeover|chairman|voorzitter|chief executive|president/.test(
+      t,
+    )
+  ) {
+    return false;
+  }
+  return (
+    /wom[ae]n|\bwsl\b|\bnwsl\b|femminil|femenin|féminin|feminin|frauen|vrouwen|jugadora|jogadora/.test(
+      t,
+    ) ||
+    (/\b(her|she)\b/.test(t) && !/\b(his|he|him)\b/.test(t))
+  );
+}
+
+/**
  * Resolves and reads one article. A row that yields nothing still comes back,
  * because the caller stamps every attempt — retrying a paywall on every run
  * would spend the whole budget on the same dead links.
@@ -255,5 +294,6 @@ export async function hydrateOne(row: {
     snippet,
     image_url: image,
     resolved_url: target === row.url ? "" : target,
+    womens: looksWomens(snippet, image, target),
   };
 }

@@ -837,6 +837,23 @@ end $$;
 
 -- The women's game, which this feed does not cover. The collector now rejects
 -- these on the way in; this clears what predates the filter.
+
+-- Removes stories the hydrate pass identified as women's football. The title
+-- gave nothing away; the fetched page did.
+
+create or replace function public.itk_drop_articles(p_ids text[])
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from articles where id = any(coalesce(p_ids, '{}'));
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_purge_womens()
 returns integer
 language plpgsql
@@ -845,11 +862,30 @@ set search_path = itk, public
 as $$
 declare v_n integer;
 begin
-  delete from articles
-  where title ~* '\mwomen|\mwsl\M|\mnwsl\M|\mlionesses\M|a-league women'
-     or title ~* '여자\s?축구|여자부'
-     or title ~* '\mfemminile\M|\mfemenin[ao]s?\M|\mféminines?\M'
-     or title ~* '\mfeminin[ao]s?\M|\mfrauen\M|\mvrouwen\M';
+  delete from articles a
+  where
+    (
+      -- Said outright in the headline, in any language we collect.
+      a.title ~* '\mwomen|\mwsl\M|\mnwsl\M|\mlionesses\M|a-league women'
+      or a.title ~* '여자\s?축구|여자부'
+      or a.title ~* 'femminil|femenin|féminin|feminin|frauen|vrouwen'
+      -- Or only in the body. A club posts "Confirmed Chelsea line up vs
+      -- Auckland FC" under the same URL shape as the men's team; the summary
+      -- and the image path are the only things that say otherwise.
+      or coalesce(a.snippet, '') ~* 'wom[ae]n|\mwsl\M|\mnwsl\M|femminil|femenin|féminin|feminin|frauen|vrouwen|jugadora|jogadora'
+      or coalesce(a.image_url, '') ~* 'wom[ae]n|\mcfcw\M|\mmufcw\M|femenin|femminil|frauen|vrouwen'
+      or coalesce(a.resolved_url, a.url) ~* '/wom[ae]n|femenin|femminil|frauen|vrouwen'
+      -- Female pronouns with no male one anywhere.
+      or (
+        coalesce(a.snippet, '') ~* '\m(her|she)\M'
+        and coalesce(a.snippet, '') !~* '\m(his|he|him)\M'
+      )
+    )
+    -- Football business is not the women's game. A woman buying a club, or a
+    -- chairman whose story merely mentions one, kept getting swept up.
+    and coalesce(a.snippet, '') !~* 'shareholder|stake|co-owner|consortium|takeover|chairman|voorzitter|board member|chief executive|president'
+;
+
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
@@ -1379,6 +1415,7 @@ declare
     'public.itk_dedupe_resolved()',
     'public.itk_purge_junk()',
     'public.itk_purge_womens()',
+    'public.itk_drop_articles(text[])',
     'public.itk_purge_backfill(integer)',
     'public.itk_retag(jsonb)',
     'public.itk_articles_for_retag(integer)',

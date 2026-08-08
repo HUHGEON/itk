@@ -68,17 +68,27 @@ async function main() {
     }),
   );
 
-  const written = await rpc<number>("itk_hydrate_apply", { p_rows: done });
+  // The page said what the headline would not: drop these rather than store a
+  // summary for something the feed does not cover.
+  const womens = done.filter((d) => d.womens).map((d) => d.id);
+  const dropped = womens.length
+    ? await rpc<number>("itk_drop_articles", { p_ids: womens })
+    : 0;
+
+  const written = await rpc<number>("itk_hydrate_apply", {
+    p_rows: done.filter((d) => !d.womens),
+  });
   // Only now can the wrapper links be matched against the outlet's own, so the
   // merge belongs here rather than in the collector.
   const merged = await rpc<number>("itk_dedupe_resolved", {});
-  const gotText = done.filter((d) => d.snippet).length;
+  const gotText = done.filter((d) => !d.womens && d.snippet).length;
   const gotImage = done.filter((d) => d.image_url).length;
   const gotUrl = done.filter((d) => d.resolved_url).length;
 
   console.log(
     `본문 요약: ${pending.length}건 시도 · 요약 ${gotText} · 이미지 ${gotImage} · ` +
-      `원문링크 ${gotUrl} · 기록 ${written} · 중복병합 ${merged}`,
+      `원문링크 ${gotUrl} · 기록 ${written} · 중복병합 ${merged}` +
+      (dropped ? ` · 여자축구 ${dropped}건 제외` : ""),
   );
 }
 
