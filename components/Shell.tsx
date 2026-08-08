@@ -96,7 +96,7 @@ export function Shell({
         {rail}
       </aside>
 
-      <div className="lg:pl-[var(--rail)]">
+      <div className="lg:pl-[calc(var(--rail)+0.5rem)]">
         {/* Below lg there is no rail, so a slim bar carries the way into it. */}
         <div className="sticky top-0 z-20 flex h-[var(--headerh)] items-center gap-2 border-b border-border bg-bg/95 px-[var(--gutter)] backdrop-blur-sm lg:hidden">
           <button

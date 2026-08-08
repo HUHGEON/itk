@@ -86,47 +86,42 @@ export function ArticleCard({
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full py-3.5 pr-[var(--gutter)] pl-[calc(var(--gutter)+3px)] text-left transition-colors ${
+        className={`block w-full py-3 pr-[var(--gutter)] pl-[calc(var(--gutter)+3px)] text-left transition-colors ${
           expandable
             ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
             : "cursor-default"
         }`}
       >
-        {/* Who filed it leads the row. "매체보다 저자가 중요" is the premise of
-            the whole app, so the name is set at reading size — shrinking it to
-            match the rest of the metadata buried the one thing that matters. */}
-        <div className="flex items-center gap-2 text-[11.5px]">
+        {/* Tier and name as one object, not two. They answer the same
+            question — who said this, and what is that worth — and reading them
+            as a single credential is faster than pairing a loose badge with a
+            loose name. The tier colours the cap; the name carries the weight. */}
+        <div className="flex items-center gap-2 text-[11px]">
           <span
-            className="shrink-0 rounded-[3px] border px-1.5 py-[2.5px] text-[10.5px] font-semibold tracking-tight"
+            className="flex min-w-0 shrink items-stretch overflow-hidden rounded-[4px] border"
             style={{
-              backgroundColor: tier.bg,
-              borderColor: tier.border,
-              color: tier.ink,
+              borderColor:
+                tier.border === "transparent" ? tier.bg : tier.border,
             }}
           >
-            {row.official ? "공식" : tierLabel(row.tier)}
-          </span>
-
-          {byline || row.official ? (
-            <span className="min-w-0 truncate text-[13.5px] font-bold text-text">
-              {row.official ? officialName : byline}
-              {!row.official && !row.journalistKo && (
-                <span className="ml-1 text-[10.5px] font-normal text-faint">
+            <span
+              className="shrink-0 px-1.5 py-[3px] text-[10px] font-semibold tracking-tight"
+              style={{ backgroundColor: tier.bg, color: tier.ink }}
+            >
+              {row.official ? "공식" : tierLabel(row.tier)}
+            </span>
+            <span className="min-w-0 truncate bg-surface-2 px-2 py-[3px] text-[12.5px] leading-[1.35] font-bold text-text">
+              {row.official ? officialName : (byline ?? "기자 미확인")}
+              {!row.official && byline && !row.journalistKo && (
+                <span className="ml-1 text-[10px] font-normal text-faint">
                   인용
                 </span>
               )}
             </span>
-          ) : (
-            <span className="text-[13px] text-faint">기자 미확인</span>
-          )}
+          </span>
 
-          {/* The outlet is dropped on narrow screens, so its separator has to
-              go with it — otherwise the line ends on a dangling dot. */}
           {!row.official && outlet && (
-            <span className="hidden min-w-0 items-center gap-2 truncate text-muted sm:flex">
-              <span aria-hidden className="text-faint">
-                ·
-              </span>
+            <span className="hidden min-w-0 truncate text-muted sm:block">
               {outlet}
             </span>
           )}
@@ -138,13 +133,12 @@ export function ArticleCard({
             {timeAgo(row.publishedAt, now)}
           </time>
         </div>
-
         <div className="mt-1.5 flex items-start gap-4">
           {/* A measure, not the full column. With the sidebar moved the feed is
               ~880px wide, and a headline running the whole way is tiring to
               read — the eye loses the line on the way back. */}
           <div className="min-w-0 flex-1 sm:max-w-[54ch]">
-            <h3 className="text-[16px] leading-[1.45] font-semibold text-text sm:text-[17px]">
+            <h3 className="text-[15.5px] leading-[1.38] font-semibold text-text sm:text-[16.5px]">
               {title}
             </h3>
             {/* The machine translation mangles football phrasing often enough
@@ -171,14 +165,14 @@ export function ArticleCard({
             for — most crests are dark navy or maroon and simply disappeared
             against a near-black page at that size. */}
         {rowTeams.length > 0 && (
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div className="mt-1.5 flex flex-wrap items-center gap-1">
             {rowTeams.slice(0, 4).map((t) => (
               <span
                 key={t.slug}
-                className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 py-[3px] pr-2.5 pl-[3px] text-[11.5px] text-muted"
+                className="inline-flex items-center gap-1 rounded-full bg-surface-2 py-[2px] pr-2 pl-[2px] text-[10.5px] text-muted"
               >
-                <span className="flex size-[19px] items-center justify-center rounded-full bg-surface-3">
-                  <TeamCrest team={t} size={15} />
+                <span className="flex size-[16px] items-center justify-center rounded-full bg-surface-3">
+                  <TeamCrest team={t} size={13} />
                 </span>
                 {t.ko}
               </span>
