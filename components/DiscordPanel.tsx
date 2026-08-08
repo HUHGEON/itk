@@ -280,7 +280,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   };
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4">
+    <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
         <h2 className="text-[13px] font-semibold">디스코드 알림</h2>
         <button

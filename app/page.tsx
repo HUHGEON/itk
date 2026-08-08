@@ -116,7 +116,7 @@ export default async function Home({
       </header>
 
       <div className="mx-auto max-w-5xl gap-5 lg:flex lg:px-5 lg:py-5">
-        <main className="min-w-0 flex-1 overflow-hidden border-border lg:rounded-lg lg:border lg:bg-surface">
+        <main className="min-w-0 flex-1 overflow-hidden border-border lg:rounded-xl lg:border lg:bg-surface">
           <Filters
             teams={teams}
             activity={activity}

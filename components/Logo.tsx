@@ -24,7 +24,7 @@ import Image from "next/image";
  */
 
 /** Intrinsic size of public/itk-plus.png. */
-const W = 601;
+const W = 615;
 const H = 235;
 
 export function Logo({ height = 38 }: { height?: number }) {

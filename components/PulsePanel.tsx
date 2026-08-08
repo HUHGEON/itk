@@ -22,7 +22,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
   if (ranked === 0) return null;
 
   return (
-    <section className="rounded-lg border border-border bg-surface p-4">
+    <section className="rounded-xl border border-border bg-surface p-4">
       <div className="flex items-baseline justify-between">
         <h2 className="text-[13px] font-semibold">최근 24시간</h2>
         <span className="tnum text-[11px] text-faint">{pulse.total}건</span>

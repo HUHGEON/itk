@@ -15,11 +15,11 @@
      #221814 — brown-leaning, not blue — and a cool grey UI under a warm mark
      made the two look like they came from different places. */
   --bg: #0a0908;
-  --surface: #121110;
-  --surface-2: #191716;
-  --surface-3: #221f1c;
-  --border: #2b2724;
-  --border-strong: #3d3833;
+  --surface: #131211;
+  --surface-2: #1c1a18;
+  --surface-3: #262320;
+  --border: #322d28;
+  --border-strong: #4a433c;
 
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
      contrast to stare at. */

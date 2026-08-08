@@ -56,12 +56,24 @@ export function ArticleCard({
     : row.source;
 
   return (
-    <article className="group relative">
-      {/* Presence, not decoration: the bar is only as strong as the tier. */}
+    <article
+      // A hairline between rows: without one a column of headlines ran together
+      // and the eye had to find each boundary from the text alone. An open row
+      // gets a lit surface and a brighter rule so it is obvious which story is
+      // being read.
+      className={`group relative border-b border-border/70 transition-colors last:border-b-0 ${
+        open ? "bg-surface-2/70" : ""
+      }`}
+    >
+      {/* Presence, not decoration: the bar is only as strong as the tier — and
+          it widens when the row is open. */}
       <span
         aria-hidden
-        className="absolute inset-y-0 left-0 w-[3px]"
-        style={{ backgroundColor: tierRule(row.tier, row.official) }}
+        className={`absolute inset-y-0 left-0 transition-all ${open ? "w-[5px]" : "w-[3px]"}`}
+        style={{
+          backgroundColor: tierRule(row.tier, row.official),
+          opacity: open ? 1 : 0.85,
+        }}
       />
 
       <button
@@ -69,7 +81,9 @@ export function ArticleCard({
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
         className={`block w-full px-4 py-3 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
-          expandable ? "cursor-pointer hover:bg-surface-2/60" : "cursor-default"
+          expandable
+            ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
+            : "cursor-default"
         }`}
       >
         {/* Who filed it leads the row. "매체보다 저자가 중요" is the premise of
