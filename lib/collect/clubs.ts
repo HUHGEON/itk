@@ -1,4 +1,5 @@
 import { detectTeams } from "../registry";
+import { WOMENS_FOOTBALL } from "./sources";
 import type { RawItem } from "./index";
 
 /**
@@ -193,7 +194,10 @@ export async function fetchClubSitemap(feed: ClubFeed): Promise<RawItem[]> {
       // Filter before truncating. Slicing first meant a club whose newest 40
       // posts were all ticket info and match previews — Man City and PSG both
       // are — yielded nothing at all, silently.
-      .filter((r) => SQUAD_NEWS.test(r.title))
+      // The club sitemap was the one path with no topic filter, so every
+      // women's-team post came through it — seven of them on the first run
+      // after the filter went in everywhere else.
+      .filter((r) => SQUAD_NEWS.test(r.title) && !WOMENS_FOOTBALL.test(r.title))
       .slice(0, MAX_PER_CLUB)
       .map((r) => {
         const detected = detectTeams(r.title);

@@ -168,3 +168,40 @@ export async function getTeamActivity(
   }
   return map;
 }
+
+export interface Pulse {
+  /** count per tier, keyed "0" | "1" | "1.5" | "2" | "3" */
+  byTier: Record<string, number>;
+  official: number;
+  total: number;
+  lastCollect: number | null;
+}
+
+/** The last 24 hours at a glance — one round trip for the sidebar. */
+export async function getPulse(): Promise<Pulse> {
+  const rows = await rpc<
+    {
+      tier: number | null;
+      official: boolean;
+      n: number;
+      last_collect: string | null;
+    }[]
+  >("itk_pulse", {});
+
+  const byTier: Record<string, number> = {};
+  let official = 0;
+  let total = 0;
+  let lastCollect: number | null = null;
+
+  for (const r of rows ?? []) {
+    const n = Number(r.n) || 0;
+    total += n;
+    if (r.official) official += n;
+    else if (r.tier !== null) {
+      byTier[String(r.tier)] = (byTier[String(r.tier)] ?? 0) + n;
+    }
+    if (r.last_collect) lastCollect = Date.parse(r.last_collect);
+  }
+
+  return { byTier, official, total, lastCollect };
+}

@@ -1,5 +1,10 @@
 import Link from "next/link";
-import { getFeed, getTeamActivity, getJournalistActivity } from "@/lib/feed";
+import {
+  getFeed,
+  getJournalistActivity,
+  getPulse,
+  getTeamActivity,
+} from "@/lib/feed";
 import { loadTeams, loadJournalists } from "@/lib/registry";
 import type { Team } from "@/lib/types";
 import { Filters } from "@/components/Filters";
@@ -7,6 +12,7 @@ import { ArticleList } from "@/components/ArticleList";
 import { AlertPanel } from "@/components/AlertPanel";
 import { CollectButton } from "@/components/CollectButton";
 import { SearchBox } from "@/components/SearchBox";
+import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 
 export const dynamic = "force-dynamic";
@@ -53,13 +59,14 @@ export default async function Home({
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
 
-  const [rows, activity, journalistActivity] = await Promise.all([
+  const [rows, activity, journalistActivity, pulse] = await Promise.all([
     getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
     // Counts describe the combination on screen, so each excludes its own
     // dimension: team badges ignore the team filter, journalist badges ignore
     // the journalist filter.
     getTeamActivity({ ...base, tieredOnly }),
     getJournalistActivity({ teams: teamSlugs, league, q }),
+    getPulse(),
   ]);
 
   const teams = loadTeams();
@@ -134,6 +141,7 @@ export default async function Home({
         </main>
 
         <aside className="w-full shrink-0 space-y-4 px-4 pt-5 pb-8 lg:w-[248px] lg:px-0 lg:pt-0">
+          <PulsePanel pulse={pulse} now={now} />
           <DiscordPanel teams={teams} />
           <AlertPanel teams={teams} />
         </aside>

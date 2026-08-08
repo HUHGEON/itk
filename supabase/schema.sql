@@ -834,6 +834,26 @@ begin
   return v_n;
 end $$;
 
+
+-- The women's game, which this feed does not cover. The collector now rejects
+-- these on the way in; this clears what predates the filter.
+create or replace function public.itk_purge_womens()
+returns integer
+language plpgsql
+security definer
+set search_path = itk, public
+as $$
+declare v_n integer;
+begin
+  delete from articles
+  where title ~* '\mwomen|\mwsl\M|\mnwsl\M|\mlionesses\M|a-league women'
+     or title ~* '여자\s?축구|여자부'
+     or title ~* '\mfemminile\M|\mfemenin[ao]s?\M|\mféminines?\M'
+     or title ~* '\mfeminin[ao]s?\M|\mfrauen\M|\mvrouwen\M';
+  get diagnostics v_n = row_count;
+  return v_n;
+end $$;
+
 create or replace function public.itk_purge_junk()
 returns integer
 language plpgsql
@@ -915,6 +935,24 @@ begin
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
+
+
+-- What the last day looks like, for the sidebar. One round trip rather than
+-- six, because the panel is above the fold on every page load.
+create or replace function public.itk_pulse()
+returns table (tier real, official boolean, n bigint, last_collect timestamptz)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select a.tier, a.official, count(*),
+         (select max(started_at) from collect_runs)
+  from articles a
+  where (a.journalist_id is not null or a.cited_id is not null or a.official)
+    and a.published_at > now() - interval '24 hours'
+  group by a.tier, a.official;
+$$;
 
 create or replace function public.itk_journalist_counts()
 returns table (id text, n bigint)
@@ -1340,6 +1378,7 @@ declare
     'public.itk_hydrate_pending(integer)',
     'public.itk_dedupe_resolved()',
     'public.itk_purge_junk()',
+    'public.itk_purge_womens()',
     'public.itk_purge_backfill(integer)',
     'public.itk_retag(jsonb)',
     'public.itk_articles_for_retag(integer)',

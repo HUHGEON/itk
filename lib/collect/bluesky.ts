@@ -1,5 +1,5 @@
 import type { Journalist } from "../types";
-import { isJunkTitle } from "./sources";
+import { WOMENS_FOOTBALL, isJunkTitle } from "./sources";
 import { beatFallback, detectTeams } from "../registry";
 import type { RawItem } from "./index";
 
@@ -121,6 +121,8 @@ export async function fetchBluesky(
 
     const link = postUrl(post);
     if (!link) return [];
+
+    if (WOMENS_FOOTBALL.test(text)) return [];
 
     const detected = detectTeams(text);
     if (detected.length === 0 && !FOOTBALL_POST.test(text)) return [];

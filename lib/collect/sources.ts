@@ -85,6 +85,33 @@ const JUNK_TITLE = new RegExp(
   "i",
 );
 
+/**
+ * The women's game, which this feed does not cover.
+ *
+ * Matched across the languages we collect in, plus the competition names that
+ * do not carry the word at all (WSL, NWSL, Lionesses). Kept separate from
+ * OTHER_SPORT because it is a preference, not a mis-tag — the reasoning and the
+ * word lists have nothing to do with each other.
+ */
+export const WOMENS_FOOTBALL = new RegExp(
+  [
+    "\\bwomen('?s)?\\b",
+    "\\bwsl\\b",
+    "\\bnwsl\\b",
+    "\\blionesses\\b",
+    "\\ba-league women\\b",
+    "여자\\s?축구",
+    "여자부",
+    "\\bfemminile\\b",
+    "\\bfemenin[ao]s?\\b",
+    "\\bféminines?\\b",
+    "\\bfeminin[ao]s?\\b",
+    "\\bfrauen\\b",
+    "\\bvrouwen\\b",
+  ].join("|"),
+  "i",
+);
+
 export function isJunkTitle(title: string): boolean {
   const t = title.trim();
   // Short posts carry no story of their own: "The ratings.", "Hello friends."

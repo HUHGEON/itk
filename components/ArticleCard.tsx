@@ -72,10 +72,12 @@ export function ArticleCard({
           expandable ? "cursor-pointer hover:bg-surface-2/60" : "cursor-default"
         }`}
       >
-        {/* Provenance line — small, single row, never wraps into the headline */}
-        <div className="flex items-center gap-2 text-[11px]">
+        {/* Who filed it leads the row. "매체보다 저자가 중요" is the premise of
+            the whole app, so the name is set at reading size — shrinking it to
+            match the rest of the metadata buried the one thing that matters. */}
+        <div className="flex items-center gap-2 text-[11.5px]">
           <span
-            className="shrink-0 rounded-[3px] border px-1.5 py-[2px] text-[10px] font-semibold tracking-tight"
+            className="shrink-0 rounded-[3px] border px-1.5 py-[2.5px] text-[10.5px] font-semibold tracking-tight"
             style={{
               backgroundColor: tier.bg,
               borderColor: tier.border,
@@ -86,14 +88,16 @@ export function ArticleCard({
           </span>
 
           {byline || row.official ? (
-            <span className="min-w-0 truncate font-medium text-text/90">
+            <span className="min-w-0 truncate text-[13.5px] font-semibold text-text">
               {row.official ? officialName : byline}
               {!row.official && !row.journalistKo && (
-                <span className="ml-1 font-normal text-faint">인용</span>
+                <span className="ml-1 text-[10.5px] font-normal text-faint">
+                  인용
+                </span>
               )}
             </span>
           ) : (
-            <span className="text-faint">기자 미확인</span>
+            <span className="text-[13px] text-faint">기자 미확인</span>
           )}
 
           {/* The outlet is dropped on narrow screens, so its separator has to
@@ -108,9 +112,17 @@ export function ArticleCard({
           )}
 
           {rowTeams.length > 0 && (
-            <span className="ml-auto flex shrink-0 items-center gap-1">
+            <span className="ml-auto flex shrink-0 items-center gap-1.5">
               {rowTeams.slice(0, 4).map((t) => (
-                <TeamCrest key={t.slug} team={t} size={14} title={t.ko} />
+                <span
+                  key={t.slug}
+                  title={t.ko}
+                  // Most crests are dark navy or maroon and vanished against the
+                  // near-black page. A faint disc behind them restores the edge.
+                  className="flex size-[22px] items-center justify-center rounded-full bg-surface-3/80"
+                >
+                  <TeamCrest team={t} size={16} title={t.ko} />
+                </span>
               ))}
             </span>
           )}
@@ -150,21 +162,26 @@ export function ArticleCard({
 
       {open && (
         <div className="px-4 pb-4 pl-5 sm:px-5 sm:pl-6">
-          {showImage && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={row.imageUrl!}
-              alt=""
-              onError={() => setImageOk(false)}
-              className="mb-3 h-44 w-full rounded-md bg-surface-3 object-cover sm:h-60"
-            />
-          )}
+          {/* Beside the text rather than above it. A full-bleed photo pushed the
+              summary — the reason the card opens — below the fold, and stock
+              agency shots earn less room than the words do. */}
+          <div className="flex flex-col gap-3.5 sm:flex-row">
+            {showImage && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={row.imageUrl!}
+                alt=""
+                onError={() => setImageOk(false)}
+                className="h-40 w-full shrink-0 rounded-md bg-surface-3 object-cover sm:h-[124px] sm:w-[196px]"
+              />
+            )}
 
-          {body && (
-            <p className="max-w-[68ch] text-[14px] leading-[1.7] text-text/75">
-              {body}
-            </p>
-          )}
+            {body && (
+              <p className="min-w-0 text-[14px] leading-[1.7] text-text/75">
+                {body}
+              </p>
+            )}
+          </div>
 
           <a
             href={row.url}

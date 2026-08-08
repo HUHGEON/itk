@@ -12,6 +12,7 @@ import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
 import {
   OTHER_SPORT,
   OUTLET_FEEDS,
+  WOMENS_FOOTBALL,
   googleNewsUrl,
   isJunkTitle,
 } from "./sources";
@@ -148,7 +149,7 @@ function ownFeedItems(j: Journalist, items: FeedItem[]): RawItem[] {
     const title = item.title ? stripHtml(item.title) : "";
     if (!link || !title) return [];
 
-    if (isJunkTitle(title)) return [];
+    if (isJunkTitle(title) || WOMENS_FOOTBALL.test(title)) return [];
 
     const snippet = item.contentSnippet
       ? stripHtml(item.contentSnippet).slice(0, 400)
@@ -177,7 +178,7 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
     const link = item.link ?? "";
     const title = item.title ? stripHtml(item.title) : "";
     if (!link || !title) return [];
-    if (isJunkTitle(title)) return [];
+    if (isJunkTitle(title) || WOMENS_FOOTBALL.test(title)) return [];
 
     // A Google News hit is a name match, not a byline. Their namesake in another
     // sport matches just as well — "Ferran Martínez" returned an ACB basketball
@@ -256,6 +257,9 @@ function outletItems(
     // A tracked journalist's byline outranks everything; otherwise drop stories
     // that are plainly about another sport before club aliases can misfire.
     if (!match && OTHER_SPORT.test(text)) return [];
+    // Unlike other sports, this one is filtered even under a tracked byline —
+    // it is a topic preference, not a mis-tag.
+    if (WOMENS_FOOTBALL.test(text)) return [];
 
     const teams = detectTeams(text);
     // "according to Fabrizio Romano" — the one free trace of an X-only scoop.

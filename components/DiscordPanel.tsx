@@ -296,11 +296,13 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           it never shows anyone else's destinations, but registering several
           here pushed the rest of the sidebar off the screen. */}
       <p className="mt-2 text-[11px] leading-relaxed text-muted">
-        {subs === null
-          ? "불러오는 중…"
-          : subs.length === 0
-            ? "웹훅을 등록하면 브라우저를 닫아도 알림이 옵니다."
-            : `이 브라우저에 등록된 알림 ${subs.length}개`}
+        {/* The list is fetched client-side from a localStorage token, so the
+            first paint has nothing to count. Showing "불러오는 중…" put a
+            loading state at the top of the sidebar on every page load; the
+            panel's own description holds the space until the count arrives. */}
+        {subs === null || subs.length === 0
+          ? "웹훅을 등록하면 브라우저를 닫아도 알림이 옵니다."
+          : `이 브라우저에 등록된 알림 ${subs.length}개`}
       </p>
 
       <div className="mt-2 flex items-center gap-2">
