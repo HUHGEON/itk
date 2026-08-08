@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { Suspense } from "react";
 import { getFeed, getTeamActivity, getJournalistActivity } from "@/lib/feed";
 import { loadTeams, loadJournalists } from "@/lib/registry";
 import type { Team } from "@/lib/types";
@@ -39,6 +38,16 @@ export default async function Home({
   const tieredOnly = sp.feed !== "all";
 
   const base = { tiers, teams: teamSlugs, league, q, journalistId: who };
+
+  // The filter bar renders on the server from this, so it is present in the
+  // first byte instead of arriving as a streamed swap.
+  const filterState = {
+    tiers: csv(sp.tier),
+    teams: teamSlugs,
+    league: league ?? "",
+    who: who ?? "",
+    q: q ?? "",
+  };
 
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
@@ -99,14 +108,13 @@ export default async function Home({
 
       <div className="mx-auto max-w-5xl gap-5 lg:flex lg:px-5 lg:py-5">
         <main className="min-w-0 flex-1 overflow-hidden border-border lg:rounded-lg lg:border lg:bg-surface">
-          <Suspense fallback={<FilterSkeleton />}>
-            <Filters
-              teams={teams}
-              activity={activity}
-              journalists={journalists}
-              journalistActivity={journalistActivity}
-            />
-          </Suspense>
+          <Filters
+            teams={teams}
+            activity={activity}
+            journalists={journalists}
+            journalistActivity={journalistActivity}
+            state={filterState}
+          />
 
           {rows.length === 0 ? (
             <EmptyState
@@ -127,36 +135,6 @@ export default async function Home({
           <DiscordPanel teams={teams} />
           <AlertPanel teams={teams} />
         </aside>
-      </div>
-    </div>
-  );
-}
-
-/** Same height as the real bar, so the feed does not jump when it arrives. */
-function FilterSkeleton() {
-  return (
-    <div aria-hidden className="animate-pulse border-b border-border">
-      <div className="flex items-center gap-1.5 px-4 py-3 sm:px-5">
-        <div className="h-3 w-8 rounded bg-surface-3" />
-        {[44, 40, 52, 40, 40].map((w, i) => (
-          <div
-            key={i}
-            className="h-[26px] rounded-[4px] bg-surface-2"
-            style={{ width: w }}
-          />
-        ))}
-      </div>
-      <div className="flex gap-4 border-t border-border px-4 py-3 sm:px-5">
-        {[32, 60, 44, 52, 40].map((w, i) => (
-          <div
-            key={i}
-            className="h-4 rounded bg-surface-2"
-            style={{ width: w }}
-          />
-        ))}
-      </div>
-      <div className="border-t border-border px-4 py-3 sm:px-5">
-        <div className="h-[38px] rounded-[5px] bg-surface-2" />
       </div>
     </div>
   );

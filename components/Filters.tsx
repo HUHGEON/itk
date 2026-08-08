@@ -1,7 +1,13 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useTransition,
+} from "react";
 import type { Team, League, Journalist } from "@/lib/types";
 import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
 import { tierLabel, tierStyle } from "@/lib/format";
@@ -20,36 +26,56 @@ const LEAGUES: League[] = [
 
 type Activity = Record<string, { count: number; bestTier: number | null }>;
 
+/** What the URL currently says, parsed once on the server. */
+export interface FilterState {
+  tiers: string[];
+  teams: string[];
+  league: string;
+  who: string;
+  q: string;
+}
+
 export function Filters({
   teams,
   activity,
   journalists,
   journalistActivity,
+  state,
 }: {
   teams: Team[];
   activity: Activity;
   journalists: Journalist[];
   journalistActivity: Record<string, number>;
+  state: FilterState;
 }) {
   const router = useRouter();
-  const params = useSearchParams();
   const [pending, startTransition] = useTransition();
 
-  const selectedTiers = (params.get("tier") ?? "").split(",").filter(Boolean);
-  const selectedTeams = (params.get("team") ?? "").split(",").filter(Boolean);
-  const league = params.get("league") ?? "";
-  const who = params.get("who") ?? "";
-  const [query, setQuery] = useState(params.get("q") ?? "");
+  // Handed down rather than read with useSearchParams. That hook opts its
+  // subtree out of server rendering, so the whole bar shipped as a Suspense
+  // fallback and only appeared once a streamed chunk was swapped in — which on
+  // one browser never happened, leaving a permanent skeleton where the filters
+  // should be. The page already parses these on the server.
+  const selectedTiers = state.tiers;
+  const selectedTeams = state.teams;
+  const league = state.league;
+  const who = state.who;
+  const [query, setQuery] = useState(state.q);
 
   const push = useCallback(
     (mutate: (p: URLSearchParams) => void) => {
-      const next = new URLSearchParams(params.toString());
+      const next = new URLSearchParams();
+      if (state.tiers.length) next.set("tier", state.tiers.join(","));
+      if (state.teams.length) next.set("team", state.teams.join(","));
+      if (state.league) next.set("league", state.league);
+      if (state.who) next.set("who", state.who);
+      if (state.q) next.set("q", state.q);
       mutate(next);
       startTransition(() => {
         router.push(next.toString() ? `/?${next}` : "/", { scroll: false });
       });
     },
-    [params, router],
+    [state, router],
   );
 
   const toggleIn = (key: string, value: string) =>
