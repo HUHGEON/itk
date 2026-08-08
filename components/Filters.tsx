@@ -177,6 +177,9 @@ export function Filters({
               onClick={() => toggleIn("tier", key)}
               aria-pressed={on}
               className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
+              // Unselected chips still carry their hue: the rail is where you
+              // learn which colour means which tier, and five identical grey
+              // pills teach nothing.
               style={
                 on
                   ? {
@@ -186,8 +189,8 @@ export function Filters({
                     }
                   : {
                       backgroundColor: "transparent",
-                      borderColor: "var(--border)",
-                      color: "var(--muted)",
+                      borderColor: `color-mix(in srgb, ${st.color} 26%, transparent)`,
+                      color: `color-mix(in srgb, ${st.color} 78%, var(--muted))`,
                     }
               }
             >
