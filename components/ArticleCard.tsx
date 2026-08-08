@@ -96,15 +96,15 @@ export function ArticleCard({
             <span className="text-faint">기자 미확인</span>
           )}
 
+          {/* The outlet is dropped on narrow screens, so its separator has to
+              go with it — otherwise the line ends on a dangling dot. */}
           {!row.official && outlet && (
-            <>
+            <span className="hidden min-w-0 items-center gap-2 truncate text-muted sm:flex">
               <span aria-hidden className="text-faint">
                 ·
               </span>
-              <span className="hidden min-w-0 truncate text-muted sm:inline">
-                {outlet}
-              </span>
-            </>
+              {outlet}
+            </span>
           )}
 
           {rowTeams.length > 0 && (
