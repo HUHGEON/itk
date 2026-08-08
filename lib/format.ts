@@ -10,12 +10,11 @@ export function tierLabel(tier: number | null): string {
 }
 
 /**
- * Tier as one colour at five strengths.
+ * Tier as a colour and a weight.
  *
- * Five separate hues read as five unrelated categories; the tier list is a
- * ladder, so it is drawn as one — a 0-tier byline is a solid block, a 3-tier
- * one is grey text. `weight` is what everything else keys off: the badge fill,
- * the rule down the left edge of a row, the chip in the filter rail.
+ * The colour is what lets you tell 1 from 1.5 without reading; the weight is
+ * what makes a 0-tier byline louder than a 3-tier one. A solid block at the
+ * top, a tint in the middle, bare text at the bottom.
  */
 export interface TierStyle {
   /** 1 at the top of the ladder, 0 at the bottom */
@@ -27,6 +26,14 @@ export interface TierStyle {
   /** text colour that sits on `bg` */
   ink: string;
 }
+
+const HUE: Record<string, string> = {
+  "0": "var(--tier-0)",
+  "1": "var(--tier-1)",
+  "1.5": "var(--tier-15)",
+  "2": "var(--tier-2)",
+  "3": "var(--tier-3)",
+};
 
 const LADDER: Record<string, number> = {
   "0": 1,
@@ -42,51 +49,55 @@ export function tierStyle(tier: number | null, official = false): TierStyle {
       weight: 1,
       color: "var(--official)",
       bg: "var(--official)",
-      border: "var(--official)",
-      ink: "var(--accent-ink)",
-    };
-  }
-
-  const w = tier === null ? 0 : (LADDER[String(tier)] ?? 0);
-
-  // Above the midpoint the badge is filled and shouts; below it, it recedes to
-  // an outline so a page of 2- and 3-tier chatter stays quiet.
-  if (w >= 0.7) {
-    return {
-      weight: w,
-      color: "var(--accent)",
-      bg: `color-mix(in srgb, var(--accent) ${Math.round(w * 100)}%, transparent)`,
       border: "transparent",
       ink: "var(--accent-ink)",
     };
   }
+
+  const key = tier === null ? "" : String(tier);
+  const color = HUE[key] ?? "var(--muted)";
+  const w = LADDER[key] ?? 0;
+
+  // Top of the ladder: a solid block, dark type on it.
+  if (w >= 1) {
+    return {
+      weight: w,
+      color,
+      bg: color,
+      border: "transparent",
+      ink: "var(--accent-ink)",
+    };
+  }
+  // Middle: the hue as a tint, so it still reads as its own colour.
   if (w >= 0.4) {
     return {
       weight: w,
-      color: "var(--accent)",
-      bg: "color-mix(in srgb, var(--accent) 14%, transparent)",
-      border: "color-mix(in srgb, var(--accent) 34%, transparent)",
-      ink: "var(--accent)",
+      color,
+      bg: `color-mix(in srgb, ${color} 16%, transparent)`,
+      border: `color-mix(in srgb, ${color} 42%, transparent)`,
+      ink: color,
     };
   }
+  // Bottom: outline only.
   return {
     weight: w,
-    color: "var(--muted)",
+    color,
     bg: "transparent",
-    border: "var(--border-strong)",
-    ink: "var(--muted)",
+    border: `color-mix(in srgb, ${color} 34%, transparent)`,
+    ink: color,
   };
 }
 
 /** The rule down the left edge of a row — presence, not decoration. */
 export function tierRule(tier: number | null, official = false): string {
   if (official) return "var(--official)";
-  const w = tier === null ? 0 : (LADDER[String(tier)] ?? 0);
-  if (w === 0) return "transparent";
-  return `color-mix(in srgb, var(--accent) ${Math.round(w * 100)}%, transparent)`;
+  const key = tier === null ? "" : String(tier);
+  const color = HUE[key];
+  const w = LADDER[key] ?? 0;
+  if (!color || w === 0) return "transparent";
+  return `color-mix(in srgb, ${color} ${Math.round(30 + w * 70)}%, transparent)`;
 }
 
-/** Kept for callers that only need a single colour (badges, counts). */
 export function tierColor(tier: number | null): string {
   return tierStyle(tier).color;
 }

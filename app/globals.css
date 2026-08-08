@@ -27,11 +27,21 @@
   --faint: #5e5d66;
 
   --accent: #ffa72e;
-  --accent-ink: #1a1206;
+  --accent-ink: #16100a;
 
-  /* Club announcements are facts, not reports, so they sit outside the tier
-     ladder entirely and take the one cool tone on the page. */
-  --official: #7fb2ff;
+  /* Tier gets its own hue *and* its own weight. Hue alone made five unrelated
+     categories; weight alone made them hard to tell apart at a glance, which is
+     the one thing a tier badge has to do. So: distinct colours, and a treatment
+     that fades from a solid block at the top to bare text at the bottom. */
+  --tier-0: #ffa72e;
+  --tier-1: #5fd68a;
+  --tier-15: #54c8e8;
+  --tier-2: #9aa4b5;
+  --tier-3: #737a88;
+
+  /* A club announcing its own signing is a fact, not a report, so it sits
+     outside the ladder and takes a hue none of the tiers use. */
+  --official: #b39dff;
 
   color-scheme: dark;
 }
@@ -49,6 +59,11 @@
   --color-accent: var(--accent);
   --color-accent-ink: var(--accent-ink);
   --color-official: var(--official);
+  --color-tier-0: var(--tier-0);
+  --color-tier-1: var(--tier-1);
+  --color-tier-15: var(--tier-15);
+  --color-tier-2: var(--tier-2);
+  --color-tier-3: var(--tier-3);
 
   --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-plex-mono), ui-monospace, monospace;

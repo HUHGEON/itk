@@ -10,7 +10,7 @@ import {
 } from "react";
 import type { Team, League, Journalist } from "@/lib/types";
 import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
-import { tierLabel, tierStyle } from "@/lib/format";
+import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close, Search } from "./icons";
@@ -225,7 +225,7 @@ export function Filters({
                   }`}
                 >
                   {j.ko}
-                  <span className="tnum text-[10px] text-faint">{n}</span>
+                  <CountBadge n={n} tier={j.tier} />
                 </button>
               );
             })
@@ -247,6 +247,7 @@ export function Filters({
               key={g.league}
               active={league === g.league}
               badge={g.count > 0 ? g.count : undefined}
+              badgeTier={g.best}
               onClick={() =>
                 push((p) =>
                   league === g.league
@@ -282,8 +283,8 @@ export function Filters({
                   <TeamCrest team={t} size={16} />
                   {t.ko}
                   {act && act.count > 0 && (
-                    <span className="tnum ml-0.5 text-[10px] text-faint">
-                      {act.count}
+                    <span className="ml-0.5">
+                      <CountBadge n={act.count} tier={act.bestTier} />
                     </span>
                   )}
                 </button>
@@ -344,14 +345,36 @@ export function Filters({
   );
 }
 
+/**
+ * A count with a colour. The number says how much is behind the filter; the
+ * colour says how trustworthy the best of it is — a league sitting on a 0-tier
+ * scoop should not look the same as one with forty 3-tier rumours.
+ */
+function CountBadge({ n, tier }: { n: number; tier: number | null }) {
+  const color = tierColor(tier);
+  return (
+    <span
+      className="tnum rounded-full px-1.5 py-[1px] text-[10px] font-semibold"
+      style={{
+        color,
+        backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)`,
+      }}
+    >
+      {n}
+    </span>
+  );
+}
+
 function LeagueTab({
   active,
   badge,
+  badgeTier,
   onClick,
   children,
 }: {
   active: boolean;
   badge?: number;
+  badgeTier?: number | null;
   onClick: () => void;
   children: React.ReactNode;
 }) {
@@ -367,9 +390,7 @@ function LeagueTab({
       }`}
     >
       {children}
-      {badge !== undefined && (
-        <span className="tnum text-[10px] text-faint">{badge}</span>
-      )}
+      {badge !== undefined && <CountBadge n={badge} tier={badgeTier ?? null} />}
     </button>
   );
 }
