@@ -65,13 +65,15 @@ export function Shell({
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        {/* The mark takes the band rather than sitting in a corner of it. */}
+        {/* The mark takes the band rather than sitting in a corner of it —
+            centred at 90% of the column, so it reads as placed rather than
+            wedged against the two rules on either side. */}
         <div className="relative shrink-0 border-b border-border px-[var(--gutter)] py-3.5">
           <Link
             href="/"
             aria-label="ITK plus 홈 · 필터 초기화"
             title="필터 초기화"
-            className="block rounded-md transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="mx-auto block w-[90%] rounded-md transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
             <LogoFluid />
           </Link>
