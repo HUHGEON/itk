@@ -1,7 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" width="180" height="180">
-  <!-- Tab icon: the mark, cropped to the ball and ribbon and nudged to fill the
-       tile. The drop shadows and the small patches are dropped — at 16px they
-       only muddy it. -->
+  <!-- Home-screen tile. iOS masks it to a squircle and paints no background of
+       its own, so the fill is drawn here and the mark sits inside the safe area. -->
   <defs>
     <linearGradient id="o" x1="0%" y1="100%" x2="100%" y2="0%">
       <stop offset="0%" stop-color="#FF3E00" />

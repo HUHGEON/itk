@@ -14,6 +14,11 @@ const sans = IBM_Plex_Sans_KR({
   // 700 was used six times and 600 reads as bold enough at these sizes. Each
   // weight is ~100 subset files for Korean, so dropping one is real bytes.
   weight: ["400", "500", "600"],
+  // The Korean cut is split into ~130 unicode-range subsets, and next/font
+  // emits a <link rel="preload"> for every one — 134 eager font fetches on a
+  // page that shows a couple of dozen distinct syllables. Off, the browser
+  // pulls only the ranges it actually paints.
+  preload: false,
   display: "swap",
 });
 
