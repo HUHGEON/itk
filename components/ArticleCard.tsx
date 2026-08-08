@@ -138,14 +138,25 @@ export function ArticleCard({
               ~880px wide, and a headline running the whole way is tiring to
               read — the eye loses the line on the way back. */}
           <div className="min-w-0 flex-1 sm:max-w-[54ch]">
-            <h3 className="text-[15.5px] leading-[1.38] font-semibold text-text sm:text-[16.5px]">
+            <h3
+              className={`text-[15.5px] leading-[1.38] font-semibold text-text sm:text-[16.5px] ${
+                open ? "" : "line-clamp-3"
+              }`}
+            >
               {title}
             </h3>
             {/* The machine translation mangles football phrasing often enough
                 that the original has to stay readable at a glance, not be
                 hidden behind an expand. */}
+            {/* One line when shut. A three-line English headline under a
+                three-line Korean one doubles the row for a reference most
+                readers only glance at; opening the article restores it. */}
             {translated && (
-              <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
+              <p
+                className={`mt-0.5 text-[12.5px] leading-snug text-muted ${
+                  open ? "" : "line-clamp-1"
+                }`}
+              >
                 {row.title}
               </p>
             )}
