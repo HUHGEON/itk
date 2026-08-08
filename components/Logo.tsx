@@ -1,17 +1,20 @@
 /**
  * The mark.
  *
- * The ribbon is a filled band rather than a stroked arc so it can taper — thin
- * where it leaves frame, thick at the shoulder — which is what makes a swoosh
- * look drawn instead of extruded. It is painted twice: once behind the ball and
- * once, for the stretch that crosses the lower left, in front. That single
- * overlap is what makes it read as wrapping rather than orbiting.
+ * The ball is a real truncated icosahedron: the twelve pentagon centres are the
+ * vertices of an icosahedron, each panel's corners sit a third of the way along
+ * the edges to its neighbours, and the whole thing is projected after a
+ * rotation. Six panels face the viewer, which is what you see holding a ball.
+ * Scattering flat pentagons across a circle is what it looked like before, and
+ * it read as a beach ball.
  *
- * The ball gets a specular highlight, a terminator shade and a rim line. Panels
- * are clipped to the sphere and shrink as they turn away from the light.
+ * The ribbon is a filled band, not a stroked arc, so it can taper. Its radius
+ * ramps up over the last third so it spirals away from the ball instead of
+ * orbiting it — that outward exit is what turns a ring into an arrow. It is
+ * painted twice, once behind the ball and once for the stretch that crosses the
+ * lower left in front; that single overlap is what makes it wrap.
  *
- * Geometry generated rather than hand-typed; the arc points are sampled at 64
- * steps so the taper stays smooth at any size.
+ * Geometry is generated, not hand-typed.
  */
 
 export function LogoMark({
@@ -30,61 +33,83 @@ export function LogoMark({
       className={className}
     >
       <defs>
-        <radialGradient id="itkSphere" cx="32%" cy="26%" r="76%">
+        <radialGradient id="itkSphere" cx="33%" cy="27%" r="75%">
           <stop offset="0" stopColor="#FFFFFF" />
-          <stop offset="0.42" stopColor="#EDF1F6" />
-          <stop offset="0.78" stopColor="#B7C2D0" />
-          <stop offset="1" stopColor="#5B6878" />
+          <stop offset="0.45" stopColor="#F1F4F8" />
+          <stop offset="0.8" stopColor="#C2CCD8" />
+          <stop offset="1" stopColor="#6B7787" />
         </radialGradient>
         <radialGradient id="itkSpec" cx="50%" cy="50%" r="50%">
-          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.95" />
+          <stop offset="0" stopColor="#FFFFFF" stopOpacity="0.92" />
           <stop offset="1" stopColor="#FFFFFF" stopOpacity="0" />
         </radialGradient>
-        <radialGradient id="itkTerm" cx="34%" cy="28%" r="78%">
-          <stop offset="0.6" stopColor="#0B1220" stopOpacity="0" />
-          <stop offset="1" stopColor="#0B1220" stopOpacity="0.5" />
+        <radialGradient id="itkTerm" cx="35%" cy="29%" r="78%">
+          <stop offset="0.58" stopColor="#0B1220" stopOpacity="0" />
+          <stop offset="1" stopColor="#0B1220" stopOpacity="0.52" />
         </radialGradient>
-        <linearGradient id="itkRib" x1="6%" y1="96%" x2="96%" y2="4%">
-          <stop offset="0" stopColor="#B32400" />
-          <stop offset="0.42" stopColor="#FF6B00" />
-          <stop offset="1" stopColor="#FFC155" />
+        <linearGradient id="itkRib" x1="4%" y1="98%" x2="98%" y2="2%">
+          <stop offset="0" stopColor="#A81F00" />
+          <stop offset="0.4" stopColor="#FF6B00" />
+          <stop offset="0.8" stopColor="#FF9A1F" />
+          <stop offset="1" stopColor="#FFCE6A" />
         </linearGradient>
-        <radialGradient id="itkHalo" cx="50%" cy="50%" r="50%">
-          <stop offset="0.48" stopColor="#FF6B00" stopOpacity="0.34" />
+        <radialGradient id="itkGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0.46" stopColor="#FF6B00" stopOpacity="0.32" />
           <stop offset="1" stopColor="#FF6B00" stopOpacity="0" />
         </radialGradient>
-        <clipPath id="itkBallClip">
+        <clipPath id="itkClip">
           <circle cx="78" cy="104" r="52" />
         </clipPath>
       </defs>
 
-      <circle cx="78" cy="104" r="78" fill="url(#itkHalo)" />
+      <circle cx="78" cy="104" r="80" fill="url(#itkGlow)" />
 
       <path
-        d="M 11.7 142.2 14.1 146.0 16.6 149.6 19.3 153.1 22.2 156.5 25.3 159.6 28.6 162.6 32.0 165.4 35.6 168.0 39.4 170.4 43.2 172.6 47.2 174.6 51.3 176.3 55.5 177.8 59.8 179.1 64.2 180.1 68.6 180.9 73.0 181.4 77.5 181.7 82.0 181.7 86.5 181.4 91.0 180.9 95.4 180.2 99.8 179.2 104.2 177.9 108.4 176.4 112.6 174.6 116.7 172.6 120.7 170.4 124.6 167.9 128.3 165.2 131.8 162.3 135.2 159.2 138.4 155.9 141.4 152.4 144.2 148.8 146.8 144.9 149.2 141.0 151.3 136.8 153.2 132.6 154.9 128.2 156.3 123.8 157.4 119.3 158.3 114.7 158.9 110.0 159.2 105.3 159.3 100.6 159.1 95.9 158.6 91.2 157.8 86.6 156.7 82.0 155.4 77.4 153.8 73.0 152.0 68.6 149.9 64.4 147.5 60.2 145.0 56.2 142.1 52.4 139.1 48.8 135.8 45.3 132.4 42.0 128.7 39.0 124.9 36.1 120.9 33.5 116.7 31.2 L 105.9 51.5 108.9 53.2 111.8 55.0 114.6 57.0 117.3 59.2 119.8 61.5 122.2 64.0 124.5 66.6 126.6 69.3 128.6 72.1 130.4 75.1 132.1 78.1 133.6 81.3 134.9 84.5 136.0 87.8 136.9 91.1 137.7 94.5 138.2 98.0 138.6 101.5 138.8 105.0 138.7 108.5 138.5 112.0 138.0 115.5 137.4 119.0 136.6 122.5 135.5 125.9 134.3 129.2 132.9 132.5 131.2 135.7 129.4 138.8 127.4 141.8 125.3 144.7 123.0 147.4 120.5 150.0 117.8 152.5 115.0 154.9 112.1 157.0 109.1 159.0 105.9 160.9 102.6 162.5 99.2 164.0 95.8 165.2 92.2 166.3 88.6 167.1 85.0 167.7 81.3 168.1 77.6 168.3 73.9 168.3 70.1 168.1 66.4 167.6 62.7 166.9 59.1 166.0 55.5 164.9 52.0 163.6 48.6 162.1 45.2 160.3 42.0 158.4 38.9 156.3 35.9 154.0 33.0 151.5 30.3 148.8 27.8 146.0 25.4 143.1 23.3 140.0 21.3 136.8 Z"
+        d="M 9.1 140.6 10.4 143.0 11.8 145.3 13.3 147.6 14.8 149.8 16.4 151.9 18.1 154.1 19.8 156.1 21.6 158.1 23.5 160.1 25.4 162.0 27.4 163.8 29.5 165.5 31.6 167.2 33.7 168.8 36.0 170.4 38.2 171.9 40.6 173.3 42.9 174.6 45.4 175.8 47.8 177.0 50.3 178.1 52.9 179.1 55.5 180.0 58.1 180.8 60.7 181.6 63.4 182.2 66.1 182.8 68.8 183.3 71.5 183.6 74.3 183.9 77.0 184.1 79.8 184.2 82.6 184.2 85.3 184.2 88.1 184.0 90.9 183.7 93.6 183.3 96.4 182.9 99.1 182.3 101.9 181.7 104.6 180.9 107.3 180.1 109.9 179.1 112.5 178.1 115.1 177.0 117.7 175.8 120.2 174.5 122.7 173.1 125.1 171.6 127.5 170.0 129.8 168.4 132.1 166.6 134.3 164.8 136.5 162.9 138.6 161.0 140.7 159.0 142.8 157.0 145.0 155.0 147.1 153.0 149.3 151.0 151.5 148.9 153.8 146.7 156.0 144.5 158.2 142.2 160.4 139.8 162.5 137.3 164.6 134.7 166.7 132.0 168.7 129.3 170.6 126.4 172.5 123.4 174.2 120.3 175.9 117.2 177.4 113.9 178.8 110.5 180.0 107.1 181.1 103.6 182.0 100.0 182.7 96.3 183.2 92.6 183.6 88.9 183.7 85.1 183.6 81.3 183.2 77.6 182.7 73.9 181.9 70.2 180.8 66.5 179.5 63.0 L 154.5 73.1 155.5 75.8 156.2 78.5 156.8 81.3 157.1 84.1 157.3 87.0 157.3 89.8 157.1 92.7 156.8 95.5 156.2 98.2 155.6 101.0 154.7 103.7 153.8 106.3 152.7 108.8 151.5 111.3 150.3 113.7 148.9 116.0 147.5 118.3 146.0 120.4 144.4 122.5 142.8 124.5 141.2 126.4 139.6 128.3 137.9 130.0 136.3 131.7 134.6 133.4 133.0 135.0 131.4 136.6 129.8 138.1 128.2 139.6 126.7 141.1 125.2 142.6 123.8 144.2 122.3 145.7 121.0 147.3 119.5 148.8 118.0 150.3 116.5 151.8 114.9 153.2 113.2 154.5 111.5 155.8 109.8 157.1 108.0 158.2 106.2 159.4 104.3 160.4 102.4 161.4 100.4 162.3 98.5 163.2 96.4 164.0 94.4 164.7 92.3 165.4 90.2 165.9 88.1 166.5 85.9 166.9 83.8 167.2 81.6 167.5 79.4 167.7 77.2 167.9 75.0 167.9 72.8 167.9 70.6 167.8 68.4 167.6 66.2 167.3 64.0 167.0 61.8 166.6 59.6 166.1 57.4 165.5 55.3 164.8 53.2 164.1 51.1 163.3 49.0 162.4 47.0 161.4 45.0 160.4 43.0 159.3 41.1 158.1 39.2 156.8 37.4 155.5 35.6 154.1 33.8 152.7 32.1 151.2 30.5 149.6 28.9 147.9 27.4 146.2 26.0 144.5 24.6 142.7 23.3 140.8 22.0 138.9 20.8 137.0 19.7 135.0 Z"
         fill="url(#itkRib)"
       />
-      <path
-        d="M 84.8 27.2 L 127.5 17.3 L 117.5 44.6 L 102.6 64.0 Z"
-        fill="url(#itkRib)"
-      />
+      <path d="M 194.8 39.3 L 193.4 99.0 L 135.1 42.8 Z" fill="url(#itkRib)" />
 
       <circle cx="78" cy="104" r="52" fill="url(#itkSphere)" />
-      <g clipPath="url(#itkBallClip)" fill="#16233A">
-        <path d="M 71.0 74.0 L 89.1 87.1 L 82.2 108.4 L 59.8 108.4 L 52.9 87.1 Z" />
-        <path d="M 105.7 68.3 L 89.4 72.5 L 79.4 61.4 L 89.4 50.4 L 105.7 54.6 Z" />
-        <path d="M 104.2 114.7 L 95.4 105.1 L 104.2 95.4 L 118.3 99.1 L 118.3 111.0 Z" />
-        <path d="M 57.7 132.0 L 66.9 121.9 L 81.7 125.8 L 81.7 138.2 L 66.9 142.1 Z" />
-        <path d="M 29.4 94.0 L 45.6 98.2 L 45.6 111.9 L 29.4 116.1 L 19.4 105.0 Z" />
-        <path d="M 59.8 54.6 L 59.8 68.3 L 43.6 72.5 L 33.6 61.4 L 43.6 50.4 Z" />
+      <g clipPath="url(#itkClip)">
+        <path
+          d="M 116.9 137.9 L 104.1 143.4 L 87.6 153.3 L 90.3 154.0 L 108.4 144.5 Z"
+          fill="#16233A"
+          fillOpacity="0.38"
+        />
+        <path
+          d="M 124.5 106.7 L 127.1 119.6 L 128.8 107.8 L 127.1 87.7 L 124.5 87.0 Z"
+          fill="#16233A"
+          fillOpacity="0.41"
+        />
+        <path
+          d="M 39.1 133.9 L 51.9 148.2 L 68.4 150.4 L 65.7 137.5 L 47.6 127.3 Z"
+          fill="#16233A"
+          fillOpacity="0.73"
+        />
+        <path
+          d="M 82.2 56.3 L 80.6 68.0 L 98.7 78.2 L 111.6 72.8 L 101.4 59.2 Z"
+          fill="#16233A"
+          fillOpacity="0.78"
+        />
+        <path
+          d="M 62.4 77.6 L 45.9 75.3 L 35.7 93.6 L 45.9 107.2 L 62.4 97.3 Z"
+          fill="#16233A"
+          fillOpacity="0.98"
+        />
+        <path
+          d="M 101.4 130.5 L 111.6 112.2 L 98.7 97.9 L 80.6 107.5 L 82.2 127.6 Z"
+          fill="#16233A"
+          fillOpacity="1.00"
+        />
       </g>
       <ellipse
-        cx="59"
-        cy="82"
-        rx="25"
-        ry="17"
+        cx="58"
+        cy="80"
+        rx="24"
+        ry="16"
         fill="url(#itkSpec)"
-        transform="rotate(-24 59 82)"
+        transform="rotate(-26 58 80)"
       />
       <circle cx="78" cy="104" r="52" fill="url(#itkTerm)" />
       <circle
@@ -93,23 +118,29 @@ export function LogoMark({
         r="52"
         fill="none"
         stroke="#0B1220"
-        strokeOpacity="0.5"
+        strokeOpacity="0.55"
         strokeWidth="2"
       />
 
       <path
-        d="M 30.8 164.4 32.3 165.6 33.9 166.8 35.5 167.9 37.2 169.0 38.8 170.1 40.5 171.1 42.2 172.1 44.0 173.0 45.7 173.9 47.5 174.7 49.3 175.5 51.2 176.2 53.0 176.9 54.9 177.6 56.8 178.2 58.7 178.8 60.6 179.3 62.5 179.7 64.4 180.1 66.4 180.5 68.4 180.8 70.3 181.1 72.3 181.3 74.3 181.5 76.3 181.6 78.3 181.7 80.2 181.7 82.2 181.7 84.2 181.6 86.2 181.4 88.2 181.3 90.2 181.0 92.2 180.7 94.2 180.4 96.1 180.0 98.1 179.6 100.0 179.1 102.0 178.6 103.9 178.0 105.8 177.4 107.7 176.7 109.6 175.9 111.4 175.2 113.3 174.3 115.1 173.5 116.9 172.5 118.7 171.6 120.4 170.6 122.1 169.5 123.8 168.4 125.5 167.3 127.2 166.1 128.8 164.8 130.4 163.6 131.9 162.2 133.4 160.9 134.9 159.5 136.4 158.1 137.8 156.6 139.1 155.1 140.5 153.5 141.8 152.0 143.0 150.3 144.3 148.7 L 129.5 138.7 128.6 140.1 127.7 141.4 126.8 142.7 125.8 144.0 124.8 145.2 123.8 146.4 122.8 147.6 121.7 148.8 120.5 150.0 119.4 151.1 118.2 152.2 117.0 153.3 115.8 154.3 114.5 155.3 113.2 156.3 111.9 157.2 110.5 158.1 109.2 159.0 107.8 159.8 106.4 160.6 104.9 161.4 103.5 162.1 102.0 162.8 100.5 163.4 99.0 164.0 97.5 164.6 95.9 165.2 94.4 165.6 92.8 166.1 91.2 166.5 89.6 166.9 88.0 167.2 86.4 167.5 84.8 167.8 83.1 168.0 81.5 168.1 79.9 168.2 78.2 168.3 76.6 168.4 74.9 168.3 73.3 168.3 71.6 168.2 70.0 168.1 68.3 167.9 66.7 167.7 65.0 167.4 63.4 167.1 61.8 166.7 60.2 166.3 58.6 165.9 57.0 165.4 55.4 164.9 53.8 164.3 52.3 163.7 50.7 163.1 49.2 162.4 47.7 161.7 46.2 160.9 44.8 160.1 43.3 159.2 41.9 158.3 40.5 157.4 39.1 156.5 37.8 155.5 Z"
+        d="M 27.7 164.0 28.6 164.9 29.6 165.7 30.7 166.5 31.7 167.3 32.7 168.1 33.8 168.9 34.9 169.6 35.9 170.4 37.0 171.1 38.1 171.8 39.3 172.5 40.4 173.2 41.5 173.8 42.7 174.4 43.8 175.1 45.0 175.7 46.2 176.2 47.4 176.8 48.6 177.3 49.8 177.9 51.0 178.4 52.2 178.8 53.5 179.3 54.7 179.7 56.0 180.2 57.2 180.6 58.5 181.0 59.8 181.3 61.0 181.7 62.3 182.0 63.6 182.3 64.9 182.6 66.2 182.8 67.5 183.1 68.8 183.3 70.2 183.5 71.5 183.6 72.8 183.8 74.1 183.9 75.5 184.0 76.8 184.1 78.1 184.2 79.5 184.2 80.8 184.2 82.1 184.2 83.5 184.2 84.8 184.2 86.2 184.1 87.5 184.0 88.8 183.9 90.2 183.8 91.5 183.6 92.9 183.4 94.2 183.3 95.5 183.0 96.8 182.8 98.2 182.5 99.5 182.2 100.8 181.9 102.1 181.6 103.4 181.2 104.7 180.9 106.0 180.5 107.3 180.0 108.6 179.6 109.9 179.1 111.2 178.6 112.4 178.1 113.7 177.6 114.9 177.1 116.2 176.5 117.4 175.9 118.6 175.3 119.8 174.7 121.0 174.0 122.2 173.3 123.4 172.6 124.6 171.9 125.8 171.2 126.9 170.4 128.0 169.6 129.2 168.8 130.3 168.0 131.4 167.2 132.5 166.3 133.5 165.5 134.6 164.6 135.6 163.7 L 120.4 147.9 119.7 148.7 119.0 149.4 118.3 150.1 117.5 150.8 116.8 151.5 116.0 152.2 115.3 152.9 114.5 153.5 113.7 154.2 112.9 154.8 112.1 155.5 111.2 156.1 110.4 156.7 109.5 157.2 108.7 157.8 107.8 158.4 106.9 158.9 106.0 159.4 105.1 160.0 104.2 160.5 103.3 161.0 102.4 161.4 101.4 161.9 100.5 162.3 99.5 162.7 98.6 163.1 97.6 163.5 96.6 163.9 95.6 164.3 94.7 164.6 93.7 165.0 92.7 165.3 91.6 165.6 90.6 165.8 89.6 166.1 88.6 166.3 87.6 166.6 86.5 166.8 85.5 167.0 84.4 167.1 83.4 167.3 82.3 167.4 81.3 167.6 80.2 167.7 79.2 167.7 78.1 167.8 77.0 167.9 76.0 167.9 74.9 167.9 73.8 167.9 72.8 167.9 71.7 167.8 70.6 167.8 69.6 167.7 68.5 167.6 67.4 167.5 66.4 167.4 65.3 167.2 64.2 167.0 63.2 166.8 62.1 166.6 61.1 166.4 60.0 166.2 59.0 165.9 57.9 165.6 56.9 165.3 55.9 165.0 54.8 164.7 53.8 164.3 52.8 163.9 51.8 163.6 50.8 163.1 49.8 162.7 48.8 162.3 47.8 161.8 46.8 161.3 45.8 160.8 44.9 160.3 43.9 159.8 43.0 159.3 42.0 158.7 41.1 158.1 40.2 157.5 39.3 156.9 38.4 156.3 37.5 155.6 36.6 155.0 35.8 154.3 Z"
         fill="url(#itkRib)"
       />
     </svg>
   );
 }
 
-/** `size` is the cap size of "itk"; the rest is proportional to it. */
+/**
+ * `size` is the cap size of "itk"; the rest is proportional.
+ *
+ * `translate="no"` is not decoration — Chrome's page translation was rendering
+ * the brand as "itk 더하기".
+ */
 export function Logo({ size = 82 }: { size?: number }) {
   return (
     <span
-      className="flex select-none items-center"
+      translate="no"
+      className="notranslate flex select-none items-center"
       style={{ fontSize: size, gap: "0.16em" }}
     >
       <LogoMark size={size * 1.42} className="shrink-0" />
@@ -136,30 +167,52 @@ export function Logo({ size = 82 }: { size?: number }) {
           itk
         </span>
 
-        <span className="flex items-center" style={{ marginTop: "-0.12em" }}>
+        {/* The plus lives inside the bowl of the p rather than standing beside
+            the word. */}
+        <span
+          className="relative inline-block"
+          style={{
+            marginTop: "-0.12em",
+            fontSize: "0.83em",
+            letterSpacing: "-0.024em",
+            background:
+              "linear-gradient(180deg, #FF6B00 0%, #FF3E00 50%, #D93000 100%)",
+            WebkitBackgroundClip: "text",
+            WebkitTextFillColor: "transparent",
+            filter: "drop-shadow(0.02em 0.04em 0.04em rgba(0,0,0,0.45))",
+          }}
+        >
+          plus
           <span
+            aria-hidden
+            className="absolute"
             style={{
-              fontSize: "0.61em",
-              marginRight: "0.02em",
-              color: "#FF5500",
-              WebkitTextStroke: "0.012em #C44000",
-              filter: "drop-shadow(0.03em 0.04em 0.04em rgba(0,0,0,0.45))",
+              left: "0.142em",
+              top: "0.39em",
+              width: "0.24em",
+              height: "0.24em",
             }}
           >
-            +
-          </span>
-          <span
-            style={{
-              fontSize: "0.829em",
-              letterSpacing: "-0.024em",
-              background:
-                "linear-gradient(180deg, #FF6B00 0%, #FF3E00 50%, #D93000 100%)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              filter: "drop-shadow(0.02em 0.04em 0.04em rgba(0,0,0,0.45))",
-            }}
-          >
-            plus
+            <span
+              className="absolute bg-white"
+              style={{
+                left: 0,
+                top: "0.081em",
+                width: "0.24em",
+                height: "0.078em",
+                borderRadius: "0.026em",
+              }}
+            />
+            <span
+              className="absolute bg-white"
+              style={{
+                top: 0,
+                left: "0.081em",
+                height: "0.24em",
+                width: "0.078em",
+                borderRadius: "0.026em",
+              }}
+            />
           </span>
         </span>
       </span>

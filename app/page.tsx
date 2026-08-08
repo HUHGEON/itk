@@ -96,10 +96,14 @@ export default async function Home({
           {/* ITK — In The Know, transfer-market slang for someone with real
                 sources, which is what the tier list ranks. Doubles as the way
                 back to an unfiltered feed. */}
+          {/* The whole mark is the control — wordmark included — not just a
+              hit area around it. -m + p keeps the tap target comfortable
+              without pushing the header taller. */}
           <Link
             href="/"
+            aria-label="ITK plus 홈 · 필터 초기화"
             title="필터 초기화"
-            className="shrink-0 transition-opacity hover:opacity-85"
+            className="-m-1.5 shrink-0 rounded-md p-1.5 transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
             <Logo size={26} />
           </Link>
