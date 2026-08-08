@@ -167,85 +167,48 @@ export function Filters({
         </div>
       )}
 
-      {/* The two axes share a line. Who filed it and where they cover are
-          halves of one question, and stacking them with the journalist row in
-          between put them three rows apart.
-
-          Who filed it is the spine of the app, so the tiers lead — one hue at
+      {/* Who filed it is the spine of the app, so the tiers lead — one hue at
           five strengths rather than five unrelated colours. Labelled by what
           they rank, not by the abstraction: "신뢰도" of what was never said. */}
-      <div className="flex flex-col sm:flex-row sm:items-stretch">
-        <ScrollRail
-          outerClassName="min-w-0 sm:flex-1"
-          className="flex items-center gap-1.5 px-[var(--gutter)] py-3"
-        >
-          <span className="shrink-0 pr-1.5 text-[11px] font-medium tracking-wide text-muted">
-            기자 티어
-          </span>
-          {ALL_TIERS.map((t) => {
-            const key = String(t);
-            const on = selectedTiers.includes(key);
-            const st = tierStyle(t);
-            return (
-              <button
-                key={key}
-                type="button"
-                onClick={() => toggleIn("tier", key)}
-                aria-pressed={on}
-                className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
-                // Unselected chips still carry their hue: the rail is where you
-                // learn which colour means which tier, and five identical grey
-                // pills teach nothing. Dimming with opacity rather than mixing
-                // toward grey keeps all five equally legible against the black.
-                style={
-                  on
-                    ? {
-                        backgroundColor: st.bg,
-                        borderColor: st.border,
-                        color: st.ink,
-                      }
-                    : {
-                        backgroundColor: "transparent",
-                        borderColor: `color-mix(in srgb, ${st.color} 30%, transparent)`,
-                        color: st.color,
-                        opacity: 0.78,
-                      }
-                }
-              >
-                {tierLabel(t)}
-              </button>
-            );
-          })}
-        </ScrollRail>
-        <ScrollRail
-          outerClassName="shrink-0 border-t border-border sm:border-t-0 sm:border-l"
-          className="flex gap-0.5 px-[var(--gutter)]"
-        >
-          <LeagueTab
-            active={!league}
-            onClick={() => push((p) => p.delete("league"))}
-          >
-            전체
-          </LeagueTab>
-          {grouped.map((g) => (
-            <LeagueTab
-              key={g.league}
-              active={league === g.league}
-              badge={g.count > 0 ? g.count : undefined}
-              badgeTier={g.best}
-              onClick={() =>
-                push((p) =>
-                  league === g.league
-                    ? p.delete("league")
-                    : p.set("league", g.league),
-                )
+      <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
+        <span className="shrink-0 pr-1.5 text-[11px] font-medium tracking-wide text-muted">
+          기자 티어
+        </span>
+        {ALL_TIERS.map((t) => {
+          const key = String(t);
+          const on = selectedTiers.includes(key);
+          const st = tierStyle(t);
+          return (
+            <button
+              key={key}
+              type="button"
+              onClick={() => toggleIn("tier", key)}
+              aria-pressed={on}
+              className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
+              // Unselected chips still carry their hue: the rail is where you
+              // learn which colour means which tier, and five identical grey
+              // pills teach nothing. Dimming with opacity rather than mixing
+              // toward grey keeps all five equally legible against the black.
+              style={
+                on
+                  ? {
+                      backgroundColor: st.bg,
+                      borderColor: st.border,
+                      color: st.ink,
+                    }
+                  : {
+                      backgroundColor: "transparent",
+                      borderColor: `color-mix(in srgb, ${st.color} 30%, transparent)`,
+                      color: st.color,
+                      opacity: 0.78,
+                    }
               }
             >
-              {LEAGUE_LABEL[g.league]}
-            </LeagueTab>
-          ))}
-        </ScrollRail>
-      </div>
+              {tierLabel(t)}
+            </button>
+          );
+        })}
+      </ScrollRail>
 
       {selectedTiers.length > 0 && (
         <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
@@ -283,55 +246,84 @@ export function Filters({
         </ScrollRail>
       )}
 
-      {/* Clubs of the open league — plus any picks made in another league, so
-          a selection never disappears when the tab changes. */}
-      {(openGroup || selected.length > 0) && (
-        <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
-          {(openGroup?.members ?? selected).map((t) => {
-            const on = selectedTeams.includes(t.slug);
-            const act = activity[t.slug];
-            return (
-              <button
-                key={t.slug}
-                type="button"
-                onClick={() => toggleIn("team", t.slug)}
-                aria-pressed={on}
-                className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
-                  on
-                    ? "border-accent/50 bg-accent/10 font-medium text-accent"
-                    : "border-border text-muted hover:border-border-strong hover:text-text"
-                }`}
-              >
-                <TeamCrest team={t} size={16} />
-                {t.ko}
-                {act && act.count > 0 && (
-                  <span className="ml-0.5">
-                    <CountBadge n={act.count} tier={act.bestTier} />
-                  </span>
-                )}
-              </button>
-            );
-          })}
+      {/* League tabs across the top; picking one drops its clubs in below. */}
+      <div className="border-t border-border">
+        <ScrollRail className="flex gap-0.5 px-[var(--gutter)]">
+          <LeagueTab
+            active={!league}
+            onClick={() => push((p) => p.delete("league"))}
+          >
+            전체
+          </LeagueTab>
+          {grouped.map((g) => (
+            <LeagueTab
+              key={g.league}
+              active={league === g.league}
+              badge={g.count > 0 ? g.count : undefined}
+              badgeTier={g.best}
+              onClick={() =>
+                push((p) =>
+                  league === g.league
+                    ? p.delete("league")
+                    : p.set("league", g.league),
+                )
+              }
+            >
+              {LEAGUE_LABEL[g.league]}
+            </LeagueTab>
+          ))}
+        </ScrollRail>
 
-          {/* Off-league picks stay visible while another tab is open */}
-          {openGroup &&
-            selected
-              .filter((t) => t.league !== openGroup.league)
-              .map((t) => (
+        {/* Clubs of the open league — plus any picks made in another league, so
+            a selection never disappears when the tab changes. */}
+        {(openGroup || selected.length > 0) && (
+          <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
+            {(openGroup?.members ?? selected).map((t) => {
+              const on = selectedTeams.includes(t.slug);
+              const act = activity[t.slug];
+              return (
                 <button
                   key={t.slug}
                   type="button"
                   onClick={() => toggleIn("team", t.slug)}
-                  title="선택 해제"
-                  className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-medium text-accent"
+                  aria-pressed={on}
+                  className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
+                    on
+                      ? "border-accent/50 bg-accent/10 font-medium text-accent"
+                      : "border-border text-muted hover:border-border-strong hover:text-text"
+                  }`}
                 >
                   <TeamCrest team={t} size={16} />
                   {t.ko}
-                  <Close size={10} className="opacity-70" />
+                  {act && act.count > 0 && (
+                    <span className="ml-0.5">
+                      <CountBadge n={act.count} tier={act.bestTier} />
+                    </span>
+                  )}
                 </button>
-              ))}
-        </ScrollRail>
-      )}
+              );
+            })}
+
+            {/* Off-league picks stay visible while another tab is open */}
+            {openGroup &&
+              selected
+                .filter((t) => t.league !== openGroup.league)
+                .map((t) => (
+                  <button
+                    key={t.slug}
+                    type="button"
+                    onClick={() => toggleIn("team", t.slug)}
+                    title="선택 해제"
+                    className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-medium text-accent"
+                  >
+                    <TeamCrest team={t} size={16} />
+                    {t.ko}
+                    <Close size={10} className="opacity-70" />
+                  </button>
+                ))}
+          </ScrollRail>
+        )}
+      </div>
     </div>
   );
 }

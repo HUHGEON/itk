@@ -20,12 +20,9 @@ import { Chevron, ChevronLeft } from "./icons";
 export function ScrollRail({
   children,
   className = "",
-  outerClassName = "",
 }: {
   children: ReactNode;
   className?: string;
-  /** On the positioned wrapper, for when the rail is itself a flex item. */
-  outerClassName?: string;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [atStart, setAtStart] = useState(true);
@@ -88,7 +85,7 @@ export function ScrollRail({
   const hasOverflow = !atStart || !atEnd;
 
   return (
-    <div className={`relative ${outerClassName}`}>
+    <div className="relative">
       <div
         ref={ref}
         className={`no-scrollbar overflow-x-auto scroll-smooth ${className}`}

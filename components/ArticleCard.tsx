@@ -98,7 +98,7 @@ export function ArticleCard({
             loose name. The tier colours the cap; the name carries the weight. */}
         <div className="flex items-center gap-2 text-[11px]">
           <span
-            className="flex min-w-0 shrink items-stretch overflow-hidden rounded-[4px] border"
+            className="flex min-w-0 shrink-0 items-stretch overflow-hidden rounded-[4px] border"
             style={{
               borderColor:
                 tier.border === "transparent" ? tier.bg : tier.border,
@@ -114,6 +114,32 @@ export function ArticleCard({
               {row.official ? officialName : (byline ?? "기자 미확인")}
             </span>
           </span>
+
+          {/* Beside the byline, not under the headline. Who filed it and
+              which club it is about are read together, and a separate row
+              below the story pushed every card taller for one line of chips.
+              Kept at crest-plus-name rather than a bare 14px icon: most crests
+              are dark navy or maroon and vanish against a near-black page at
+              that size. */}
+          {rowTeams.length > 0 && (
+            <span className="flex shrink-0 items-center gap-1">
+              {rowTeams.slice(0, 3).map((t) => (
+                <span
+                  key={t.slug}
+                  title={t.ko}
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-2 p-[2px] text-[10.5px] text-muted sm:pr-2"
+                >
+                  <span className="flex size-[16px] items-center justify-center rounded-full bg-surface-3">
+                    <TeamCrest team={t} size={13} />
+                  </span>
+                  {/* The name is what makes a dark crest legible, but on a
+                      phone the line has no room for it and the crest alone
+                      still reads. */}
+                  <span className="hidden sm:inline">{t.ko}</span>
+                </span>
+              ))}
+            </span>
+          )}
 
           {!row.official && outlet && (
             <span className="hidden min-w-0 truncate text-muted sm:block">
@@ -166,26 +192,6 @@ export function ArticleCard({
             />
           )}
         </div>
-
-        {/* Under the headline, with names. Squeezing them onto the metadata
-            line as bare 14px icons saved a row and cost the one thing they are
-            for — most crests are dark navy or maroon and simply disappeared
-            against a near-black page at that size. */}
-        {rowTeams.length > 0 && (
-          <div className="mt-1.5 flex flex-wrap items-center gap-1">
-            {rowTeams.slice(0, 4).map((t) => (
-              <span
-                key={t.slug}
-                className="inline-flex items-center gap-1 rounded-full bg-surface-2 py-[2px] pr-2 pl-[2px] text-[10.5px] text-muted"
-              >
-                <span className="flex size-[16px] items-center justify-center rounded-full bg-surface-3">
-                  <TeamCrest team={t} size={13} />
-                </span>
-                {t.ko}
-              </span>
-            ))}
-          </div>
-        )}
       </button>
 
       {open && (
