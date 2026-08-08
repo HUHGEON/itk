@@ -71,11 +71,20 @@ export function Filters({
       if (state.who) next.set("who", state.who);
       if (state.q) next.set("q", state.q);
       mutate(next);
+      // A journalist pick only exists inside the row its tier opens. Drop the
+      // tier and that row goes with it — leaving `who` applied to the feed with
+      // nothing on screen able to release it, so the tier chip looked broken.
+      const picked = next.get("who");
+      if (picked) {
+        const tiers = (next.get("tier") ?? "").split(",").filter(Boolean);
+        const j = journalists.find((x) => x.id === picked);
+        if (!j || !tiers.includes(String(j.tier))) next.delete("who");
+      }
       startTransition(() => {
         router.push(next.toString() ? `/?${next}` : "/", { scroll: false });
       });
     },
-    [state, router],
+    [state, router, journalists],
   );
 
   const toggleIn = (key: string, value: string) =>
@@ -159,11 +168,12 @@ export function Filters({
         </div>
       )}
 
-      {/* Trust is the spine of the app, so it leads — one hue at five
-          strengths rather than five unrelated colours. */}
+      {/* Who filed it is the spine of the app, so the tiers lead — one hue at
+          five strengths rather than five unrelated colours. Labelled by what
+          they rank, not by the abstraction: "신뢰도" of what was never said. */}
       <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
-        <span className="shrink-0 pr-1.5 text-[11px] tracking-wide text-faint">
-          신뢰도
+        <span className="shrink-0 pr-1.5 text-[11px] font-medium tracking-wide text-muted">
+          기자 티어
         </span>
         {ALL_TIERS.map((t) => {
           const key = String(t);
@@ -203,8 +213,8 @@ export function Filters({
 
       {selectedTiers.length > 0 && (
         <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
-          <span className="shrink-0 pr-1 text-[11px] font-semibold text-muted">
-            기자
+          <span className="shrink-0 pr-1 text-[11px] font-medium tracking-wide text-muted">
+            이름
           </span>
           {tierReporters.length === 0 ? (
             <span className="text-[12px] text-muted">
