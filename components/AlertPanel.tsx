@@ -5,6 +5,7 @@ import type { Team } from "@/lib/types";
 import { ALL_TIERS, DB_SCHEMA } from "@/lib/types";
 import { tierLabel } from "@/lib/format";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { RailSection } from "./RailSection";
 import { TeamCrest } from "./TeamCrest";
 
 const STORAGE_KEY = "itk:alerts";
@@ -156,14 +157,9 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
   const selected = teams.filter((t) => prefs.teams.includes(t.slug));
 
   return (
-    <section className="border-b border-border px-[var(--gutter)] py-4">
-      <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-[13px] font-semibold">
-          <span
-            aria-hidden
-            className="mr-0.5 h-[13px] w-[3px] rounded-full"
-            style={{ background: "var(--ribbon)" }}
-          />
+    <RailSection
+      title={
+        <>
           팀 알림
           <span
             title={live ? "실시간 연결됨" : "폴링 모드"}
@@ -171,21 +167,23 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
               live ? "bg-accent" : "bg-muted"
             }`}
           />
-        </h2>
+        </>
+      }
+      action={
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="text-[12px] text-accent hover:underline"
+          className="shrink-0 text-[12px] text-accent hover:underline"
         >
           {open ? "닫기" : "팀 선택"}
         </button>
-      </div>
-
+      }
+    >
       {permission !== "granted" && (
         <button
           type="button"
           onClick={requestPermission}
-          className="mt-3 w-full rounded-[5px] border border-accent/45 px-3 py-2 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
+          className="mt-2.5 w-full rounded-[5px] border border-accent/45 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
         >
           {permission === "denied"
             ? "브라우저 설정에서 알림 허용 필요"
@@ -193,7 +191,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
         </button>
       )}
 
-      <div className="mt-3">
+      <div className="mt-2.5">
         <label className="text-[11px] font-semibold text-muted">
           최소 신뢰도
         </label>
@@ -213,13 +211,13 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-[11px] text-muted">
+        <p className="mt-1.5 text-[10.5px] text-muted">
           {tierLabel(prefs.maxTier)}까지 알림을 받습니다.
         </p>
       </div>
 
       {open ? (
-        <div className="mt-3 max-h-64 space-y-1 overflow-y-auto border-t border-border pt-3">
+        <div className="mt-2.5 max-h-64 space-y-1 overflow-y-auto border-t border-border pt-2.5">
           {teams.map((t) => (
             <button
               key={t.slug}
@@ -240,7 +238,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
           ))}
         </div>
       ) : (
-        <div className="mt-3 border-t border-border pt-3">
+        <div className="mt-2.5 border-t border-border pt-2.5">
           {selected.length === 0 ? (
             <p className="text-[11px] text-muted">구독한 팀이 없습니다.</p>
           ) : (
@@ -264,6 +262,6 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
           )}
         </div>
       )}
-    </section>
+    </RailSection>
   );
 }

@@ -22,7 +22,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
   if (ranked === 0) return null;
 
   return (
-    <section className="border-b border-border px-[var(--gutter)] py-4">
+    <section className="border-b border-border px-[var(--gutter)] py-3">
       <div className="flex items-baseline justify-between">
         <h2 className="flex items-center gap-2 text-[13px] font-semibold">
           <span
@@ -36,7 +36,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
       </div>
 
       <div
-        className="mt-3 flex h-1.5 overflow-hidden rounded-full bg-surface-3"
+        className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-surface-3"
         role="img"
         aria-label={tiers
           .map((s) => `${tierLabel(s.tier)} ${s.n}건`)
@@ -53,7 +53,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
         ))}
       </div>
 
-      <ul className="mt-3 space-y-1.5">
+      <ul className="mt-2.5 space-y-1">
         {tiers.map((s) => (
           <li key={s.tier}>
             <Link
@@ -86,7 +86,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
       </ul>
 
       {pulse.lastCollect && (
-        <p className="mt-3 border-t border-border pt-2.5 text-[10.5px] text-faint">
+        <p className="mt-2.5 border-t border-border pt-2 text-[10.5px] text-faint">
           마지막 수집 {timeAgo(pulse.lastCollect, now)}
         </p>
       )}
