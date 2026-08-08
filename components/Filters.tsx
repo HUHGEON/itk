@@ -189,8 +189,12 @@ export function Filters({
                     }
                   : {
                       backgroundColor: "transparent",
-                      borderColor: `color-mix(in srgb, ${st.color} 26%, transparent)`,
-                      color: `color-mix(in srgb, ${st.color} 78%, var(--muted))`,
+                      // Two custom properties inside one color-mix() resolves to
+                      // black in WebKit, so the unselected state mixes with
+                      // `transparent` only and dims via opacity instead.
+                      borderColor: `color-mix(in srgb, ${st.color} 30%, transparent)`,
+                      color: st.color,
+                      opacity: 0.78,
                     }
               }
             >
