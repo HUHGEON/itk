@@ -258,7 +258,7 @@ returns table (
   published_at timestamptz, tier real, title_ko text, summary_ko text,
   image_url text, journalist_id text, journalist_ko text, journalist_en text,
   outlet text, handle text, cited_id text, cited_ko text, official boolean,
-  teams text[]
+  teams text[], league text
 )
 language sql
 stable
@@ -270,14 +270,16 @@ as $$
          j.ko, j.en, j.outlet, j.x, a.cited_id, c.ko, a.official,
          coalesce(
            (select array_agg(at.team_slug) from article_teams at where at.article_id = a.id),
-           '{}'::text[])
+           '{}'::text[]),
+         -- The reporter's beat is the story's category when the story itself
+         -- names no tracked club. Crystal Palace is not one of the seventeen,
+         -- so a Palace story can never carry a crest — but a Chelsea reporter
+         -- filing it still places it in the Premier League.
+         coalesce(j.league, c.league)
   from articles a
   left join journalists j on j.id = a.journalist_id
   left join journalists c on c.id = a.cited_id
   where
-    -- The default view is the point of the app: stories we can attribute to a
-    -- ranked reporter. Outlet churn about a tracked club, with no byline we
-    -- recognise, drowns those out roughly four to one.
     (not p_tiered_only
        or a.journalist_id is not null
        or a.cited_id is not null
@@ -286,25 +288,25 @@ as $$
     and (p_teams is null or exists (
           select 1 from article_teams at
           where at.article_id = a.id and at.team_slug = any(p_teams)))
-    -- Filtering by a journalist should surface what they broke, whether they
-    -- wrote it themselves or an outlet credited them.
     and (p_journalist_id is null
          or a.journalist_id = p_journalist_id
          or a.cited_id = p_journalist_id)
-    and (p_league is null or j.league = p_league)
+    -- Same expression as the badge, so a league badge always means the story
+    -- is under that tab.
+    and (p_league is null or coalesce(j.league, c.league) = p_league)
     and (p_q is null or (
           a.search_vector @@ websearch_to_tsquery('english', p_q)
        or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
-    -- Composite cursor: a plain timestamp comparison skips rows whenever a
-    -- feed stamps a batch with the same minute, which several of them do.
     and (p_before is null
-         or (a.published_at, a.id) < (p_before, coalesce(p_before_id, '')))
-    -- created_at, not published_at: a backdated story we just discovered is
-    -- still news to the reader.
+         or a.published_at < p_before
+         or (a.published_at = p_before and a.id < p_before_id))
     and (p_after is null or a.created_at > p_after)
   order by a.published_at desc, a.id desc
   limit least(coalesce(p_limit, 60), 200)
 $$;
+
+grant execute on function public.itk_feed(real[], text[], text, text, text, timestamptz, text, timestamptz, integer, boolean)
+  to anon, authenticated, service_role;
 
 create or replace function public.itk_team_activity(
   p_hours         integer default 48,
@@ -324,6 +326,7 @@ as $$
   from article_teams at
   join articles a on a.id = at.article_id
   left join journalists j on j.id = a.journalist_id
+  left join journalists c on c.id = a.cited_id
   where a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
     and (not p_tiered_only
          or a.journalist_id is not null
@@ -335,57 +338,12 @@ as $$
     and (p_journalist_id is null
          or a.journalist_id = p_journalist_id
          or a.cited_id = p_journalist_id)
-    and (p_league is null or j.league = p_league)
+    and (p_league is null or coalesce(j.league, c.league) = p_league)
     and (p_q is null or (
           a.search_vector @@ websearch_to_tsquery('english', p_q)
        or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
   group by at.team_slug
 $$;
-
--- Article counts per league, matching what a league tab actually returns.
---
--- The tabs used to sum their clubs' badges, which counts a different set: a
--- story that names no tracked club carries no club tag, but itk_feed still
--- shows it under its reporter's league. Counting the same way the filter
--- filters is the only way the number can be right.
-create or replace function public.itk_league_activity(
-  p_hours         integer default 48,
-  p_tiers         real[]  default null,
-  p_teams         text[]  default null,
-  p_journalist_id text    default null,
-  p_q             text    default null,
-  p_tiered_only   boolean default false
-)
-returns table (league text, n bigint, best_tier real)
-language sql
-stable
-security definer
-set search_path = itk, public
-as $$
-  select j.league, count(*), min(a.tier)
-  from articles a
-  join journalists j on j.id = a.journalist_id
-  where a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
-    and j.league is not null
-    and (not p_tiered_only
-         or a.journalist_id is not null
-         or a.cited_id is not null
-         or a.official)
-    and (p_tiers is null or (a.tier = any(p_tiers) and not a.official))
-    and (p_teams is null or exists (
-          select 1 from article_teams at
-          where at.article_id = a.id and at.team_slug = any(p_teams)))
-    and (p_journalist_id is null
-         or a.journalist_id = p_journalist_id
-         or a.cited_id = p_journalist_id)
-    and (p_q is null or (
-          a.search_vector @@ websearch_to_tsquery('english', p_q)
-       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
-  group by j.league
-$$;
-
-grant execute on function public.itk_league_activity(integer, real[], text[], text, text, boolean)
-  to anon, authenticated, service_role;
 
 -- Which journalists actually filed recently, so the picker can lead with them
 -- instead of listing 244 names in registry order.

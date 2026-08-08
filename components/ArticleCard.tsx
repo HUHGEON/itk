@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import type { FeedRow } from "@/lib/feed";
-import type { Team } from "@/lib/types";
+import type { League, Team } from "@/lib/types";
+import { LEAGUE_LABEL } from "@/lib/types";
 import { tierLabel, tierRule, tierStyle, timeAgo } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { Chevron } from "./icons";
@@ -45,6 +46,9 @@ export function ArticleCard({
 
   // Byline first; failing that, the reporter an outlet credited.
   const byline = row.journalistKo ?? row.citedKo;
+  const leagueLabel = row.league
+    ? (LEAGUE_LABEL[row.league as League] ?? null)
+    : null;
   const outlet =
     row.outlet && row.outlet !== row.source ? row.outlet : row.source;
 
@@ -115,13 +119,12 @@ export function ArticleCard({
             </span>
           </span>
 
-          {/* Beside the byline, not under the headline. Who filed it and
-              which club it is about are read together, and a separate row
-              below the story pushed every card taller for one line of chips.
-              Kept at crest-plus-name rather than a bare 14px icon: most crests
-              are dark navy or maroon and vanish against a near-black page at
-              that size. */}
-          {rowTeams.length > 0 && (
+          {/* Beside the byline, not under the headline. Who filed it and what
+              it is about are read together, and a separate row below the story
+              pushed every card taller for one line of chips. Crest plus name
+              rather than a bare 14px icon: most crests are dark navy or maroon
+              and vanish against a near-black page at that size. */}
+          {rowTeams.length > 0 ? (
             <span className="flex shrink-0 items-center gap-1">
               {rowTeams.slice(0, 3).map((t) => (
                 <span
@@ -139,6 +142,16 @@ export function ArticleCard({
                 </span>
               ))}
             </span>
+          ) : (
+            leagueLabel && (
+              // Only seventeen clubs carry crests, so a Crystal Palace story
+              // can never be tagged with one — but the reporter who filed it
+              // covers the Premier League, and that is the category it sits
+              // under. Without this the row simply had nothing.
+              <span className="hidden shrink-0 rounded-full border border-border px-2 py-[2px] text-[10.5px] text-faint sm:inline">
+                {leagueLabel}
+              </span>
+            )
           )}
 
           {!row.official && outlet && (

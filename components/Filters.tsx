@@ -22,6 +22,7 @@ const LEAGUES: League[] = [
   "SerieA",
   "Ligue1",
   "Eredivisie",
+  "General",
 ];
 
 type Activity = Record<string, { count: number; bestTier: number | null }>;
@@ -109,7 +110,12 @@ export function Filters({
       members: teams.filter((t) => t.league === l),
       count: leagueActivity[l]?.count ?? 0,
       best: leagueActivity[l]?.bestTier ?? null,
-    })).filter((g) => g.members.length > 0);
+      // A league earns a tab by having stories, not by having tracked clubs.
+      // Bundesliga has twenty-four reporters and no crest in the registry, so
+      // keying the tabs off club membership hid all of them behind 전체.
+    })).filter(
+      (g) => g.members.length > 0 || (leagueActivity[g.league]?.count ?? 0) > 0,
+    );
   }, [teams, leagueActivity]);
 
   // Journalists of the picked tiers, busiest first — a flat list of 244 names
@@ -276,7 +282,7 @@ export function Filters({
 
         {/* Clubs of the open league — plus any picks made in another league, so
             a selection never disappears when the tab changes. */}
-        {(openGroup || selected.length > 0) && (
+        {((openGroup?.members.length ?? 0) > 0 || selected.length > 0) && (
           <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
             {(openGroup?.members ?? selected).map((t) => {
               const on = selectedTeams.includes(t.slug);

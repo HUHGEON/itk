@@ -42,6 +42,12 @@ export interface FeedRow {
   /** the club's own announcement */
   official: boolean;
   teams: string[];
+  /**
+   * The reporter's beat, and the story's category when the story itself names
+   * no tracked club — which is most of football, since only seventeen clubs
+   * carry crests here.
+   */
+  league: string | null;
 }
 
 interface FeedRpcRow {
@@ -65,6 +71,7 @@ interface FeedRpcRow {
   cited_ko: string | null;
   official: boolean | null;
   teams: string[] | null;
+  league: string | null;
 }
 
 /** `undefined` filters must reach Postgres as SQL NULL, not be omitted. */
@@ -114,6 +121,7 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
     citedKo: r.cited_ko,
     official: Boolean(r.official),
     teams: r.teams ?? [],
+    league: r.league,
   }));
 }
 
