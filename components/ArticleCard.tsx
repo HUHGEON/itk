@@ -88,7 +88,7 @@ export function ArticleCard({
           </span>
 
           {byline || row.official ? (
-            <span className="min-w-0 truncate text-[13.5px] font-semibold text-text">
+            <span className="min-w-0 truncate text-[13.5px] font-bold text-text">
               {row.official ? officialName : byline}
               {!row.official && !row.journalistKo && (
                 <span className="ml-1 text-[10.5px] font-normal text-faint">
