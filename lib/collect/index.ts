@@ -1,7 +1,6 @@
 import crypto from "node:crypto";
 import { rpc } from "../supabase";
 import {
-  beatFallback,
   detectCitation,
   detectTeams,
   loadJournalists,
@@ -165,7 +164,7 @@ function ownFeedItems(j: Journalist, items: FeedItem[]): RawItem[] {
         publishedAt: parseDate(item.isoDate),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : beatFallback(j.teams),
+        teams: detected,
         imageUrl: imageFrom(item),
         citedId: null,
       },
@@ -197,7 +196,7 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
         publishedAt: parseDate(item.isoDate),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : beatFallback(j.teams),
+        teams: detected,
         // Google News links are JS redirect pages — no image or body to read.
         // The hydrate pass resolves them afterwards and fills both in.
         imageUrl: null,

@@ -342,6 +342,51 @@ as $$
   group by at.team_slug
 $$;
 
+-- Article counts per league, matching what a league tab actually returns.
+--
+-- The tabs used to sum their clubs' badges, which counts a different set: a
+-- story that names no tracked club carries no club tag, but itk_feed still
+-- shows it under its reporter's league. Counting the same way the filter
+-- filters is the only way the number can be right.
+create or replace function public.itk_league_activity(
+  p_hours         integer default 48,
+  p_tiers         real[]  default null,
+  p_teams         text[]  default null,
+  p_journalist_id text    default null,
+  p_q             text    default null,
+  p_tiered_only   boolean default false
+)
+returns table (league text, n bigint, best_tier real)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select j.league, count(*), min(a.tier)
+  from articles a
+  join journalists j on j.id = a.journalist_id
+  where a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
+    and j.league is not null
+    and (not p_tiered_only
+         or a.journalist_id is not null
+         or a.cited_id is not null
+         or a.official)
+    and (p_tiers is null or (a.tier = any(p_tiers) and not a.official))
+    and (p_teams is null or exists (
+          select 1 from article_teams at
+          where at.article_id = a.id and at.team_slug = any(p_teams)))
+    and (p_journalist_id is null
+         or a.journalist_id = p_journalist_id
+         or a.cited_id = p_journalist_id)
+    and (p_q is null or (
+          a.search_vector @@ websearch_to_tsquery('english', p_q)
+       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
+  group by j.league
+$$;
+
+grant execute on function public.itk_league_activity(integer, real[], text[], text, text, boolean)
+  to anon, authenticated, service_role;
+
 -- Which journalists actually filed recently, so the picker can lead with them
 -- instead of listing 244 names in registry order.
 create or replace function public.itk_journalist_activity(

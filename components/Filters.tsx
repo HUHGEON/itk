@@ -38,12 +38,14 @@ export interface FilterState {
 export function Filters({
   teams,
   activity,
+  leagueActivity,
   journalists,
   journalistActivity,
   state,
 }: {
   teams: Team[];
   activity: Activity;
+  leagueActivity: Activity;
   journalists: Journalist[];
   journalistActivity: Record<string, number>;
   state: FilterState;
@@ -97,21 +99,18 @@ export function Filters({
       else p.delete(key);
     });
 
+  // The badge counts what the tab returns. Summing the clubs underneath it
+  // counts a different set — a league tab selects on the reporter's beat, so
+  // a story that names no tracked club sits in the tab with no club badge to
+  // be counted in.
   const grouped = useMemo(() => {
-    return LEAGUES.map((l) => {
-      const members = teams.filter((t) => t.league === l);
-      const count = members.reduce(
-        (n, t) => n + (activity[t.slug]?.count ?? 0),
-        0,
-      );
-      const best = members.reduce<number | null>((b, t) => {
-        const bt = activity[t.slug]?.bestTier;
-        if (bt === null || bt === undefined) return b;
-        return b === null ? bt : Math.min(b, bt);
-      }, null);
-      return { league: l, members, count, best };
-    }).filter((g) => g.members.length > 0);
-  }, [teams, activity]);
+    return LEAGUES.map((l) => ({
+      league: l,
+      members: teams.filter((t) => t.league === l),
+      count: leagueActivity[l]?.count ?? 0,
+      best: leagueActivity[l]?.bestTier ?? null,
+    })).filter((g) => g.members.length > 0);
+  }, [teams, leagueActivity]);
 
   // Journalists of the picked tiers, busiest first — a flat list of 244 names
   // is unusable, and the ones filing today are the ones worth filtering to.

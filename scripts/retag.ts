@@ -9,7 +9,7 @@
  */
 import "../lib/load-env";
 import { rpc } from "../lib/supabase";
-import { beatFallback, detectTeams } from "../lib/registry";
+import { detectTeams } from "../lib/registry";
 
 interface Row {
   id: string;
@@ -23,15 +23,14 @@ async function main() {
   let scanned = 0;
 
   for (let offset = 0; ; offset += 1000) {
-    const page = await rpc<Row[]>("itk_articles_for_retag", { p_offset: offset });
+    const page = await rpc<Row[]>("itk_articles_for_retag", {
+      p_offset: offset,
+    });
     scanned += page.length;
 
     for (const r of page) {
-      const detected = detectTeams(`${r.title} ${r.snippet ?? ""}`);
-      // Same rule the collector uses: a story that names no club falls back to
-      // the reporter's beat rather than being left untagged.
-      const teams =
-        detected.length > 0 ? detected : beatFallback(r.journalist_teams ?? []);
+      // Same rule the collector uses: only clubs the story actually names.
+      const teams = detectTeams(`${r.title} ${r.snippet ?? ""}`);
       items.push({ id: r.id, teams });
     }
 
@@ -40,7 +39,9 @@ async function main() {
 
   let written = 0;
   for (let i = 0; i < items.length; i += 300) {
-    written += await rpc<number>("itk_retag", { p_items: items.slice(i, i + 300) });
+    written += await rpc<number>("itk_retag", {
+      p_items: items.slice(i, i + 300),
+    });
   }
 
   console.log(`클럽 태그 재계산: ${scanned}건 검사 · 태그 ${written}개 기록`);

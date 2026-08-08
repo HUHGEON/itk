@@ -1,6 +1,6 @@
 import type { Journalist } from "../types";
 import { WOMENS_FOOTBALL, isJunkTitle } from "./sources";
-import { beatFallback, detectTeams } from "../registry";
+import { detectTeams } from "../registry";
 import type { RawItem } from "./index";
 
 /**
@@ -143,7 +143,7 @@ export async function fetchBluesky(
           : Date.now(),
         journalistId: j.id,
         tier: j.tier,
-        teams: detected.length > 0 ? detected : beatFallback(j.teams),
+        teams: detected,
         imageUrl: imageOf(post),
         citedId: null,
       },

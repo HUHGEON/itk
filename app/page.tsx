@@ -2,6 +2,7 @@ import {
   getFeed,
   getJournalistActivity,
   getPulse,
+  getLeagueActivity,
   getTeamActivity,
 } from "@/lib/feed";
 import { loadTeams, loadJournalists } from "@/lib/registry";
@@ -60,15 +61,23 @@ export default async function Home({
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
 
-  const [rows, activity, journalistActivity, pulse] = await Promise.all([
-    getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
-    // Counts describe the combination on screen, so each excludes its own
-    // dimension: team badges ignore the team filter, journalist badges ignore
-    // the journalist filter.
-    getTeamActivity({ ...base, tieredOnly }),
-    getJournalistActivity({ teams: teamSlugs, league, q }),
-    getPulse(),
-  ]);
+  const [rows, activity, leagueActivity, journalistActivity, pulse] =
+    await Promise.all([
+      getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
+      // Counts describe the combination on screen, so each excludes its own
+      // dimension: team badges ignore the team filter, league badges ignore
+      // the league filter, journalist badges ignore the journalist filter.
+      getTeamActivity({ ...base, tieredOnly }),
+      getLeagueActivity({
+        tiers,
+        teams: teamSlugs,
+        journalistId: who,
+        q,
+        tieredOnly,
+      }),
+      getJournalistActivity({ teams: teamSlugs, league, q }),
+      getPulse(),
+    ]);
 
   const teams = loadTeams();
   const teamMap = new Map<string, Team>(teams.map((t) => [t.slug, t]));
@@ -107,6 +116,7 @@ export default async function Home({
         <Filters
           teams={teams}
           activity={activity}
+          leagueActivity={leagueActivity}
           journalists={journalists}
           journalistActivity={journalistActivity}
           state={filterState}

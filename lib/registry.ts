@@ -160,18 +160,6 @@ export function detectTeams(text: string): string[] {
 }
 
 /**
- * A reporter's own beat, used only when the story itself names no club.
- *
- * Guessing is safe for someone who covers one club and wrong for anyone else:
- * a FIFA story filed by a reporter assigned both Manchester clubs was landing
- * under each of their filters. Of 244 active reporters only 7 cover more than
- * one club, so the stories this drops are few and were mistagged anyway.
- */
-export function beatFallback(teams: string[]): string[] {
-  return teams.length === 1 ? teams : [];
-}
-
-/**
  * Journalists whose name appears in the text — a citation, not a byline.
  *
  * The reporters with the biggest scoops (Romano above all) publish only on X

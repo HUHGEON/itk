@@ -169,6 +169,39 @@ export async function getTeamActivity(
   return map;
 }
 
+/**
+ * Article counts per league, for the league tabs.
+ *
+ * Not a sum of the clubs beneath a tab: itk_feed selects a league by the
+ * reporter's beat, so a story naming no tracked club belongs to the tab
+ * without belonging to any club badge. Summing clubs undercounted those and,
+ * back when an untagged story inherited its reporter's club, miscounted them.
+ */
+export async function getLeagueActivity(
+  filters: Pick<
+    FeedFilters,
+    "tiers" | "teams" | "journalistId" | "q" | "tieredOnly"
+  > = {},
+  hours = 48,
+) {
+  const rows = await rpc<
+    { league: string; n: number; best_tier: number | null }[]
+  >("itk_league_activity", {
+    p_hours: hours,
+    p_tiers: filters.tiers?.length ? filters.tiers : null,
+    p_teams: filters.teams?.length ? filters.teams : null,
+    p_journalist_id: orNull(filters.journalistId),
+    p_q: filters.q?.trim() ? filters.q.trim() : null,
+    p_tiered_only: filters.tieredOnly ?? false,
+  });
+
+  const map: Record<string, { count: number; bestTier: number | null }> = {};
+  for (const r of rows ?? []) {
+    map[r.league] = { count: Number(r.n), bestTier: r.best_tier };
+  }
+  return map;
+}
+
 export interface Pulse {
   /** count per tier, keyed "0" | "1" | "1.5" | "2" | "3" */
   byTier: Record<string, number>;
