@@ -92,7 +92,7 @@ export default async function Home({
             title="필터 초기화"
             className="group flex shrink-0 items-baseline gap-2"
           >
-            <span className="rounded-[3px] bg-accent px-1.5 py-0.5 text-[14px] font-bold tracking-[-0.02em] text-accent-ink transition-opacity group-hover:opacity-85">
+            <span className="rounded-[3px] bg-accent px-1.5 py-0.5 text-[14px] font-semibold tracking-[-0.02em] text-accent-ink transition-opacity group-hover:opacity-85">
               ITK+
             </span>
             <span className="hidden text-[11px] tracking-wide text-faint sm:inline">

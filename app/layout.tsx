@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { IBM_Plex_Sans_KR, IBM_Plex_Mono } from "next/font/google";
+import { IBM_Plex_Sans_KR } from "next/font/google";
 import "./globals.css";
 
 /*
@@ -11,15 +11,9 @@ import "./globals.css";
 const sans = IBM_Plex_Sans_KR({
   variable: "--font-plex-kr",
   subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  display: "swap",
-});
-
-/* Timestamps and counts only — a proportional face makes them jitter. */
-const mono = IBM_Plex_Mono({
-  variable: "--font-plex-mono",
-  subsets: ["latin"],
-  weight: ["400", "500"],
+  // 700 was used six times and 600 reads as bold enough at these sizes. Each
+  // weight is ~100 subset files for Korean, so dropping one is real bytes.
+  weight: ["400", "500", "600"],
   display: "swap",
 });
 
@@ -40,9 +34,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="ko">
-      <body className={`${sans.variable} ${mono.variable} antialiased`}>
-        {children}
-      </body>
+      <body className={`${sans.variable} antialiased`}>{children}</body>
     </html>
   );
 }

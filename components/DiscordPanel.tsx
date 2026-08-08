@@ -282,7 +282,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
   return (
     <section className="rounded-lg border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-[13px] font-bold">디스코드 알림</h2>
+        <h2 className="text-[13px] font-semibold">디스코드 알림</h2>
         <button
           type="button"
           onClick={openAdd}
@@ -321,9 +321,8 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
         </button>
       </div>
 
-      <p className="mt-2 text-[10px] leading-snug text-muted">
-        목록은 이 브라우저에서만 보입니다. 저장소를 지우거나 다른 기기에서 열면
-        <b> 불러오기</b>로 가져오세요.
+      <p className="mt-2 text-[10px] leading-snug text-faint">
+        이 브라우저에만 저장됩니다.
       </p>
 
       <Modal
@@ -445,7 +444,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                   type="button"
                   onClick={() => setReveal(true)}
                   title="누르면 전체 주소가 보입니다"
-                  className="mt-1 w-full truncate rounded-lg border border-border bg-surface-2 px-2.5 py-2 text-left font-mono text-[11px] text-muted"
+                  className="mt-1 w-full truncate rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-left font-mono text-[11px] text-muted"
                 >
                   {loading ? "불러오는 중…" : maskWebhook(url)}
                 </button>
@@ -497,7 +496,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                   return (
                     <div key={league}>
                       <div className="flex items-baseline justify-between px-0.5 pb-1">
-                        <span className="text-[10px] font-bold tracking-wide text-muted">
+                        <span className="text-[10px] font-semibold tracking-wide text-muted">
                           {LEAGUE_LABEL[league]}
                         </span>
                         <button

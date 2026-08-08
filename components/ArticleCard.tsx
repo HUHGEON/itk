@@ -61,7 +61,7 @@ export function ArticleCard({
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full px-4 py-3.5 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
+        className={`block w-full px-4 py-3 pl-5 text-left transition-colors sm:px-5 sm:pl-6 ${
           expandable ? "cursor-pointer hover:bg-surface-2/60" : "cursor-default"
         }`}
       >
@@ -100,15 +100,23 @@ export function ArticleCard({
             </>
           )}
 
+          {rowTeams.length > 0 && (
+            <span className="ml-auto flex shrink-0 items-center gap-1">
+              {rowTeams.slice(0, 4).map((t) => (
+                <TeamCrest key={t.slug} team={t} size={14} title={t.ko} />
+              ))}
+            </span>
+          )}
+
           <time
-            className="tnum ml-auto shrink-0 text-faint"
+            className={`tnum shrink-0 text-faint ${rowTeams.length > 0 ? "" : "ml-auto"}`}
             dateTime={new Date(row.publishedAt).toISOString()}
           >
             {timeAgo(row.publishedAt, now)}
           </time>
         </div>
 
-        <div className="mt-2 flex items-start gap-3">
+        <div className="mt-1.5 flex items-start gap-3">
           <div className="min-w-0 flex-1">
             <h3 className="text-[16px] leading-[1.45] font-semibold text-text sm:text-[17px]">
               {title}
@@ -117,7 +125,7 @@ export function ArticleCard({
                 that the original has to stay readable at a glance, not be
                 hidden behind an expand. */}
             {translated && (
-              <p className="mt-1 text-[12.5px] leading-snug text-muted">
+              <p className="mt-0.5 text-[12.5px] leading-snug text-muted">
                 {row.title}
               </p>
             )}
@@ -131,20 +139,6 @@ export function ArticleCard({
             />
           )}
         </div>
-
-        {rowTeams.length > 0 && (
-          <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
-            {rowTeams.slice(0, 4).map((t) => (
-              <span
-                key={t.slug}
-                className="inline-flex items-center gap-1.5 text-[11px] text-muted"
-              >
-                <TeamCrest team={t} size={13} />
-                {t.ko}
-              </span>
-            ))}
-          </div>
-        )}
       </button>
 
       {open && (

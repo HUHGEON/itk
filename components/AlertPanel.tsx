@@ -158,7 +158,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
   return (
     <section className="rounded-[5px] border border-border bg-surface p-4">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-1.5 text-[13px] font-bold">
+        <h2 className="flex items-center gap-1.5 text-[13px] font-semibold">
           팀 알림
           <span
             title={live ? "실시간 연결됨" : "폴링 모드"}
@@ -180,7 +180,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
         <button
           type="button"
           onClick={requestPermission}
-          className="mt-3 w-full rounded-lg bg-accent px-3 py-2 text-[12px] font-semibold text-black"
+          className="mt-3 w-full rounded-[5px] border border-accent/45 px-3 py-2 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
         >
           {permission === "denied"
             ? "브라우저 설정에서 알림 허용 필요"
