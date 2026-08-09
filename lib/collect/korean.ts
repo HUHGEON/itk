@@ -10,7 +10,7 @@
  * headline is worse than a stiff one, so anything that can't be derived from
  * Hangul's own structure is left alone.
  */
-import { loadTeams } from "../registry";
+import { loadJournalists, loadPlayers, loadTeams } from "../registry";
 
 const SYLLABLE_START = 0xac00;
 const SYLLABLE_END = 0xd7a3;
@@ -114,51 +114,127 @@ function dropLatinGloss(s: string): string {
 }
 
 /**
- * Club names the engine left in Latin script.
+ * Names the engine left in Latin script — clubs, reporters, players.
  *
- * Google's main weakness is exactly this — "Benfica에서 Lens로" — and it is the
- * one thing we can fix with certainty, because the seventeen tracked clubs
- * already carry their Korean names in the registry. Only the canonical name and
- * aliases long enough to be unambiguous are used: replacing "United" would hit
- * every other United in football.
+ * This is the free engines' most visible weakness: "Benfica에서 Lens로",
+ * "기다릴 수 있음 - Ben Jacobs", "Bruno Guimaraes가 아스날에". It is also the one
+ * weakness we can fix with certainty, because all three registries already hold
+ * the Korean spelling.
+ *
+ * One list, sorted longest first, so the longest name always wins — otherwise
+ * "Roberto De Zerbi" would be half-consumed by a shorter entry, and
+ * "Manchester" would beat "Manchester United".
  */
-let clubPatterns: { re: RegExp; ko: string }[] | null = null;
+interface Substitution {
+  re: RegExp;
+  ko: string;
+}
 
-function clubs(): { re: RegExp; ko: string }[] {
-  if (clubPatterns) return clubPatterns;
+/** Latin letters that carry no decomposition, so NFD alone can't fold them. */
+const IRREGULAR: Record<string, string> = {
+  ı: "i", ø: "o", ł: "l", đ: "d", ð: "d", ħ: "h", ŧ: "t", ƶ: "z",
+};
 
-  const seen = new Set<string>();
-  const out: { re: RegExp; ko: string }[] = [];
+function fold(ch: string): string {
+  const stripped = ch
+    .normalize("NFD")
+    .replace(/\p{Diacritic}/gu, "")
+    .toLowerCase();
+  return IRREGULAR[stripped] ?? stripped;
+}
 
-  for (const team of loadTeams()) {
-    const names = [team.en, ...(team.aliases ?? [])]
-      .filter((n) => n.length >= 5)
-      // Longest first, so "Manchester United" wins over "Manchester".
-      .sort((a, b) => b.length - a.length);
-
-    for (const name of names) {
-      const key = name.toLowerCase();
-      if (seen.has(key)) continue;
-      seen.add(key);
-      const escaped = name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-      // The boundary is Latin-only on purpose. `\p{L}` counts Hangul as a
-      // letter, so "Arsenal에" — a name with a Korean particle stuck to it,
-      // which is every occurrence that matters here — never matched.
-      out.push({
-        re: new RegExp(`(?<![A-Za-zÀ-ÿ0-9])${escaped}(?![A-Za-zÀ-ÿ0-9])`, "gi"),
-        ko: team.ko,
-      });
-    }
+/**
+ * Every accented letter that folds onto each plain one, built by walking the
+ * Latin supplements rather than by listing them.
+ *
+ * Both registries and headlines are inconsistent about diacritics, and in
+ * opposite directions: the journalist list stores "Yagiz Sabuncuoglu" while the
+ * article says "Yağız Sabuncuoğlu", and stores "Loïc Tanzi" while the article
+ * says "Loic Tanzi". Matching each letter as a class of its variants makes both
+ * directions work without normalising the text and losing its offsets — which
+ * matters, because the replacement has to land back in the original string.
+ */
+const VARIANTS: Map<string, string> = (() => {
+  const map = new Map<string, string>();
+  for (let code = 0x00c0; code <= 0x024f; code++) {
+    const ch = String.fromCodePoint(code);
+    const base = fold(ch);
+    if (base.length !== 1 || !/[a-z]/.test(base)) continue;
+    map.set(base, (map.get(base) ?? "") + ch);
   }
+  return map;
+})();
 
-  out.sort((a, b) => b.re.source.length - a.re.source.length);
-  clubPatterns = out;
+/** A regex matching `name` however its diacritics were or weren't typed. */
+function lenientPattern(name: string): string {
+  let out = "";
+  for (const ch of name) {
+    const base = fold(ch);
+    const variants = VARIANTS.get(base);
+    if (variants && /[a-z]/.test(base)) out += `[${base}${variants}]`;
+    else out += ch.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  }
   return out;
 }
 
-function localizeClubs(s: string): string {
+let substitutions: Substitution[] | null = null;
+
+function nameSubstitutions(): Substitution[] {
+  if (substitutions) return substitutions;
+
+  const seen = new Set<string>();
+  const out: { name: string; ko: string }[] = [];
+
+  const add = (name: string, ko: string, min: number) => {
+    // Dedup on the folded form: "Loïc Tanzi" and "Loic Tanzi" compile to the
+    // same lenient pattern, so keeping both would just double the work.
+    const key = [...name].map(fold).join("");
+    if (name.length < min || seen.has(key) || !ko) return;
+    seen.add(key);
+    out.push({ name, ko });
+  };
+
+  // Clubs: the canonical name plus aliases long enough to be unambiguous.
+  // "United" would hit every other United in football.
+  for (const team of loadTeams()) {
+    for (const name of [team.en, ...(team.aliases ?? [])]) add(name, team.ko, 5);
+  }
+
+  // People are only ever substituted as a full name. A bare surname is a
+  // coin flip — "Jones" and "Silva" belong to several players at once, and a
+  // wrong name in a headline is worse than an untranslated one.
+  for (const player of loadPlayers()) {
+    for (const name of player.en) if (name.includes(" ")) add(name, player.ko, 6);
+  }
+
+  // A reporter's name is usually the byline the headline is crediting, which
+  // is exactly the part a Korean reader needs to recognise.
+  for (const j of loadJournalists()) {
+    if (j.en.includes(" ")) add(j.en, j.ko, 6);
+  }
+
+  substitutions = out
+    .sort((a, b) => b.name.length - a.name.length)
+    .map(({ name, ko }) => ({
+      // The boundary is Latin-only on purpose. `\p{L}` counts Hangul as a
+      // letter, so "Arsenal에" — a name with a Korean particle stuck to it,
+      // which is every occurrence that matters here — never matched.
+      re: new RegExp(
+        `(?<![A-Za-zÀ-ÿ0-9])${lenientPattern(name)}(?![A-Za-zÀ-ÿ0-9])`,
+        "gi",
+      ),
+      ko,
+    }));
+
+  return substitutions;
+}
+
+function localizeNames(s: string): string {
   let out = s;
-  for (const { re, ko } of clubs()) out = out.replace(re, ko);
+  for (const { re, ko } of nameSubstitutions()) {
+    if (!/[A-Za-zÀ-ÿ]/.test(out)) break;
+    out = out.replace(re, ko);
+  }
   return out;
 }
 
@@ -207,5 +283,5 @@ function nominalizeAll(s: string): string {
 /** Everything a translated headline should have done to it before storage. */
 export function headlineKo(text: string): string {
   if (!text) return text;
-  return nominalizeAll(localizeClubs(dropLatinGloss(text))).trim();
+  return nominalizeAll(localizeNames(dropLatinGloss(text))).trim();
 }

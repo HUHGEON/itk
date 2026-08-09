@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Journalist, Team } from "./types";
+import type { Journalist, Player, Team } from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 
@@ -40,6 +40,7 @@ function cachedJson<T>(file: string, fallback: T): () => T {
 
 export const loadTeams = cachedJson<Team[]>("teams.json", []);
 export const loadJournalists = cachedJson<Journalist[]>("journalists.json", []);
+export const loadPlayers = cachedJson<Player[]>("players.json", []);
 
 /**
  * Longest alias first, so "Manchester United" wins over "United" and we never

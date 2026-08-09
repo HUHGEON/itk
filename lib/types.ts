@@ -29,6 +29,21 @@ export interface Team {
   fdId?: number;
 }
 
+/**
+ * A person whose name a translation engine leaves in Latin script.
+ *
+ * Built by scripts/build-players.ts from the names actually appearing in the
+ * feed, not from a squad list — the entries exist to be substituted into
+ * translated headlines, so the only ones worth having are the ones that leak.
+ */
+export interface Player {
+  /** Every Latin spelling seen for this person, longest first. */
+  en: string[];
+  ko: string;
+  /** The Wikidata entity the Korean came from, so a wrong name is traceable. */
+  qid?: string;
+}
+
 export interface Journalist {
   /** stable slug derived from the English name */
   id: string;
