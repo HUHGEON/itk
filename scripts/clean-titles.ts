@@ -18,6 +18,7 @@
  */
 import "../lib/load-env";
 import { cleanTitle } from "../lib/collect/title";
+import { headlineKo } from "../lib/collect/korean";
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(`--${name}`);
@@ -53,9 +54,49 @@ async function sql<T = Record<string, unknown>>(query: string): Promise<T[]> {
 
 const lit = (s: string) => `'${s.replace(/'/g, "''")}'`;
 
+/**
+ * Re-runs the Korean headline pass over Korean we already have.
+ *
+ * The pass is pure text, so improving one of its rules does not mean paying a
+ * translator again — the stored `title_ko` is the input. Every rule change
+ * should come back through here rather than through `--restyle`, which throws
+ * the translation away and re-fetches it.
+ */
+async function repolish(dry: boolean): Promise<void> {
+  const rows = await sql<{ id: string; title_ko: string }>(
+    "select id, title_ko from itk.articles where title_ko is not null",
+  );
+
+  const changed = rows
+    .map((r) => ({ id: r.id, from: r.title_ko, to: headlineKo(r.title_ko) }))
+    .filter((r) => r.to && r.to !== r.from);
+
+  console.log(`한글 ${rows.length.toLocaleString()}건 중 ${changed.length.toLocaleString()}건 재가공`);
+  for (const c of changed.slice(0, 10)) console.log(`  ${c.from}\n  → ${c.to}\n`);
+  if (dry) return;
+
+  let done = 0;
+  for (let i = 0; i < changed.length; i += 400) {
+    const batch = changed.slice(i, i + 400);
+    const values = batch.map((c) => `(${lit(c.id)}, ${lit(c.to)})`).join(",\n    ");
+    await sql(`
+      update itk.articles a
+      set title_ko = v.title_ko
+      from (values
+    ${values}
+      ) as v(id, title_ko)
+      where a.id = v.id`);
+    done += batch.length;
+    process.stdout.write(`  ${done}/${changed.length}\r`);
+  }
+  console.log(`\n✓ ${done.toLocaleString()}건 헤드라인 재가공`);
+}
+
 async function main() {
   const dry = has("dry");
   const restyle = arg("restyle") ? Number(arg("restyle")) : 0;
+
+  if (has("repolish")) return repolish(dry);
 
   const rows = await sql<{ id: string; title: string; source: string | null }>(
     "select id, title, source from itk.articles where source is not null",

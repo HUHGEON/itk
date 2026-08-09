@@ -164,8 +164,15 @@ function localizeClubs(s: string): string {
 
 const QUOTED = /["'“”«»「」]/;
 
-/** A 종결어미 counts as clause-final before a period, a closing paren, or the end. */
-const CLAUSE_END = "(?=\\s*(?:[.()\\[\\]]|$))";
+/**
+ * What counts as the end of a clause.
+ *
+ * Everything that can follow a 종결어미 without continuing the sentence.
+ * Restricting this to the period and the parentheses left a seventh of the feed
+ * untouched, because engines love a colon or a dash: "고려하고 있습니다: 세부
+ * 사항", "기다릴 수 있습니다 - Ben Jacobs", "발표했습니다!".
+ */
+const CLAUSE_END = "(?=\\s*(?:[.()\\[\\]!?:;,·–—|…-]|$))";
 
 /**
  * A headline can hold more than one clause — "Flick에는 목표가 필요합니다. 경고
