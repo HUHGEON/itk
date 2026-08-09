@@ -77,7 +77,10 @@ jobs:
       - name: Fetch article summaries
         run: npm run hydrate -- --limit 80
 
-      # MyMemory needs no key; ANTHROPIC_API_KEY upgrades the engine if present.
+      # Google's public translate backend is the default and needs no key;
+      # MyMemory catches whatever it drops, and ANTHROPIC_API_KEY upgrades the
+      # engine if one is ever set. Every engine's output goes through the
+      # Korean headline pass in lib/collect/korean.ts.
       - name: Translate headlines
         run: npm run translate -- --limit 150
         env:

@@ -2,24 +2,38 @@
  * Translates headlines into Korean and stores them, so every browser gets
  * Korean without depending on a client-side API.
  *
- * Default engine is MyMemory: free, no key, no signup. Setting
- * MYMEMORY_EMAIL raises the daily allowance from 5,000 to 50,000 characters —
- * at ~70 characters a headline that's ~70/day anonymous versus ~700/day, and
- * this feed produces roughly 130 attributable stories a day.
+ * Three engines, all reached the same way — whichever produced the Korean, the
+ * result goes through `headlineKo` before it is stored, because no translator
+ * writes headlines. That pass is where 서술체 becomes 명사형 and where Chelsea
+ * becomes 첼시.
  *
- * ANTHROPIC_API_KEY, when present, is used instead: better handling of football
- * names and Korean club conventions, at roughly $3/month for this volume.
+ *   google    default. Google's public web-translate backend: no key, no quota
+ *             to budget, and clearly better than MyMemory on this feed's
+ *             languages. Unsupported, so every failure falls through.
+ *   mymemory  the fallback, and the engine before Google. Free and documented,
+ *             but weak — it renders a name as "브루노 기마랑이스 (Bruno
+ *             Guimarães)". MYMEMORY_EMAIL raises its allowance from 5,000 to
+ *             50,000 characters a day; as a fallback it now barely spends any.
+ *   claude    used automatically when ANTHROPIC_API_KEY is set. The only engine
+ *             that gets football naming and headline register right on its own,
+ *             at roughly $2–8/month for this feed's ~145 stories a day.
  *
  *   npm run translate
  *   npm run translate -- --limit 200 --tier 1.5
- *   npm run translate -- --engine claude
+ *   npm run translate -- --engine mymemory
  */
 import "../lib/load-env";
 import { rpc } from "../lib/supabase";
+import { headlineKo } from "../lib/collect/korean";
 
 const MYMEMORY_DAILY_CHARS = process.env.MYMEMORY_EMAIL ? 50_000 : 5_000;
-/** MyMemory throttles hard on bursts. */
+/**
+ * MyMemory throttles hard on bursts; Google is far more tolerant, and pacing a
+ * 150-headline run at MyMemory's rate made every run take three minutes for no
+ * reason once Google became the default.
+ */
 const GAP_MS = 700;
+const GOOGLE_GAP_MS = 200;
 
 interface Pending {
   id: string;
@@ -111,6 +125,51 @@ async function askMyMemory(text: string, source: string): Promise<string | null>
 }
 
 /**
+ * Google's public web-translate backend — the one the translate.google.com page
+ * itself calls. No key, no signup, and markedly better than MyMemory on the
+ * languages this feed is actually in: it keeps names intact instead of
+ * rendering "Bruno Guimarães" as "브루노 기마랑이스 (🗣️Bruno Guimarães)".
+ *
+ * It is not a supported API. There is no quota to budget against and no
+ * contract either — it can rate-limit or change shape without notice — so every
+ * failure falls through to MyMemory rather than dropping the headline.
+ *
+ * Its one systematic weakness, leaving club names in Latin script, is repaired
+ * afterwards by `headlineKo` against the club registry.
+ */
+async function viaGoogle(text: string): Promise<string | null> {
+  const params = new URLSearchParams({
+    client: "gtx",
+    sl: "auto",
+    tl: "ko",
+    dt: "t",
+    q: text,
+  });
+
+  try {
+    const res = await fetch(
+      `https://translate.googleapis.com/translate_a/single?${params}`,
+      { signal: AbortSignal.timeout(15_000) },
+    );
+    if (!res.ok) return null;
+
+    // [[[chunk, source, ...], ...], ...] — a long headline arrives split.
+    const body = (await res.json()) as [[string, string][]] | unknown;
+    if (!Array.isArray(body) || !Array.isArray(body[0])) return null;
+
+    const out = (body[0] as [string, string][])
+      .map((seg) => (Array.isArray(seg) ? (seg[0] ?? "") : ""))
+      .join("")
+      .trim();
+
+    if (!out || out === text) return null;
+    return out;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * MyMemory's own detector, with ours as the fallback.
  *
  * Asking for the wrong pair returns the input unchanged, and our detector is
@@ -137,12 +196,28 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, Translated>> {
   const client = new Anthropic();
 
   const res = await client.messages.create({
-    model: process.env.TRANSLATE_MODEL ?? "claude-opus-4-8",
-    max_tokens: 4000,
+    model: process.env.TRANSLATE_MODEL ?? "claude-opus-5",
+    // Opus 5 thinks by default, and max_tokens caps thinking *plus* the
+    // response — the 4,000 that was ample on Opus 4.8 truncates a 25-headline
+    // batch here, and a truncated batch is lost JSON, not a short answer.
+    max_tokens: 16000,
     system:
-      "해외 축구 기사를 한국어로 옮긴다. 선수·감독·구단명은 국내 축구 커뮤니티 통용 표기를 " +
-      "따른다 (Haaland→홀란, Tottenham→토트넘). 원문에 없는 내용을 덧붙이지 않고, 확정되지 않은 " +
-      "이적설을 확정처럼 쓰지 않는다. summary 가 비어 있으면 summary_ko 도 빈 문자열로 둔다.",
+      "해외 축구 기사 제목을 한국 스포츠 매체의 헤드라인으로 옮긴다.\n\n" +
+      "[문체] title_ko 는 기사 본문이 아니라 제목이다. 짧고 단정하게, 서술 종결어미" +
+      "(~입니다/~습니다/~한다/~했다)를 쓰지 않는다.\n" +
+      "  나쁨: 다니엘 말디니는 칼리아리의 새로운 선수입니다\n" +
+      "  좋음: 말디니, 칼리아리행 확정\n" +
+      "  나쁨: 브라이튼의 스쿼드 메이크업은 이번 여름에 바뀌고 있습니다\n" +
+      "  좋음: 브라이튼 스쿼드, 이번 여름 세대교체\n" +
+      "큰따옴표 안의 발언은 말투를 살리되 제목 길이로 줄인다.\n\n" +
+      "[표기] 선수·감독·구단명은 국내 축구 커뮤니티 통용 표기를 따른다 " +
+      "(Haaland→홀란, Tottenham→토트넘, Mbappé→음바페).\n" +
+      "outlet 은 그 기사를 실은 매체 이름이다. 매체명과 기자 이름은 번역하지 않는다 — " +
+      "제목에 남아 있으면 사람 이름이나 일반 명사로 옮기지 말고 그대로 두거나 뺀다.\n" +
+      "(Defensa Central 을 '중앙 수비'로, Gianluca Di Marzio 를 선수 이름으로 옮기는 것이 " +
+      "실제로 있었던 오역이다.)\n\n" +
+      "[내용] 원문에 없는 내용을 덧붙이지 않고, 확정되지 않은 이적설을 확정처럼 쓰지 않는다. " +
+      "summary 가 비어 있으면 summary_ko 도 빈 문자열로 둔다.",
     output_config: {
       effort: "low",
       format: {
@@ -173,7 +248,12 @@ async function viaClaude(batch: Pending[]): Promise<Map<string, Translated>> {
       {
         role: "user",
         content: `id는 그대로 돌려줘.\n\n${JSON.stringify(
-          batch.map((b) => ({ id: b.id, title: b.title, summary: b.snippet })),
+          batch.map((b) => ({
+            id: b.id,
+            title: b.title,
+            summary: b.snippet,
+            outlet: b.source,
+          })),
         )}`,
       },
     ],
@@ -205,15 +285,26 @@ async function save(
 ): Promise<number> {
   if (items.length === 0) return 0;
   return rpc<number>("itk_apply_translations", {
-    p_items: items.map((i) => ({ ...i, summary_ko: i.summary_ko || null })),
+    p_items: items.map((i) => ({
+      ...i,
+      // Applied to every engine, not just the free ones. No translator can be
+      // told "write a headline, not a sentence" for free, and even Claude's
+      // output benefits from the club registry — this is the only place that
+      // knows 첼시 is what we call Chelsea.
+      title_ko: headlineKo(i.title_ko),
+      summary_ko: i.summary_ko || null,
+    })),
   });
 }
 
 async function main() {
   const limit = Number(arg("limit")) || 150;
   const maxTier = arg("tier") ? Number(arg("tier")) : 3;
+  // Google needs no key and beats MyMemory on this feed, so it leads whenever
+  // there is no Anthropic key. MyMemory stays behind it as the fallback, which
+  // also means its daily character budget is now barely touched.
   const engine =
-    arg("engine") ?? (process.env.ANTHROPIC_API_KEY ? "claude" : "mymemory");
+    arg("engine") ?? (process.env.ANTHROPIC_API_KEY ? "claude" : "google");
 
   const pending = (await fetchPending(limit, maxTier, engine === "claude")).filter(
     (p) => !isKorean(p.title),
@@ -259,7 +350,11 @@ async function main() {
   };
 
   for (const item of pending) {
-    if (spent + item.title.length > MYMEMORY_DAILY_CHARS) {
+    const overBudget = spent + item.title.length > MYMEMORY_DAILY_CHARS;
+    // Only MyMemory meters characters. Under Google the exhausted budget just
+    // removes the fallback — stopping the run there would strand headlines
+    // Google could still have handled.
+    if (overBudget && engine !== "google") {
       console.log(
         `  오늘 한도(${MYMEMORY_DAILY_CHARS.toLocaleString()}자)에 도달해 중단합니다.` +
           (process.env.MYMEMORY_EMAIL ? "" : " MYMEMORY_EMAIL을 넣으면 10배로 늘어납니다."),
@@ -268,8 +363,13 @@ async function main() {
     }
 
     try {
-      const ko = await viaMyMemory(item.title, item.lang);
-      spent += item.title.length;
+      // Google first when it is the chosen engine; MyMemory only picks up what
+      // Google could not do, so it costs budget only on the exceptions.
+      let ko = engine === "google" ? await viaGoogle(item.title) : null;
+      if (!ko && !overBudget) {
+        ko = await viaMyMemory(item.title, item.lang);
+        spent += item.title.length;
+      }
       if (ko) results.push({ id: item.id, title_ko: ko });
       // Recorded, so a headline the provider cannot handle stops returning to
       // the front of the queue and spending the budget again.
@@ -286,7 +386,7 @@ async function main() {
 
     // Flush periodically so a mid-run stop still saves progress.
     if (results.length + misses.length >= 25) await flush();
-    await sleep(GAP_MS);
+    await sleep(engine === "google" ? GOOGLE_GAP_MS : GAP_MS);
   }
 
   await flush();

@@ -18,6 +18,7 @@ import {
 import { fetchBluesky } from "./bluesky";
 import { CLUB_SITEMAPS, fetchClubSitemap } from "./clubs";
 import { detectLang, langForCountry } from "./lang";
+import { cleanTitle, decodeEntities } from "./title";
 
 export interface RawItem {
   url: string;
@@ -49,12 +50,7 @@ function articleId(url: string): string {
 }
 
 function stripHtml(s: string): string {
-  return s
-    .replace(/<[^>]*>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
+  return decodeEntities(s.replace(/<[^>]*>/g, " "))
     .replace(/\s+/g, " ")
     .trim();
 }
@@ -316,7 +312,9 @@ async function persist(items: RawItem[]): Promise<number> {
   const rows = [...byId].map(([id, item]) => ({
     id,
     url: item.url,
-    title: item.title,
+    // Cleaned here rather than in each of the four item builders: this is the
+    // one place that has both the headline and the publisher it belongs to.
+    title: cleanTitle(item.title, item.source),
     snippet: item.snippet,
     source: item.source,
     published_at: new Date(item.publishedAt).toISOString(),
