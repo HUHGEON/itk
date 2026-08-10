@@ -39,57 +39,36 @@ function finalOf(ch: string): number | null {
 }
 
 /**
- * Quoted speech keeps its 존댓말 — a quote rewritten into 명사형 is a misquote,
- * not a headline. So the nominalizer only fires on an ending that is actually
- * the end of the sentence, outside any quotation.
- */
-function endsInsideQuote(s: string): boolean {
-  const trailing = s.trimEnd().slice(-1);
-  if (/["'”’»】」]/.test(trailing)) return true;
-
-  // An unbalanced opening quote means everything after it is still quoted.
-  let open = 0;
-  for (const ch of s) {
-    if (ch === "“" || ch === "«" || ch === "「") open++;
-    else if (ch === "”" || ch === "»" || ch === "」") open--;
-    else if (ch === '"') open = open ? 0 : 1;
-  }
-  return open > 0;
-}
-
-/**
- * "~할 것입니다" is the single most common ending the engines produce for a
- * transfer that hasn't happened yet, and 전망 is what a Korean desk writes
- * there. Handled before the generic rules because 것입니다 would otherwise
- * nominalize to the useless "것임".
- */
-const PROSPECTIVE = /\s*것입니다$/;
-
-/**
- * Drops or nominalizes a sentence-final 종결어미.
+ * Korean particles pick their form from the preceding syllable's 받침, so
+ * substituting a name changes which form is correct: the engine wrote "Inter
+ * Milan이" against a consonant-final Latin word, and 인테르 ends in a vowel.
+ * Left alone the feed reads "인테르이", "뉴캐슬가".
  *
- * -습니다 → -음 and -ㅂ니다 → -ㅁ are the same operation Korean itself performs
- * (있습니다 → 있음, 앞당깁니다 → 앞당김), so they hold for any verb without a
- * conjugation table. The copula 입니다 is dropped instead of nominalized:
- * "새로운 선수임" is grammatical but nobody writes it.
+ * Only ever applied to the particle directly after a name this module just
+ * replaced. Sweeping the whole string would be a disaster — "국가", "평가" and
+ * "높이" all end in what looks like a particle.
  */
-function nominalize(s: string): string {
-  const out = s.trimEnd().replace(/[.\s]+$/, "");
-  if (endsInsideQuote(out)) return out;
+const AGREEMENT: Record<string, [withBatchim: string, without: string]> = {
+  은: ["은", "는"], 는: ["은", "는"],
+  이: ["이", "가"], 가: ["이", "가"],
+  을: ["을", "를"], 를: ["을", "를"],
+  과: ["과", "와"], 와: ["과", "와"],
+  으로: ["으로", "로"], 로: ["으로", "로"],
+};
 
-  if (PROSPECTIVE.test(out)) return `${out.replace(PROSPECTIVE, "")} 전망`;
-  if (out.endsWith("입니다")) return out.slice(0, -3).replace(/[\s은는이가]+$/, "");
-  if (out.endsWith("습니다")) return `${out.slice(0, -3)}음`;
+const PARTICLE_AFTER_NAME = "은|는|이|가|을|를|과|와|으로|로";
 
-  if (out.endsWith("니다")) {
-    const stem = out.slice(0, -2);
-    const last = stem.slice(-1);
-    if (finalOf(last) === FINAL_B) {
-      const rewritten = withFinal(last, FINAL_M);
-      if (rewritten) return stem.slice(0, -1) + rewritten;
-    }
+function agree(korean: string, particle: string): string {
+  const pair = AGREEMENT[particle];
+  const last = korean.trimEnd().slice(-1);
+  const final = finalOf(last);
+  if (!pair || final === null) return particle;
+
+  // ㄹ is the exception every Korean speaker knows: 서울로, never 서울으로.
+  if (particle === "로" || particle === "으로") {
+    return final === 0 || final === 8 ? "로" : "으로";
   }
-  return out;
+  return final === 0 ? pair[1] : pair[0];
 }
 
 /**
@@ -102,11 +81,18 @@ const PARTICLE = "은|는|이|가|을|를|의|와|과|에서|에게|에|로|으�
 function dropLatinGloss(s: string): string {
   return (
     s
-      // The particle is pulled back with the name: engines write
-      // "말디니 (Daniel Maldini) 는", and dropping only the parenthetical
-      // leaves the particle stranded a space away from its noun.
+      // Two conditions, both learned the hard way. The parenthetical must hold
+      // real Latin letters — without that check "첼시(1-0) 아스날" lost its score
+      // and "마드리드(2026)" its year. And the surrounding space may only be
+      // eaten when a particle follows: engines write "말디니 (Daniel Maldini) 는"
+      // and dropping the middle leaves the particle stranded, but with no
+      // particle there is nothing to pull back and the space still separates
+      // two words.
       .replace(
-        new RegExp(`([가-힣])\\s*\\(\\s*[^)가-힣]{2,40}\\)\\s*(${PARTICLE})?`, "g"),
+        new RegExp(
+          `([가-힣])\\s*\\((?=[^)]*[A-Za-zÀ-ÿ]{2})[^)가-힣]{2,40}\\)(?:\\s*(${PARTICLE}))?`,
+          "g",
+        ),
         (_m, head: string, particle?: string) => head + (particle ?? ""),
       )
       .replace(/\s{2,}/g, " ")
@@ -125,6 +111,19 @@ function dropLatinGloss(s: string): string {
  * "Roberto De Zerbi" would be half-consumed by a shorter entry, and
  * "Manchester" would beat "Manchester United".
  */
+/**
+ * Club aliases that name a category rather than a club.
+ *
+ * `teams.json` aliases exist for *tagging* — deciding whether a story is about
+ * Chelsea — where "Blues" in a Chelsea-shaped article is a fair signal.
+ * Substitution is the opposite problem: the alias has to identify the club on
+ * its own, against every other club in football. Reusing the tagging list
+ * turned "Oxford United" into "Oxford 맨체스터 유나이티드".
+ */
+const AMBIGUOUS_ALIAS = new Set([
+  "united", "city", "madrid", "milan", "inter", "villa", "blues", "reds",
+]);
+
 interface Substitution {
   re: RegExp;
   ko: string;
@@ -194,10 +193,11 @@ function nameSubstitutions(): Substitution[] {
     out.push({ name, ko });
   };
 
-  // Clubs: the canonical name plus aliases long enough to be unambiguous.
-  // "United" would hit every other United in football.
   for (const team of loadTeams()) {
-    for (const name of [team.en, ...(team.aliases ?? [])]) add(name, team.ko, 5);
+    for (const name of [team.en, ...(team.aliases ?? [])]) {
+      if (AMBIGUOUS_ALIAS.has(name.toLowerCase())) continue;
+      add(name, team.ko, 5);
+    }
   }
 
   // People are only ever substituted as a full name. A bare surname is a
@@ -219,8 +219,11 @@ function nameSubstitutions(): Substitution[] {
       // The boundary is Latin-only on purpose. `\p{L}` counts Hangul as a
       // letter, so "Arsenal에" — a name with a Korean particle stuck to it,
       // which is every occurrence that matters here — never matched.
+      // The trailing group captures the particle riding on the name, so it can
+      // be re-agreed against the Korean that replaces it.
       re: new RegExp(
-        `(?<![A-Za-zÀ-ÿ0-9])${lenientPattern(name)}(?![A-Za-zÀ-ÿ0-9])`,
+        `(?<![A-Za-zÀ-ÿ0-9])${lenientPattern(name)}(?![A-Za-zÀ-ÿ0-9])` +
+          `(?:(${PARTICLE_AFTER_NAME})(?=[\\s.,!?)\\]|…·—–-]|$))?`,
         "gi",
       ),
       ko,
@@ -232,13 +235,25 @@ function nameSubstitutions(): Substitution[] {
 function localizeNames(s: string): string {
   let out = s;
   for (const { re, ko } of nameSubstitutions()) {
+    // Nothing Latin left means nothing left to substitute.
     if (!/[A-Za-zÀ-ÿ]/.test(out)) break;
-    out = out.replace(re, ko);
+    out = out.replace(re, (_m, particle?: string) =>
+      particle ? ko + agree(ko, particle) : ko,
+    );
   }
   return out;
 }
 
-const QUOTED = /["'“”«»「」]/;
+/**
+ * A run of quoted speech, which is copied through untouched.
+ *
+ * Rewriting a quote into 명사형 misquotes the speaker, so quotes are excluded —
+ * but excluding the *whole headline* whenever a quote mark appears anywhere was
+ * too blunt. A single emphasis mark in "아스날의 '특별한' 영입이 완료됐습니다"
+ * disabled the pass for the entire line. Spans let the sentence outside the
+ * quote be handled while the quote itself is left alone.
+ */
+const QUOTED_SPAN = /[“"'‘«「][^”"'’»」]*[”"'’»」]/g;
 
 /**
  * What counts as the end of a clause.
@@ -263,21 +278,63 @@ const CLAUSE_END = "(?=\\s*(?:[.()\\[\\]!?:;,·–—|…-]|$))";
  * whether it sits inside a quote needs a parser, and getting it wrong rewrites
  * someone's words — a quoted headline keeps the single end-of-string rule.
  */
-function nominalizeAll(s: string): string {
-  if (QUOTED.test(s)) return nominalize(s);
-
-  const out = s
+/**
+ * Rewrites every clause-final 종결어미 in one unquoted stretch of text.
+ *
+ * -습니다 → -음 and -ㅂ니다 → -ㅁ are operations Korean itself performs (있습니다
+ * → 있음, 앞당깁니다 → 앞당김), so they hold for any verb without a conjugation
+ * table.
+ *
+ * The copula 입니다 gets no rule of its own, and that is deliberate. Deleting it
+ * reads better after a noun — "새로운 선수" over "새로운 선수임" — but nothing in
+ * the text distinguishes the copula from a verb whose stem ends in 이: 보이다,
+ * 쓰이다, 모이다 all conjugate to …입니다 too. The delete rule was cutting
+ * "보입니다" down to "보". Falling through to the -ㅂ니다 rule gives 선수임 and
+ * 보임: one is stiff, the other is correct, and a stiff headline beats a
+ * truncated word.
+ */
+function rewriteClauses(part: string): string {
+  return part
     .replace(new RegExp(`\\s*것입니다${CLAUSE_END}`, "g"), " 전망")
-    .replace(new RegExp(`[\\s은는이가]*입니다${CLAUSE_END}`, "g"), "")
     .replace(new RegExp(`습니다${CLAUSE_END}`, "g"), "음")
     .replace(new RegExp(`(.)니다${CLAUSE_END}`, "gu"), (m, last: string) => {
       if (finalOf(last) !== FINAL_B) return m;
       return withFinal(last, FINAL_M) ?? m;
     });
+}
+
+/**
+ * A headline can hold more than one clause — "Flick에는 목표가 필요합니다. 경고
+ * 비교", "…있습니다(이미 예측 가능했습니다)" — and treating only the last one
+ * leaves 서술체 in plain sight.
+ *
+ * Rewriting in place rather than splitting and rejoining: the separators are
+ * what make a two-clause headline readable, and a split that drops them turns
+ * "필요합니다. 경고 비교" into the run-on "필요함 경고 비교".
+ */
+function nominalizeAll(s: string): string {
+  let out = "";
+  let cursor = 0;
+  let endsQuoted = false;
+
+  for (const m of s.matchAll(QUOTED_SPAN)) {
+    out += rewriteClauses(s.slice(cursor, m.index));
+    out += m[0];
+    cursor = m.index + m[0].length;
+    endsQuoted = s.slice(cursor).trim() === "";
+  }
+
+  if (cursor < s.length) {
+    const tail = s.slice(cursor);
+    out += rewriteClauses(tail);
+    if (tail.trim()) endsQuoted = false;
+  }
 
   // Headlines don't carry a terminal period; interior ones are the separator
-  // that keeps the clauses apart, so only the last one goes.
-  return out.replace(/[.\s]+$/, "").replace(/\s{2,}/g, " ").trim();
+  // that keeps the clauses apart, so only the last one goes — and never the one
+  // that belongs to somebody's quoted sentence.
+  if (!endsQuoted) out = out.replace(/[.\s]+$/, "");
+  return out.replace(/\s{2,}/g, " ").trim();
 }
 
 /** Everything a translated headline should have done to it before storage. */
