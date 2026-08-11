@@ -100,7 +100,10 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
           const n = new Notification(row.titleKo ?? row.title, {
             body: `${tierLabel(row.tier)}${row.journalistKo ? ` · ${row.journalistKo}` : ""}`,
             tag: row.id,
-            icon: "/favicon.ico",
+            // app/icon.png is the only icon route this app generates. There is
+            // no app/favicon.ico, so the conventional path 404s and the
+            // notification renders without a mark.
+            icon: "/icon.png",
           });
           n.onclick = () => window.open(row.url, "_blank", "noopener");
         }
