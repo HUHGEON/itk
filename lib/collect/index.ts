@@ -368,7 +368,30 @@ export interface CollectStats {
   tooOld: number;
   pruned: number;
   failures: { label: string; error: string }[];
+  /**
+   * Bluesky handles that answered but had nothing recent to say. Not a failure
+   * — a dead source and a healthy one look identical from the response code, so
+   * this is the only place a stopped mirror can surface.
+   */
+  quiet: {
+    label: string;
+    handle: string;
+    /** null when the feed came back completely empty */
+    days: number | null;
+    mirror: boolean;
+  }[];
   durationMs: number;
+}
+
+/**
+ * How long a handle may go silent before it is worth a line in the log.
+ *
+ * A mirror relays 30-50 posts a day, so three days of nothing means it broke.
+ * A reporter's own account has slow weeks — international breaks, holidays —
+ * and flagging those every run would train us to ignore the list.
+ */
+function quietAfter(j: Journalist): number {
+  return j.blueskyMirror ? 3 : 45;
 }
 
 export async function collect(
@@ -424,6 +447,7 @@ export async function collect(
   // Bluesky is a JSON API rather than RSS, so it runs beside the feed fetcher.
   // Posts are short and frequent — always fetched, never conditional.
   const bskyTargets = journalists.filter((j) => j.bluesky);
+  const quiet: CollectStats["quiet"] = [];
   const bskyResults = await pool<Journalist, SourceResult>(
     bskyTargets,
     concurrency,
@@ -431,12 +455,20 @@ export async function collect(
       const label = `bsky:${j.ko}`;
       const url = `https://bsky.app/profile/${j.bluesky}`;
       try {
-        return {
-          label,
-          url,
-          outcome: { kind: "ok", items: [] },
-          items: await fetchBluesky(j),
-        };
+        const { items, latestAt } = await fetchBluesky(j);
+        const days =
+          latestAt === null
+            ? Infinity
+            : Math.floor((Date.now() - latestAt) / 86_400_000);
+        if (days >= quietAfter(j)) {
+          quiet.push({
+            label,
+            handle: j.bluesky!,
+            days: Number.isFinite(days) ? days : null,
+            mirror: j.blueskyMirror === true,
+          });
+        }
+        return { label, url, outcome: { kind: "ok", items: [] }, items };
       } catch (err) {
         return {
           label,
@@ -581,6 +613,7 @@ export async function collect(
     tooOld,
     pruned,
     failures,
+    quiet,
     durationMs,
   };
 

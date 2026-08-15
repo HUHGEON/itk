@@ -76,6 +76,17 @@ export interface Journalist {
    * read at all).
    */
   bluesky?: string;
+  /**
+   * The handle above is an unaffiliated bot that reposts this reporter's X
+   * feed, not an account they run.
+   *
+   * The words are theirs, so the tier still applies, but two things differ and
+   * the reader should be told: the link goes to the mirror rather than the
+   * original post, and the mirror can stop without anyone announcing it. Three
+   * Romano mirrors died silently before the one we use — see the staleness
+   * check in collect().
+   */
+  blueskyMirror?: boolean;
 }
 
 export interface Article {

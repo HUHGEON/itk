@@ -95,11 +95,23 @@ function splitText(text: string): { title: string; snippet: string } {
 const FOOTBALL_POST =
   /transfer|signing|signed|sign |deal|contract|medical|agreed|loan|bid|fee|club|manager|head coach|squad|goal|lineup|kick-?off|fichaje|traspaso|cedido|mercato|acuerdo|wechsel|vertrag|ablöse|transferts?|prêt|overgang|contrato|#\w*fc\b|\bfc\b|\bcfc\b|\bmufc\b|\blfc\b|\bafc\b/i;
 
+export interface BlueskyResult {
+  items: RawItem[];
+  /**
+   * When the newest post in the raw feed was written, before any of the filters
+   * below. A mirror that has stopped relaying and a reporter who has stopped
+   * posting both look like an empty result otherwise, and neither shows up as a
+   * failure — the request succeeds, it just returns nothing new forever.
+   */
+  latestAt: number | null;
+}
+
 export async function fetchBluesky(
   j: Journalist,
   limit = 30,
-): Promise<RawItem[]> {
-  if (!j.bluesky) return [];
+): Promise<BlueskyResult> {
+  const empty: BlueskyResult = { items: [], latestAt: null };
+  if (!j.bluesky) return empty;
 
   const url = `${API}/app.bsky.feed.getAuthorFeed?${new URLSearchParams({
     actor: j.bluesky,
@@ -111,8 +123,16 @@ export async function fetchBluesky(
   if (!res.ok) throw new Error(`Bluesky HTTP ${res.status}`);
 
   const body = (await res.json()) as FeedResponse;
+  const feed = body.feed ?? [];
 
-  return (body.feed ?? []).flatMap(({ post, reason }) => {
+  const stamps = feed
+    .map(({ post }) =>
+      post.record.createdAt ? Date.parse(post.record.createdAt) : NaN,
+    )
+    .filter((t) => Number.isFinite(t));
+  const latestAt = stamps.length > 0 ? Math.max(...stamps) : null;
+
+  const items = feed.flatMap(({ post, reason }) => {
     // `reason` marks a repost — someone else's words under their name.
     if (reason) return [];
 
@@ -137,7 +157,9 @@ export async function fetchBluesky(
         url: link,
         title,
         snippet,
-        source: "Bluesky",
+        // The mirror is not the reporter, and the link proves it — it lands on
+        // a bot's profile. Say so on the card rather than passing it off.
+        source: j.blueskyMirror ? "Bluesky (X 미러)" : "Bluesky",
         publishedAt: post.record.createdAt
           ? Date.parse(post.record.createdAt)
           : Date.now(),
@@ -149,4 +171,6 @@ export async function fetchBluesky(
       },
     ];
   });
+
+  return { items, latestAt };
 }

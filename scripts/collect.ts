@@ -54,6 +54,27 @@ async function main() {
     }
   }
 
+  // Mirrors are third-party bots that stop without telling anyone. Three
+  // Romano mirrors went quiet before the one we use, and nothing in the run
+  // would have said so — the request still returns 200 with an old feed.
+  const mirrors = stats.quiet.filter((q) => q.mirror);
+  if (mirrors.length > 0) {
+    console.log(`\n⚠ 멈춘 것으로 보이는 X 미러 ${mirrors.length}곳:`);
+    for (const q of mirrors) {
+      const age = q.days === null ? "글 없음" : `${q.days}일째 조용`;
+      console.log(`  · ${q.label} (${q.handle}) — ${age}`);
+    }
+    console.log("  다른 미러를 찾거나 registry에서 빼세요.");
+  }
+
+  const dormant = stats.quiet.filter((q) => !q.mirror);
+  if (dormant.length > 0) {
+    console.log(
+      `\n오래 조용한 Bluesky 계정 ${dormant.length}곳: ` +
+        dormant.map((q) => q.label.replace(/^bsky:/, "")).join(", "),
+    );
+  }
+
   // A run where most sources failed means the IP is throttled or a feed format
   // changed — surface it as a non-zero exit so CI goes red instead of quietly
   // collecting nothing.

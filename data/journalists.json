@@ -41,7 +41,7 @@
     "outlet": "TyC Sports",
     "x": "CLMerlo",
     "confidence": "high",
-    "note": "",
+    "note": "X 미러 cesarluismerlo.yopro.studio 가 2025-06 개설 후 하루 8~15건씩 중계하다 2026-08-07 이후 멈춤. 재개하면 bluesky 필드에 다시 넣을 것.",
     "id": "cesar-luis-merlo",
     "active": true
   },
@@ -1835,7 +1835,9 @@
     "active": true,
     "feeds": [
       "https://www.caughtoffside.com/author/fabrizio-romano/feed/"
-    ]
+    ],
+    "bluesky": "fabrizioromano.yopro20.com",
+    "blueskyMirror": true
   },
   {
     "ko": "프란체스코 포르지오",
