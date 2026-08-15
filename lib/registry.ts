@@ -80,21 +80,28 @@ export function teamMatchers(): { slug: string; pattern: RegExp }[] {
  * but `\bUnited\b` and `\bAFC\b` match both. Masking a tracked club's longer
  * name handles Newcastle United on its own; these are the ones no tracked alias
  * would ever cover.
+ *
+ * The whole alternation is bounded. Without the leading `\b`, the shield for
+ * Chester City matched the tail of "Man[chester City]" and blanked it, so
+ * detectTeams found nothing at all in any text that used Man City's full name
+ * — the club vanished from its own filter unless a story said "Man City".
  */
 const SHIELDS = new RegExp(
-  [
-    // "United"
-    "(?:leeds|west ham|sheffield|dundee|carlisle|colchester|oxford|rotherham",
-    "|southend|torquay|hartlepool|cambridge|scunthorpe|ayr|hereford)\\s+united",
-    // "City"
-    "|(?:leicester|norwich|hull|cardiff|swansea|bristol|stoke|coventry|birmingham",
-    "|lincoln|exeter|salford|bradford|york|chester|new york|melbourne|mumbai",
-    "|ho chi minh)\\s+city",
-    // "AFC" — two clubs and a continental confederation
-    "|afc\\s+(?:bournemouth|wimbledon|ajax|champions league|asian cup)",
-    // "Madrid" / "Milan" as places rather than clubs
-    "|rayo vallecano|milan(?:o)?\\s+(?:fashion|design|airport)",
-  ].join(""),
+  "\\b(?:" +
+    [
+      // "United"
+      "(?:leeds|west ham|sheffield|dundee|carlisle|colchester|oxford|rotherham",
+      "|southend|torquay|hartlepool|cambridge|scunthorpe|ayr|hereford)\\s+united",
+      // "City"
+      "|(?:leicester|norwich|hull|cardiff|swansea|bristol|stoke|coventry|birmingham",
+      "|lincoln|exeter|salford|bradford|york|chester|new york|melbourne|mumbai",
+      "|ho chi minh)\\s+city",
+      // "AFC" — two clubs and a continental confederation
+      "|afc\\s+(?:bournemouth|wimbledon|ajax|champions league|asian cup)",
+      // "Madrid" / "Milan" as places rather than clubs
+      "|rayo vallecano|milan(?:o)?\\s+(?:fashion|design|airport)",
+    ].join("") +
+    ")\\b",
   "gi",
 );
 
