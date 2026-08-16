@@ -1833,11 +1833,11 @@
     "note": "",
     "id": "fabrizio-romano",
     "active": true,
+    "bluesky": "fabrizioromano.yopro20.com",
+    "blueskyMirror": true,
     "feeds": [
       "https://www.caughtoffside.com/author/fabrizio-romano/feed/"
-    ],
-    "bluesky": "fabrizioromano.yopro20.com",
-    "blueskyMirror": true
+    ]
   },
   {
     "ko": "프란체스코 포르지오",
