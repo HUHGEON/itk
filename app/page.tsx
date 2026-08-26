@@ -9,6 +9,7 @@ import { loadTeams, loadJournalists } from "@/lib/registry";
 import type { Team } from "@/lib/types";
 import { Filters } from "@/components/Filters";
 import { ArticleList } from "@/components/ArticleList";
+import { NewArticles } from "@/components/NewArticles";
 import { AlertPanel } from "@/components/AlertPanel";
 import { Suspense } from "react";
 import { Shell } from "@/components/Shell";
@@ -121,6 +122,8 @@ export default async function Home({
           journalistActivity={journalistActivity}
           state={filterState}
         />
+
+        <NewArticles query={feedQuery} since={now} />
 
         {rows.length === 0 ? (
           <EmptyState
