@@ -87,6 +87,9 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
+        "78%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
+        // Holds from here to the end of the wrapper, so the assembled ring stays
+        // on screen for a beat instead of finishing exactly as the stage lets go.
         "100%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
       },
       ease: "outQuad",
@@ -152,7 +155,7 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
             fill
             priority
             sizes="100vw"
-            className="scale-105 object-cover"
+            className="scale-[1.18] object-cover object-[86%_center]"
           />
         </div>
         {/* Darkened toward the top so the grass falls away into the page rather

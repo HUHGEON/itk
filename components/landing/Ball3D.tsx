@@ -52,7 +52,12 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       );
 
       const tick = () => {
-        const t = Math.min(1, Math.max(0, progress.current));
+        // The sequence completes at 78% of the scroll and holds. Finishing
+        // exactly as the sticky stage releases meant the assembled state was
+        // never actually seen: it arrived and the page moved on in the same
+        // gesture.
+        const raw = Math.min(1, Math.max(0, progress.current));
+        const t = Math.min(1, raw / 0.78);
         ball.group.rotation.y = t * Math.PI * 4 + 0.6;
         ball.group.rotation.x = -0.22 + t * 0.5;
 

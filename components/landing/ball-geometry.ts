@@ -131,22 +131,36 @@ export function createBall(radius = 1): Ball {
    * them, dark, so the gaps read as stitching rather than as holes.
    */
   const core = new Mesh(
-    new SphereGeometry(radius * 0.972, 64, 48),
-    new MeshStandardMaterial({ color: new Color("#0f0c0a"), roughness: 0.85 }),
+    new SphereGeometry(radius * 0.965, 64, 48),
+    new MeshStandardMaterial({
+      color: new Color("#241203"),
+      emissive: new Color("#f1800b"),
+      emissiveIntensity: 0.45,
+      roughness: 0.6,
+    }),
   );
   group.add(core);
 
   // Low-ish roughness so the environment map actually shows up: a matte surface
   // reflects nothing, which is why the first version read as painted card.
-  const white = new MeshStandardMaterial({
-    color: new Color("#efece6"),
-    roughness: 0.34,
-    metalness: 0.0,
+  /**
+   * Not a white-and-black ball.
+   *
+   * The classic pattern fights this page: two big blocks of near-white are the
+   * loudest thing on a warm near-black palette, and next to a photograph they
+   * read as plastic. These are two shades of dark leather instead, and the
+   * seams between them glow in the brand amber, which is the one chromatic
+   * colour the rest of the site uses.
+   */
+  const light = new MeshStandardMaterial({
+    color: new Color("#2a2320"),
+    roughness: 0.42,
+    metalness: 0.15,
   });
-  const black = new MeshStandardMaterial({
-    color: new Color("#171310"),
-    roughness: 0.38,
-    metalness: 0.0,
+  const dark = new MeshStandardMaterial({
+    color: new Color("#12100e"),
+    roughness: 0.48,
+    metalness: 0.12,
   });
 
   // CircleGeometry with 5 or 6 segments IS a regular pentagon or hexagon, but
@@ -162,7 +176,7 @@ export function createBall(radius = 1): Ball {
    * pentagons. SEAM shaves a hair off so the panels meet in a stitch line
    * rather than butting together.
    */
-  const SEAM = 0.965;
+  const SEAM = 0.955;
   const PENTA_R = 0.3433;
   const HEXA_R = 0.4035;
   const PENTA_H = Math.sqrt(1 - PENTA_R * PENTA_R);
@@ -190,7 +204,7 @@ export function createBall(radius = 1): Ball {
   };
 
   const verts = icoVertices();
-  for (const v of verts) place(v, pentagon, black, PENTA_H);
+  for (const v of verts) place(v, pentagon, dark, PENTA_H);
 
   for (const [a, b, c] of ICO_FACES) {
     const centre = new Vector3()
@@ -198,7 +212,7 @@ export function createBall(radius = 1): Ball {
       .add(verts[b])
       .add(verts[c])
       .normalize();
-    place(centre, hexagon, white, HEXA_H);
+    place(centre, hexagon, light, HEXA_H);
   }
 
   return { group, panels };
