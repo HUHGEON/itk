@@ -1,18 +1,18 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import type { Material } from "three";
 import { reducedMotion } from "@/lib/motion";
 
 /**
- * The ball, rendered live.
+ * The ball: one smooth sphere wearing a computed texture, spun by the scrollbar.
  *
- * three.js is ~132kB gzipped, which is most of a page budget, so it is loaded
- * only when this component mounts and only on /about. The feed never pays for
- * it. Under reduced motion nothing is loaded at all and the still image below
- * is what the reader gets.
+ * three.js is ~132kB gzipped, so it is imported only when this mounts and only
+ * on /about. The feed never pays for it, and under reduced motion it is never
+ * fetched at all.
  *
- * `progress` is 0 at the top of the sequence and 1 at the end. The parent owns
- * it, because the parent is the thing tied to the scrollbar.
+ * `progress` runs 0 to 1 across the sequence. The parent owns it because the
+ * parent is what is tied to the scrollbar.
  */
 export function Ball3D({ progress }: { progress: { current: number } }) {
   const canvas = useRef<HTMLCanvasElement>(null);
@@ -21,60 +21,85 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     const el = canvas.current;
     if (!el || reducedMotion()) return;
 
-    let raf = 0;
     let stop: (() => void) | null = null;
     let cancelled = false;
 
     void (async () => {
-      const [{ createBall, createStage }, { Vector3 }] = await Promise.all([
-        import("./ball-geometry"),
+      const [THREE, { drawBallTexture }] = await Promise.all([
         import("three"),
+        import("./ball-texture"),
       ]);
       if (cancelled) return;
 
-      const stage = createStage(el);
-      const ball = createBall(1);
-      stage.scene.add(ball.group);
+      const renderer = new THREE.WebGLRenderer({
+        canvas: el,
+        antialias: true,
+        alpha: true,
+        powerPreference: "low-power",
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+      camera.position.set(0, 0, 4.2);
+
+      // Reflections without shipping an HDRI: three carries a small procedural
+      // room for exactly this, used as environment only so the page keeps its
+      // own dark ground.
+      const { RoomEnvironment } = await import(
+        "three/examples/jsm/environments/RoomEnvironment.js"
+      );
+      const pmrem = new THREE.PMREMGenerator(renderer);
+      const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
+      scene.environment = env.texture;
+      scene.environmentIntensity = 0.4;
+
+      const key = new THREE.DirectionalLight(0xfff4e6, 2.0);
+      key.position.set(3, 4, 5);
+      scene.add(key);
+      const rim = new THREE.DirectionalLight(0xf1800b, 0.5);
+      rim.position.set(-4, -1, -3);
+      scene.add(rim);
+      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+      // The markings are drawn once into a canvas and used as a map, so the
+      // mesh stays a single smooth sphere: the outline is a circle by
+      // construction and there are no panel edges to fight the depth buffer.
+      const painted = document.createElement("canvas");
+      drawBallTexture(painted, {
+        base: "#e6e0d4",
+        mark: "#17130f",
+        seam: "#3a332c",
+      });
+      const map = new THREE.CanvasTexture(painted);
+      map.colorSpace = THREE.SRGBColorSpace;
+      map.anisotropy = renderer.capabilities.getMaxAnisotropy();
+
+      const ball = new THREE.Mesh(
+        new THREE.SphereGeometry(1, 96, 64),
+        new THREE.MeshStandardMaterial({ map, roughness: 0.42, metalness: 0.04 }),
+      );
+      scene.add(ball);
 
       const fit = () => {
         const r = el.getBoundingClientRect();
-        stage.resize(Math.max(1, r.width), Math.max(1, r.height));
+        renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
+        camera.aspect = r.width / Math.max(1, r.height);
+        camera.updateProjectionMatrix();
       };
       fit();
       const ro = new ResizeObserver(fit);
       ro.observe(el);
 
-      // Each panel drifts out along its own outward axis as the sequence runs,
-      // so the ball comes apart the way a real one would if the stitching went.
-      const home = ball.panels.map((p) => p.position.clone());
-      const axis = ball.panels.map(
-        (p) => (p.userData.dir as InstanceType<typeof Vector3>).clone(),
-      );
-
+      let raf = 0;
       const tick = () => {
-        // The sequence completes at 78% of the scroll and holds. Finishing
-        // exactly as the sticky stage releases meant the assembled state was
-        // never actually seen: it arrived and the page moved on in the same
-        // gesture.
-        const raw = Math.min(1, Math.max(0, progress.current));
-        const t = Math.min(1, raw / 0.78);
-        ball.group.rotation.y = t * Math.PI * 4 + 0.6;
-        ball.group.rotation.x = -0.22 + t * 0.5;
-
-        // Hold together for the first half, then separate.
-        const burst = Math.max(0, (t - 0.5) / 0.5);
-        // The dark core exists to fill the seams; once the panels leave there
-        // are no seams, and a black sphere hanging in the middle of the burst
-        // reads as a hole rather than as a ball coming apart.
-        const core = ball.group.children[0];
-        core.scale.setScalar(Math.max(0.001, 1 - burst));
-        for (let i = 0; i < ball.panels.length; i++) {
-          ball.panels[i].position
-            .copy(home[i])
-            .addScaledVector(axis[i], burst * 1.15);
-        }
-
-        stage.renderer.render(stage.scene, stage.camera);
+        // Completes at half the scroll and holds: the sticky stage releases
+        // well before the scrub reaches 1, so anything finishing late finishes
+        // off screen.
+        const t = Math.min(1, Math.max(0, progress.current) / 0.5);
+        ball.rotation.y = t * Math.PI * 3 + 0.5;
+        ball.rotation.x = -0.18 + t * 0.35;
+        renderer.render(scene, camera);
         raf = requestAnimationFrame(tick);
       };
       tick();
@@ -82,7 +107,12 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       stop = () => {
         cancelAnimationFrame(raf);
         ro.disconnect();
-        stage.dispose();
+        map.dispose();
+        env.texture.dispose();
+        pmrem.dispose();
+        ball.geometry.dispose();
+        (ball.material as Material).dispose();
+        renderer.dispose();
       };
     })();
 
@@ -96,7 +126,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     <canvas
       ref={canvas}
       aria-hidden
-      className="size-[clamp(16rem,42vmin,30rem)]"
+      className="size-[clamp(15rem,38vmin,27rem)]"
     />
   );
 }
