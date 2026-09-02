@@ -88,7 +88,7 @@
     "outlet": "Radio Esport Valencia / Valencia Plaza",
     "x": "Generaldepie_",
     "confidence": "medium",
-    "note": "Valencia CF specialist who runs Tribuna Deportiva; common name, so the handle is the reliable identifier rather than the name itself.",
+    "note": "Valencia CF specialist who runs Tribuna Deportiva; common name, so the handle is the reliable identifier rather than the name itself. Bluesky @hect.org 는 동명이인 F1 팟캐스터라 등록하지 않음(2026-09-02 확인). 자동 탐색에서 계속 후보로 잡히니 주의.",
     "id": "hector-gomez",
     "active": true
   },
@@ -1659,7 +1659,8 @@
     "confidence": "high",
     "note": "",
     "id": "craig-hope",
-    "active": true
+    "active": true,
+    "bluesky": "craighope-dm.bsky.social"
   },
   {
     "ko": "댄 킬패트릭",
