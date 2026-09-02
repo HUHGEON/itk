@@ -26,11 +26,13 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
     "@supabase/supabase-js": "^2.111.0",
+    "@types/three": "^0.185.4",
     "animejs": "^4.5.0",
     "next": "15.5.22",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "rss-parser": "^3.13.0",
+    "three": "^0.185.1",
     "ws": "^8.21.1"
   },
   "devDependencies": {

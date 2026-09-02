@@ -4,10 +4,11 @@ import { getPulse } from "@/lib/feed";
 import { loadJournalists, loadTeams } from "@/lib/registry";
 import { ALL_TIERS } from "@/lib/types";
 import { Logo } from "@/components/Logo";
-import { LandingHero } from "@/components/landing/LandingHero";
+import { PitchSequence } from "@/components/landing/PitchSequence";
+import { TierLadder } from "@/components/landing/LandingHero";
 import { ScaleStrip } from "@/components/landing/ScaleStrip";
 import { WhyAuthor } from "@/components/landing/WhyAuthor";
-import { ClubGrid } from "@/components/landing/ClubGrid";
+
 import { LandingCta } from "@/components/landing/LandingCta";
 
 /**
@@ -56,7 +57,7 @@ export default async function About() {
 
   return (
     <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-20 border-b border-border bg-bg/90 backdrop-blur-sm">
+      <header className="sticky top-0 z-20 bg-bg/80 backdrop-blur-sm">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-[var(--gutter)]">
           <Link href="/about" aria-label="ITK plus 소개" className="shrink-0">
             <Logo height={26} />
@@ -71,7 +72,9 @@ export default async function About() {
       </header>
 
       <main>
-        <LandingHero tiers={tiers} total={journalists.length} />
+        <PitchSequence teams={teams} />
+
+        <TierLadder tiers={tiers} total={journalists.length} />
 
         <ScaleStrip
           stats={[
@@ -81,8 +84,6 @@ export default async function About() {
             { value: pulse.total, unit: "건", label: "최근 24시간 기사" },
           ]}
         />
-
-        <ClubGrid teams={teams} />
 
         <WhyAuthor names={topTier} />
 
