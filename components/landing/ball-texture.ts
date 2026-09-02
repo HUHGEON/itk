@@ -78,25 +78,49 @@ function starEdge(bearing: number, outer: number): number {
   );
 }
 
+/** How wide the seam trench is, in radians of arc. */
+const SEAM_WIDTH = 0.028;
+
 export interface BallColours {
   base: string;
   mark: string;
   seam: string;
 }
 
+/**
+ * Deterministic value noise, for the leather grain.
+ *
+ * A painted sphere reads as a balloon no matter how right the markings are,
+ * because a real ball is not smooth: the panels are grained, and the seams are
+ * trenches. Colour alone cannot say that, so this fills a bump map at the same
+ * time - and the grain has to be stable across frames, hence a hash rather than
+ * Math.random.
+ */
+function grain(x: number, y: number): number {
+  let h = (x * 374761393 + y * 668265263) | 0;
+  h = (h ^ (h >>> 13)) * 1274126177;
+  return (((h ^ (h >>> 16)) >>> 0) % 1000) / 1000;
+}
+
 export function drawBallTexture(
   canvas: HTMLCanvasElement,
+  bump: HTMLCanvasElement,
   colours: BallColours,
   size = 1024,
 ): void {
   canvas.width = size * 2;
   canvas.height = size;
+  bump.width = size * 2;
+  bump.height = size;
   const ctx = canvas.getContext("2d");
-  if (!ctx) return;
+  const bctx = bump.getContext("2d");
+  if (!ctx || !bctx) return;
 
   const dirs = icoDirections();
   const image = ctx.createImageData(canvas.width, canvas.height);
   const data = image.data;
+  const bimage = bctx.createImageData(bump.width, bump.height);
+  const bdata = bimage.data;
 
   const base = hex(colours.base);
   const mark = hex(colours.mark);
@@ -162,10 +186,29 @@ export function drawBallTexture(
       data[i4 + 1] = rgb[1];
       data[i4 + 2] = rgb[2];
       data[i4 + 3] = 255;
+
+      /**
+       * Height, in the same pass.
+       *
+       * The seam is a trench, so the panel surface falls away as it approaches
+       * the boundary and bottoms out on it. Everything else is panel, lifted
+       * and grained. This is what separates a ball from a painted balloon.
+       */
+      const toEdge = Math.abs(angle - edge);
+      const trench = Math.min(1, toEdge / SEAM_WIDTH);
+      // Smoothstep, so the panels roll into the seam instead of stepping.
+      const rolled = trench * trench * (3 - 2 * trench);
+      const g = (grain(x, y) - 0.5) * 44;
+      const h = Math.max(0, Math.min(255, 40 + rolled * 200 + g));
+      bdata[i4] = h;
+      bdata[i4 + 1] = h;
+      bdata[i4 + 2] = h;
+      bdata[i4 + 3] = 255;
     }
   }
 
   ctx.putImageData(image, 0, 0);
+  bctx.putImageData(bimage, 0, 0);
 }
 
 function hex(v: string): [number, number, number] {

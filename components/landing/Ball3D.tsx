@@ -66,18 +66,34 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
       const painted = document.createElement("canvas");
-      drawBallTexture(painted, {
+      const relief = document.createElement("canvas");
+      drawBallTexture(painted, relief, {
         base: "#e6e0d4",
         mark: "#17130f",
         seam: "#3a332c",
       });
+
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
+      // The height pass: seams become trenches and the panels pick up grain.
+      // Without it the markings sit on a perfectly smooth surface and the whole
+      // thing reads as a painted balloon rather than as a ball.
+      const bumpMap = new THREE.CanvasTexture(relief);
+      bumpMap.anisotropy = map.anisotropy;
+
       const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 96, 64),
-        new THREE.MeshStandardMaterial({ map, roughness: 0.42, metalness: 0.04 }),
+        new THREE.SphereGeometry(1, 128, 96),
+        new THREE.MeshStandardMaterial({
+          map,
+          bumpMap,
+          bumpScale: 4.0,
+          // Match-ball surface is close to matte; a glossy sphere is the other
+          // half of why it looked like plastic.
+          roughness: 0.62,
+          metalness: 0.02,
+        }),
       );
       scene.add(ball);
 
@@ -108,6 +124,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cancelAnimationFrame(raf);
         ro.disconnect();
         map.dispose();
+        bumpMap.dispose();
         env.texture.dispose();
         pmrem.dispose();
         ball.geometry.dispose();
