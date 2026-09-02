@@ -39,11 +39,13 @@ const STAR_OUTER = TOUCH * 0.98;
 /**
  * The waist of the star, inner points over outer.
  *
- * A geometric pentagram is 0.382. The match-ball star is stouter than that but
- * still clearly a star; 0.52 is about where it stops reading as a blob and
- * starts reading as five arms.
+ * A geometric pentagram is 0.382. The match-ball star is much stouter: on the
+ * Adidas Champions League ball the arms are short and wide, closer to a
+ * five-lobed clover than to a spark. 0.55 reads closest to the photograph: at
+ * 0.62 the arms round off and the star stops having points, at 0.52 it goes
+ * spindly, and 0.76 is a blob.
  */
-const STAR_INNER_RATIO = 0.52;
+const STAR_INNER_RATIO = 0.55;
 
 /**
  * One arm every 72 degrees, with the waist at its midpoint.
@@ -80,10 +82,23 @@ function starEdge(bearing: number, outer: number): number {
 
 /** How wide the seam trench is, in radians of arc. */
 const SEAM_WIDTH = 0.028;
+/** Width of the lime keyline inside each star edge. */
+const KEY_WIDTH = 0.019;
 
 export interface BallColours {
+  /** The panels between the stars. */
   base: string;
+  /** The stars themselves. */
   mark: string;
+  /**
+   * The lime keyline just inside each star's edge.
+   *
+   * This is the detail that identifies the ball. Without it the pattern is
+   * generic black-on-white; with it, it is recognisable at a glance even at
+   * thumbnail size, because it is the only chromatic edge on the object.
+   */
+  key: string;
+  /** The stitch line between star and panel. */
   seam: string;
 }
 
@@ -124,6 +139,7 @@ export function drawBallTexture(
 
   const base = hex(colours.base);
   const mark = hex(colours.mark);
+  const key = hex(colours.key);
   const seam = hex(colours.seam);
 
   for (let y = 0; y < canvas.height; y++) {
@@ -179,9 +195,20 @@ export function drawBallTexture(
       const edge = starEdge(bearing, STAR_OUTER);
 
       const i4 = (y * canvas.width + x) * 4;
-      // A thin darker band on the boundary stands in for the stitching.
+      /**
+       * Four bands out from the star's centre: the star, a lime keyline just
+       * inside its edge, the stitch line on the edge itself, then the panel.
+       * The keyline is wider than the stitch because on the real ball it is a
+       * printed border, not a seam.
+       */
       const rgb =
-        angle < edge - 0.008 ? mark : angle < edge + 0.006 ? seam : base;
+        angle < edge - KEY_WIDTH
+          ? mark
+          : angle < edge - 0.004
+            ? key
+            : angle < edge + 0.005
+              ? seam
+              : base;
       data[i4] = rgb[0];
       data[i4 + 1] = rgb[1];
       data[i4 + 2] = rgb[2];

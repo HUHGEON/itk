@@ -68,9 +68,11 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const painted = document.createElement("canvas");
       const relief = document.createElement("canvas");
       drawBallTexture(painted, relief, {
-        base: "#e6e0d4",
-        mark: "#17130f",
-        seam: "#3a332c",
+        base: "#efebe1",
+        mark: "#14110e",
+        // The fluorescent lime border, sampled off a photograph of the ball.
+        key: "#cdfa2a",
+        seam: "#2c2721",
       });
 
       const map = new THREE.CanvasTexture(painted);
