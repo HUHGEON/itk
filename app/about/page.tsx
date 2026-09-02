@@ -82,9 +82,9 @@ export default async function About() {
           ]}
         />
 
-        <WhyAuthor names={topTier} />
-
         <ClubGrid teams={teams} />
+
+        <WhyAuthor names={topTier} />
 
         <LandingCta todayCount={pulse.total} />
       </main>

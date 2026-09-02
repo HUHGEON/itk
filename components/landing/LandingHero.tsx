@@ -32,6 +32,39 @@ export function LandingHero({
 }) {
   const max = Math.max(...tiers.map((t) => t.count), 1);
   const ladder = useRef<HTMLDivElement>(null);
+  const headline = useRef<HTMLHeadingElement>(null);
+
+  /**
+   * The two lines of the headline arrive one after the other.
+   *
+   * `splitText` was tried first and dropped: it duplicated the line on this
+   * markup (the headline carries a `<br>` and a coloured `<span>`), and a
+   * per-glyph split makes a screen reader spell Korean out syllable by
+   * syllable. Two lines sliding in reads the same at this size and cannot
+   * mangle the text.
+   */
+  useBeforePaint(() => {
+    const el = headline.current;
+    if (!el || reducedMotion()) return;
+    const lines = Array.from(el.querySelectorAll<HTMLElement>("[data-line]"));
+    if (lines.length === 0) return;
+
+    utils.set(lines, { opacity: 0, y: "0.35em" });
+    const anim = animate(lines, {
+      opacity: 1,
+      y: "0em",
+      duration: 820,
+      ease: "outExpo",
+      delay: stagger(120),
+    });
+    return () => {
+      anim.revert();
+      for (const l of lines) {
+        l.style.opacity = "";
+        l.style.transform = "";
+      }
+    };
+  }, []);
 
   useBeforePaint(() => {
     const el = ladder.current;
@@ -80,10 +113,16 @@ export function LandingHero({
     <section className="border-b border-border px-[var(--gutter)] pt-16 pb-20 lg:pt-24 lg:pb-28">
       <div className="mx-auto grid max-w-6xl items-center gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-20">
         <div className="min-w-0">
-          <h1 className="text-[2.6rem] leading-[1.06] font-bold tracking-tight text-text sm:text-6xl lg:text-[4.2rem]">
-            매체보다
-            <br />
-            <span className="text-accent">저자</span>가 중요하다
+          <h1
+            ref={headline}
+            className="text-[2.6rem] leading-[1.06] font-bold tracking-tight text-text sm:text-6xl lg:text-[4.2rem]"
+          >
+            <span data-line className="block">
+              매체보다
+            </span>
+            <span data-line className="block">
+              <span className="text-accent">저자</span>가 중요하다
+            </span>
           </h1>
           <p className="mt-6 max-w-[46ch] text-[15px] leading-relaxed text-muted sm:text-base">
             같은 이적설도 누가 처음 말했느냐에 따라 값이 다릅니다. 해외 기자

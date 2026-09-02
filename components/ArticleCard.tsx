@@ -4,7 +4,7 @@ import { useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import type { League, Team } from "@/lib/types";
 import { LEAGUE_LABEL } from "@/lib/types";
-import { tierLabel, tierRule, tierStyle, timeAgo } from "@/lib/format";
+import { tierLabel, tierStyle, timeAgo } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { Chevron } from "./icons";
 import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
@@ -90,24 +90,11 @@ export function ArticleCard({
           : "border-b border-border last:border-b-0"
       }`}
     >
-      {/* Presence, not decoration: the bar is only as strong as the tier — and
-          it widens when the row is open. */}
-      <span
-        aria-hidden
-        className={`absolute inset-y-0 left-0 transition-all ${
-          open ? "w-[5px] rounded-l-lg" : "w-[3px]"
-        }`}
-        style={{
-          backgroundColor: tierRule(row.tier, row.official),
-          opacity: open ? 1 : 0.85,
-        }}
-      />
-
       <button
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full py-3 pr-[var(--gutter)] pl-[calc(var(--gutter)+3px)] text-left transition-colors ${
+        className={`block w-full py-3 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors ${
           expandable
             ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
             : "cursor-default"
@@ -228,7 +215,7 @@ export function ArticleCard({
       {open && (
         <div
           ref={bodyRef}
-          className="pr-[var(--gutter)] pb-4 pl-[calc(var(--gutter)+3px)]"
+          className="pr-[var(--gutter)] pb-4 pl-[var(--gutter)]"
         >
           {/* Beside the text rather than above it. A full-bleed photo pushed the
               summary — the reason the card opens — below the fold, and stock
