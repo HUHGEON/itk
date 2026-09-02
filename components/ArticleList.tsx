@@ -1,11 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import { animate, stagger, utils } from "animejs";
 import type { FeedRow } from "@/lib/feed";
 import type { Team } from "@/lib/types";
 import { ArticleCard } from "./ArticleCard";
+import { reducedMotion, useBeforePaint } from "@/lib/motion";
 
 const PAGE_SIZE = 40;
+
+/**
+ * How many rows of an arriving batch actually animate.
+ *
+ * A page is forty stories. Staggering all forty is nine seconds of the feed
+ * assembling itself, and the reader is looking at the top of it the whole time.
+ * The rows past this point are below the fold when they land, so they get no
+ * entrance and cost nothing.
+ */
+const ENTER_CAP = 12;
 
 /**
  * The feed, extended a page at a time.
@@ -33,6 +45,9 @@ export function ArticleList({
   const [done, setDone] = useState(initialRows.length < PAGE_SIZE);
   const [error, setError] = useState(false);
   const sentinel = useRef<HTMLDivElement>(null);
+  const list = useRef<HTMLDivElement>(null);
+  /** Rows that have already had their entrance, so a re-render doesn't repeat it. */
+  const entered = useRef(0);
 
   // A filter change re-renders the server component with fresh rows; reset so
   // the previous filter's pages don't linger.
@@ -40,7 +55,46 @@ export function ArticleList({
     setRows(initialRows);
     setDone(initialRows.length < PAGE_SIZE);
     setError(false);
+    // Not an arrival. A filter swaps the whole column at once, and forty rows
+    // sliding in says "these are new" about a set that is simply different.
+    entered.current = initialRows.length;
   }, [initialRows]);
+
+  /**
+   * The rows that just showed up, and only those.
+   *
+   * "더 보기" appends a page below the fold, so without this there is no signal
+   * that anything happened — the reader scrolls into forty rows that were
+   * apparently always there. The stagger draws the eye down the seam.
+   */
+  useBeforePaint(() => {
+    const root = list.current;
+    if (!root || reducedMotion()) return;
+
+    const from = entered.current;
+    entered.current = rows.length;
+    if (rows.length <= from) return;
+
+    // Children are the cards followed by the sentinel, so an index into the
+    // row array is an index into the DOM.
+    const fresh = Array.from(root.children).slice(
+      from,
+      Math.min(rows.length, from + ENTER_CAP),
+    );
+    if (fresh.length === 0) return;
+
+    utils.set(fresh, { opacity: 0, y: 10 });
+    const anim = animate(fresh, {
+      opacity: 1,
+      y: 0,
+      duration: 460,
+      ease: "outExpo",
+      delay: stagger(30),
+    });
+    return () => {
+      anim.revert();
+    };
+  }, [rows]);
 
   const loadMore = useCallback(async () => {
     if (loading || done) return;
@@ -95,7 +149,7 @@ export function ArticleList({
   }, [loadMore, done, error]);
 
   return (
-    <>
+    <div ref={list}>
       {rows.map((row) => (
         <ArticleCard key={row.id} row={row} teams={teams} now={now} />
       ))}
@@ -125,6 +179,6 @@ export function ArticleList({
           </button>
         )}
       </div>
-    </>
+    </div>
   );
 }

@@ -43,3 +43,6 @@ next-env.d.ts
 
 # local scratch
 /data/local.db
+
+# Playwright MCP 가 검증 중 남기는 스냅샷·콘솔 로그
+/.playwright-mcp/

@@ -2,8 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { animate, createSpring } from "animejs";
 import { DB_SCHEMA } from "@/lib/types";
 import { supabaseBrowser } from "@/lib/supabase-browser";
+import { reducedMotion, useBeforePaint } from "@/lib/motion";
 
 /**
  * "새 기사 N건 · 보기" — the only thing that tells an open tab it has gone stale.
@@ -92,11 +94,54 @@ export function NewArticles({
     };
   }, [check]);
 
+  /**
+   * The banner drops in, and nudges each time the count climbs.
+   *
+   * It is the one thing on the page that interrupts: it appears over a column
+   * the reader is already in the middle of, unasked. A hard cut there reads as
+   * a rendering glitch — something that was always there and only now got
+   * painted — so it arrives under a spring, from above, which is the direction
+   * it is pointing. Later arrivals only bump it: a second full entrance for a
+   * banner already on screen is motion with nothing behind it.
+   */
+  const pill = useRef<HTMLButtonElement>(null);
+  const shown = useRef(false);
+
+  useBeforePaint(() => {
+    const el = pill.current;
+    if (!el || reducedMotion()) {
+      shown.current = count > 0;
+      return;
+    }
+    const entering = !shown.current;
+    shown.current = true;
+
+    const anim = entering
+      ? animate(el, {
+          opacity: [0, 1],
+          y: [-16, 0],
+          scale: [0.9, 1],
+          ease: createSpring({ stiffness: 190, damping: 14 }),
+        })
+      : animate(el, {
+          scale: [1, 1.07, 1],
+          duration: 340,
+          ease: "outQuad",
+        });
+
+    return () => {
+      anim.revert();
+    };
+  }, [count]);
+
+  // The banner leaving resets `shown` through the effect above, which runs with
+  // a null ref once the button has unmounted.
   if (count === 0) return null;
 
   return (
     <div className="pointer-events-none sticky top-[calc(var(--headerh)+0.5rem)] z-10 flex justify-center lg:top-2">
       <button
+        ref={pill}
         type="button"
         onClick={() => {
           window.scrollTo({ top: 0, behavior: "smooth" });

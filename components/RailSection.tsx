@@ -1,7 +1,9 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { animate } from "animejs";
 import { Chevron } from "./icons";
+import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
 
 /**
  * A rail section that folds.
@@ -15,6 +17,12 @@ import { Chevron } from "./icons";
  * The section's own action ("+ 추가", "팀 선택") appears only while open. It
  * acts on the body, and offering it against a body nobody can see is how you
  * get a button that appears to do nothing.
+ *
+ * Opening and closing both animate, which needs two pieces of state rather than
+ * one: `open` is what the reader asked for, `mounted` is whether the body is
+ * still in the DOM. A closing panel has to keep its content long enough to
+ * collapse over it — unmounting on the click would leave nothing to animate and
+ * the section would snap shut, which is worse than never animating at all.
  */
 export function RailSection({
   title,
@@ -29,6 +37,35 @@ export function RailSection({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+  const body = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (open) setMounted(true);
+  }, [open]);
+
+  useBeforePaint(() => {
+    const el = body.current;
+    if (!el) return;
+
+    if (reducedMotion()) {
+      if (!open) setMounted(false);
+      return;
+    }
+
+    if (open) return expand(el);
+
+    const height = el.scrollHeight;
+    const anim = animate(el, {
+      height: [height, 0],
+      opacity: [1, 0],
+      duration: 200,
+      ease: "inQuad",
+      onComplete: () => setMounted(false),
+    });
+    el.style.overflow = "hidden";
+    return () => anim.revert();
+  }, [open, mounted]);
 
   return (
     <section className="border-b border-border px-[var(--gutter)] py-3">
@@ -56,7 +93,11 @@ export function RailSection({
         {open && action}
       </div>
 
-      {open && <div className="mt-2.5">{children}</div>}
+      {mounted && (
+        <div ref={body} className="mt-2.5">
+          {children}
+        </div>
+      )}
       {overlay}
     </section>
   );

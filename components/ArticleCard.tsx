@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import type { League, Team } from "@/lib/types";
 import { LEAGUE_LABEL } from "@/lib/types";
 import { tierLabel, tierRule, tierStyle, timeAgo } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { Chevron } from "./icons";
+import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
 
 /**
  * One story, read in place.
@@ -30,6 +31,22 @@ export function ArticleCard({
 }) {
   const [open, setOpen] = useState(false);
   const [imageOk, setImageOk] = useState(true);
+  const bodyRef = useRef<HTMLDivElement>(null);
+
+  /**
+   * The summary unrolls rather than appearing.
+   *
+   * Opening a card shoves every row below it down the page by the height of a
+   * paragraph and a photo, instantly. Reading which of forty rows moved — and
+   * therefore which one you actually opened — took a beat. Growing into the gap
+   * makes the answer obvious, and the ring and the widened tier bar land on the
+   * same row you were looking at.
+   */
+  useBeforePaint(() => {
+    const el = bodyRef.current;
+    if (!el || !open || reducedMotion()) return;
+    return expand(el);
+  }, [open]);
 
   const tier = tierStyle(row.tier, row.official);
   const rowTeams = row.teams
@@ -209,7 +226,10 @@ export function ArticleCard({
       </button>
 
       {open && (
-        <div className="pr-[var(--gutter)] pb-4 pl-[calc(var(--gutter)+3px)]">
+        <div
+          ref={bodyRef}
+          className="pr-[var(--gutter)] pb-4 pl-[calc(var(--gutter)+3px)]"
+        >
           {/* Beside the text rather than above it. A full-bleed photo pushed the
               summary — the reason the card opens — below the fold, and stock
               agency shots earn less room than the words do. */}
