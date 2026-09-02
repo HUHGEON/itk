@@ -83,15 +83,47 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const bumpMap = new THREE.CanvasTexture(relief);
       bumpMap.anisotropy = map.anisotropy;
 
+      /**
+       * Real leather grain, tiled over the computed markings.
+       *
+       * The pattern has to be computed - no photograph gives you a star layout
+       * that wraps a sphere correctly - but grain is the opposite: it is small,
+       * repeating and unstructured, which is exactly what a photographed
+       * material is good for and what a hash function only approximates. These
+       * are CC0 scans from ambientCG, tiled several times around the ball so
+       * the grain sits at roughly the right scale against a 22cm object.
+       *
+       * Only normal and roughness are used. The colour map would fight the
+       * markings, and the markings are the part that has to stay exact.
+       */
+      const loader = new THREE.TextureLoader();
+      const tile = (url: string) => {
+        const t = loader.load(url);
+        t.wrapS = t.wrapT = THREE.RepeatWrapping;
+        // 4x2 rather than a finer tiling: on screen the ball is about 380px,
+        // so grain repeated seven times around it lands below a pixel and
+        // averages back out to smooth.
+        t.repeat.set(4, 2);
+        t.anisotropy = map.anisotropy;
+        return t;
+      };
+      const normalMap = tile("/tex/leather-normal.jpg");
+      const roughnessMap = tile("/tex/leather-rough.jpg");
+
       const ball = new THREE.Mesh(
         new THREE.SphereGeometry(1, 128, 96),
         new THREE.MeshStandardMaterial({
           map,
+          // Seams and panel roll, computed.
           bumpMap,
-          bumpScale: 4.0,
-          // Match-ball surface is close to matte; a glossy sphere is the other
+          bumpScale: 5.5,
+          // Grain, photographed.
+          normalMap,
+          normalScale: new THREE.Vector2(1.15, 1.15),
+          roughnessMap,
+          // Match-ball surface is close to matte; a glossy sphere was the other
           // half of why it looked like plastic.
-          roughness: 0.62,
+          roughness: 0.66,
           metalness: 0.02,
         }),
       );
@@ -125,6 +157,8 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         ro.disconnect();
         map.dispose();
         bumpMap.dispose();
+        normalMap.dispose();
+        roughnessMap.dispose();
         env.texture.dispose();
         pmrem.dispose();
         ball.geometry.dispose();
