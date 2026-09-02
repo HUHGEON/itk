@@ -1,10 +1,12 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
+import { animate } from "animejs";
 import { collectNow } from "@/app/actions";
 import { Refresh } from "./icons";
 import { timeAgo } from "@/lib/format";
+import { reducedMotion } from "@/lib/motion";
 
 /**
  * Collect now, without waiting for the next scheduled pass.
@@ -40,6 +42,32 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
   }, []);
 
   const due = state === "idle" && (!lastCollect || now - lastCollect >= DUE_MS);
+
+  /**
+   * A run takes the better part of a minute — 42 seconds, measured — and a
+   * spinning icon says nothing about whether it is still going.
+   *
+   * There is no progress to report — the server action fans out to fifty feeds
+   * and returns once, with no interim count — so this deliberately does not
+   * pretend to be a progress bar. It is a sweep across the button that keeps
+   * repeating, which reads as "still working" without claiming to know how far
+   * along it is. A bar creeping toward an end it cannot predict would be a
+   * worse lie than no bar at all.
+   */
+  const sweep = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const el = sweep.current;
+    if (!el || state !== "running" || reducedMotion()) return;
+    const anim = animate(el, {
+      x: ["-100%", "100%"],
+      duration: 1150,
+      ease: "inOutSine",
+      loop: true,
+    });
+    return () => {
+      anim.revert();
+    };
+  }, [state]);
 
   const run = () => {
     setState("running");
@@ -78,13 +106,20 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         onClick={() => run()}
         disabled={state === "running"}
         title={title}
-        className={`inline-flex w-full items-center justify-center gap-1.5 rounded-[5px] px-3 py-2 text-[11.5px] font-semibold transition-colors disabled:opacity-50 ${
+        className={`relative inline-flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-[5px] px-3 py-2 text-[11.5px] font-semibold transition-colors disabled:opacity-50 ${
           due
             ? "text-accent-ink hover:opacity-90"
             : "border border-border text-muted hover:border-border-strong hover:text-text"
         }`}
         style={due ? { background: "var(--ribbon)" } : undefined}
       >
+        {state === "running" && (
+          <span
+            ref={sweep}
+            aria-hidden
+            className="pointer-events-none absolute inset-y-0 left-0 w-full bg-gradient-to-r from-transparent via-accent/25 to-transparent"
+          />
+        )}
         <Refresh className={state === "running" ? "animate-spin" : ""} />
         {state === "running" ? "수집 중" : "수집"}
       </button>

@@ -1,7 +1,9 @@
 "use client";
 
 import { useEffect, useRef, type ReactNode } from "react";
+import { animate, spring } from "animejs";
 import { Close } from "./icons";
+import { reducedMotion } from "@/lib/motion";
 
 /**
  * A dialog rendered with the native `<dialog>` element, so focus trapping and
@@ -19,12 +21,44 @@ export function Modal({
   children: ReactNode;
 }) {
   const ref = useRef<HTMLDialogElement>(null);
+  const card = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
     if (open && !el.open) el.showModal();
     if (!open && el.open) el.close();
+  }, [open]);
+
+  /**
+   * The card arrives under a spring; the dialog it sits in does not move.
+   *
+   * `showModal()` puts the whole thing in the top layer in one frame, which for
+   * a sheet that covers the screen on a phone reads as a cut rather than as
+   * something opening. It comes from below — the direction it occupies on
+   * mobile — and settles rather than easing to a stop, because a panel you
+   * dragged up should behave like it has weight.
+   *
+   * Only the card is animated. Transforming the `<dialog>` itself would move
+   * the backdrop with it, and the backdrop is what tells you the page behind is
+   * out of reach.
+   */
+  useEffect(() => {
+    const el = card.current;
+    if (!open || !el || reducedMotion()) return;
+    const anim = animate(el, {
+      // Opacity gets its own easing. A spring overshoots on the way to its
+      // target, which is the point for position — the card settles rather than
+      // stopping dead — but overshooting opacity means asking for 1.08, and
+      // "more opaque than opaque" is a value the browser has to clamp away.
+      opacity: { from: 0, to: 1, duration: 220, ease: "outQuad" },
+      y: [24, 0],
+      scale: [0.97, 1],
+      ease: spring({ stiffness: 170, damping: 16 }),
+    });
+    return () => {
+      anim.revert();
+    };
   }, [open]);
 
   // Esc closes the dialog natively; mirror that back into React state.
@@ -60,6 +94,7 @@ export function Modal({
     >
       <div className="flex min-h-full items-end justify-center p-0 sm:items-center sm:p-4">
         <div
+          ref={card}
           onClick={(e) => e.stopPropagation()}
           className="w-full max-w-md rounded-t-xl border border-border bg-surface text-text shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] sm:rounded-xl"
         >

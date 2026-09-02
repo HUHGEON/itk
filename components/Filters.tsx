@@ -5,6 +5,7 @@ import {
   useCallback,
   useEffect,
   useMemo,
+  useRef,
   useState,
   useTransition,
 } from "react";
@@ -14,6 +15,18 @@ import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
+import { pressPop, rollNumber, useBeforePaint } from "@/lib/motion";
+
+/**
+ * Marks the control that was just pressed.
+ *
+ * Every chip here navigates, so the gap between the click and the new feed is a
+ * server round trip. The bar dims as a whole while that is in flight — which
+ * says something is loading, not which of twenty chips you hit.
+ */
+function press(e: { currentTarget: HTMLElement }) {
+  pressPop(e.currentTarget);
+}
 
 const LEAGUES: League[] = [
   "EPL",
@@ -188,7 +201,10 @@ export function Filters({
             <button
               key={key}
               type="button"
-              onClick={() => toggleIn("tier", key)}
+              onClick={(e) => {
+                press(e);
+                toggleIn("tier", key);
+              }}
               aria-pressed={on}
               className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
               // Unselected chips still carry their hue: the rail is where you
@@ -232,9 +248,10 @@ export function Filters({
                 <button
                   key={j.id}
                   type="button"
-                  onClick={() =>
-                    push((p) => (on ? p.delete("who") : p.set("who", j.id)))
-                  }
+                  onClick={(e) => {
+                    press(e);
+                    push((p) => (on ? p.delete("who") : p.set("who", j.id)));
+                  }}
                   aria-pressed={on}
                   title={`${j.en}${j.outlet ? ` · ${j.outlet}` : ""}`}
                   className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
@@ -291,7 +308,10 @@ export function Filters({
                 <button
                   key={t.slug}
                   type="button"
-                  onClick={() => toggleIn("team", t.slug)}
+                  onClick={(e) => {
+                    press(e);
+                    toggleIn("team", t.slug);
+                  }}
                   aria-pressed={on}
                   className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
                     on
@@ -318,7 +338,10 @@ export function Filters({
                   <button
                     key={t.slug}
                     type="button"
-                    onClick={() => toggleIn("team", t.slug)}
+                    onClick={(e) => {
+                      press(e);
+                      toggleIn("team", t.slug);
+                    }}
                     title="선택 해제"
                     className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-medium text-accent"
                   >
@@ -341,8 +364,24 @@ export function Filters({
  */
 function CountBadge({ n, tier }: { n: number; tier: number | null }) {
   const color = tierColor(tier);
+  const ref = useRef<HTMLSpanElement>(null);
+  const prev = useRef(n);
+
+  // A filter change lands a new number in every badge at once. Rewinding to the
+  // old value and running up to the new one costs nothing visually — this is
+  // before paint, so the old number is never shown — and turns a silent swap
+  // into a readable amount of change.
+  useBeforePaint(() => {
+    const el = ref.current;
+    if (!el) return;
+    const from = prev.current;
+    prev.current = n;
+    rollNumber(el, from, n);
+  }, [n]);
+
   return (
     <span
+      ref={ref}
       className="tnum rounded-full px-1.5 py-[1px] text-[10px] font-semibold"
       style={{
         color,
@@ -370,7 +409,10 @@ function LeagueTab({
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={(e) => {
+        pressPop(e.currentTarget);
+        onClick();
+      }}
       aria-pressed={active}
       className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] transition-colors ${
         active

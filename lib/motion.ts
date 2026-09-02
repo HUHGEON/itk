@@ -84,3 +84,54 @@ export function expand(el: HTMLElement, opts: { duration?: number } = {}) {
     el.style.opacity = "";
   };
 }
+
+/**
+ * Acknowledges a press on a control that navigates.
+ *
+ * A filter chip pushes a new URL, and that is a server round trip — a few
+ * hundred milliseconds before anything on screen changes. The bar dims as a
+ * whole while it is in flight, which answers "is something loading" but not
+ * "which one did I press", and on a rail of twenty club crests those are
+ * different questions. The dip happens on the click itself, before the
+ * navigation has gone anywhere.
+ */
+export function pressPop(el: HTMLElement) {
+  if (reducedMotion()) return;
+  animate(el, {
+    scale: [1, 0.93, 1.03, 1],
+    duration: 420,
+    ease: "outQuad",
+  });
+}
+
+/**
+ * Runs an element's text from one number to another.
+ *
+ * The badges count what is behind each filter, so they all change at once when
+ * a filter does — every league tab and every club chip lands on a new number in
+ * the same frame. Swapped outright it reads as a re-render; run up or down it
+ * reads as the answer moving, and a badge that barely shifts stops competing
+ * for attention with one that doubles.
+ */
+export function rollNumber(el: HTMLElement, from: number, to: number) {
+  // Rewinding to the start value is this function's job, not the caller's. Doing
+  // it at the call site left every badge frozen on its previous number under
+  // reduced motion: the text had already been wound back when this returned
+  // early, and nothing wound it forward again.
+  if (reducedMotion() || from === to) return;
+  el.textContent = String(from);
+  const tick = { v: from };
+  animate(tick, {
+    v: to,
+    duration: 520,
+    ease: "outExpo",
+    onUpdate: () => {
+      el.textContent = String(Math.round(tick.v));
+    },
+    // An eased tween lands a hair short often enough to leave a badge one off
+    // the number the feed below it actually holds.
+    onComplete: () => {
+      el.textContent = String(to);
+    },
+  });
+}

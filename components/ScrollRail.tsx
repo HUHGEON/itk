@@ -7,7 +7,9 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import { animate } from "animejs";
 import { Chevron, ChevronLeft } from "./icons";
+import { reducedMotion, useBeforePaint } from "@/lib/motion";
 
 /**
  * A horizontally scrolling row that a mouse can actually operate.
@@ -111,8 +113,28 @@ function RailButton({
   onClick: () => void;
 }) {
   const isLeft = side === "left";
+  const ref = useRef<HTMLButtonElement>(null);
+
+  // The arrows mount and unmount as the rail reaches its ends, so a chip
+  // scrolled one pixel too far made a control appear and vanish beside the
+  // cursor. Fading covers the boundary, where the answer to "can I still
+  // scroll" is genuinely almost-no rather than yes-or-no.
+  useBeforePaint(() => {
+    const el = ref.current;
+    if (!el || reducedMotion()) return;
+    const anim = animate(el, {
+      opacity: [0, 1],
+      duration: 180,
+      ease: "outQuad",
+    });
+    return () => {
+      anim.revert();
+    };
+  }, []);
+
   return (
     <button
+      ref={ref}
       type="button"
       onClick={onClick}
       aria-label={isLeft ? "왼쪽으로" : "오른쪽으로"}

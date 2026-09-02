@@ -44,6 +44,16 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
   const [lit, setLit] = useState<number | null>(null);
 
   /**
+   * The numbers themselves, not the object holding them.
+   *
+   * `pulse` is rebuilt by the server on every render, so keying the draw on it
+   * replayed the whole bar each time a filter chip was pressed — and the last
+   * 24 hours do not depend on the filter, so the same five numbers redrew from
+   * zero while the reader was looking at something else entirely.
+   */
+  const pulseKey = JSON.stringify([pulse.total, pulse.official, pulse.byTier]);
+
+  /**
    * The bar draws itself in, and the counts run up to meet it.
    *
    * Deliberately `scaleX` rather than `width`: the segments are flex items, so
@@ -126,7 +136,8 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
       io.disconnect();
       stop();
     };
-  }, [pulse]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pulseKey]);
 
   // Pointer or keyboard on a legend row. Skipped until something is actually
   // lit, so an untouched panel carries no inline styles at all.

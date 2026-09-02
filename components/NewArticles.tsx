@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { animate, createSpring } from "animejs";
+import { animate, spring } from "animejs";
 import { DB_SCHEMA } from "@/lib/types";
 import { supabaseBrowser } from "@/lib/supabase-browser";
 import { reducedMotion, useBeforePaint } from "@/lib/motion";
@@ -118,10 +118,11 @@ export function NewArticles({
 
     const anim = entering
       ? animate(el, {
-          opacity: [0, 1],
+          // Eased separately from the spring below — see the note in Modal.
+          opacity: { from: 0, to: 1, duration: 200, ease: "outQuad" },
           y: [-16, 0],
           scale: [0.9, 1],
-          ease: createSpring({ stiffness: 190, damping: 14 }),
+          ease: spring({ stiffness: 190, damping: 14 }),
         })
       : animate(el, {
           scale: [1, 1.07, 1],
