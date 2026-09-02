@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect } from "react";
+import {
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  type DependencyList,
+  type RefObject,
+} from "react";
 import { animate } from "animejs";
 
 /**
@@ -134,4 +140,105 @@ export function rollNumber(el: HTMLElement, from: number, to: number) {
       el.textContent = String(to);
     },
   });
+}
+
+/**
+ * Runs an animation the first time an element is actually on screen.
+ *
+ * Landing sections are mostly below the fold, so playing on mount means the
+ * whole page finishes animating before the reader has scrolled to any of it.
+ * `prepare` runs before paint and sets the from-state; `play` runs once the
+ * section is in view. Both are skipped under reduced motion, which leaves the
+ * markup at its resting state - the finished layout.
+ *
+ * IntersectionObserver rather than a scroll listener: a scroll handler fires on
+ * every frame of every scroll, for a question that has one answer per element.
+ */
+export function useReveal<T extends HTMLElement>(
+  prepare: (root: T) => void,
+  play: (root: T) => void,
+  deps: DependencyList = [],
+): RefObject<T | null> {
+  const ref = useRef<T>(null);
+
+  useBeforePaint(() => {
+    const el = ref.current;
+    if (!el || reducedMotion()) return;
+
+    prepare(el);
+
+    if (typeof IntersectionObserver === "undefined") {
+      play(el);
+      return;
+    }
+
+    let done = false;
+    const finish = (run: (root: T) => void) => {
+      if (done) return;
+      done = true;
+      io.disconnect();
+      stopSafety();
+      run(el);
+    };
+
+    const io = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) finish(play);
+      },
+      // A little into the viewport, so the motion is seen starting rather than
+      // being already half over by the time the section is readable.
+      { threshold: 0.15 },
+    );
+    io.observe(el);
+
+    /**
+     * The observer alone loses content.
+     *
+     * IntersectionObserver only reports a *change* in intersection. Drag the
+     * scrollbar from the top of the page to the bottom and a mid-page section
+     * goes from below the viewport to above it without ever being inside it:
+     * not-intersecting to not-intersecting, no change, no callback. The section
+     * stays at the opacity 0 that `prepare` set, forever. Measured: after one
+     * scrollbar drag the reporter list was an empty band.
+     *
+     * So anything the viewport has already passed is dropped straight into its
+     * finished state. This is a one-second poll rather than a listener: it is
+     * not the banned per-frame scroll handler, it costs one rect read a second,
+     * and it stops the moment the section resolves either way. A `scrollend`
+     * listener was tried first and measured as never firing here.
+     */
+    const poll = window.setInterval(() => {
+      if (el.getBoundingClientRect().bottom < 0) {
+        finish(settle as (r: T) => void);
+      }
+    }, 1000);
+    function stopSafety() {
+      window.clearInterval(poll);
+    }
+
+    return () => {
+      io.disconnect();
+      stopSafety();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, deps);
+
+  return ref;
+}
+
+/**
+ * Drops every from-state this module writes, with no animation.
+ *
+ * The entrance styles are always inline `opacity` and `transform`, so clearing
+ * those two returns the subtree to what the stylesheet says — which is the
+ * finished layout, by rule 1 at the top of this file.
+ */
+function settle(root: HTMLElement) {
+  for (const el of root.querySelectorAll<HTMLElement>("*")) {
+    if (el.style.opacity) el.style.opacity = "";
+    if (el.style.transform) el.style.transform = "";
+  }
+  for (const n of root.querySelectorAll<HTMLElement>("[data-n]")) {
+    if (n.dataset.n) n.textContent = n.dataset.n;
+  }
 }

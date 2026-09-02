@@ -30,12 +30,12 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "ITK+ — 축구 이적 소식",
+  title: "ITK+ 축구 이적 소식",
   description:
     "기자 신뢰도 티어로 거른 해외 축구 이적 소식. 누가 떴는지 보고 판단하세요.",
   applicationName: "ITK+",
   openGraph: {
-    title: "ITK+ — 축구 이적 소식",
+    title: "ITK+ 축구 이적 소식",
     description: "기자 신뢰도 티어로 거른 해외 축구 이적 소식.",
     type: "website",
   },

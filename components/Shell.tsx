@@ -97,6 +97,19 @@ export function Shell({
         </div>
 
         {rail}
+
+        {/* The way to the explainer, at the bottom of the rail rather than in
+            the header: someone who opens this daily needs the feed, not the
+            pitch, and a nav item above the stories would sell to them every
+            time. */}
+        <div className="mt-auto border-t border-border px-[var(--gutter)] py-3">
+          <Link
+            href="/about"
+            className="text-[11.5px] text-faint transition-colors hover:text-muted"
+          >
+            ITK+ 소개
+          </Link>
+        </div>
       </aside>
 
       <div className="lg:pl-[calc(var(--rail)+0.5rem)]">
