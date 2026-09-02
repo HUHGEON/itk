@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useRef } from "react";
 import { animate, onScroll, stagger } from "animejs";
@@ -137,36 +138,41 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
         ref={stage}
         className="sticky top-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-[#070806]"
       >
-        {/* The ground, tilted away from the camera. The wrapper owns the
-            perspective; the plane inside it is what rotates. */}
-        <div
-          aria-hidden
-          className="absolute inset-x-[-60%] bottom-[-8%] h-[135%]"
-          style={{ perspective: "60rem", perspectiveOrigin: "50% 0%" }}
-        >
-          <div
-            className="absolute inset-0 origin-bottom"
-            style={{
-              transform: "rotateX(72deg)",
-              background:
-                "repeating-linear-gradient(90deg, #17301c 0 5%, #12250f 5% 10%)",
-            }}
+        {/* Real grass, because drawn grass is not grass.
+            A tilted stripe gradient reads as a diagram of a pitch rather than
+            as a pitch: it has the stripes and none of the texture, and that is
+            what makes it look like a court drawing. This is a CC0 photograph of
+            a mown surface with a touchline in it, darkened hard so the page
+            keeps its own near-black palette and the ball stays the brightest
+            thing on screen. */}
+        <div aria-hidden className="absolute inset-0">
+          <Image
+            src="/pitch.jpg"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="scale-105 object-cover"
           />
         </div>
-        {/* Floodlight falloff and a horizon, so the plane reads as depth
-            rather than as a tilted rectangle. */}
+        {/* Darkened toward the top so the grass falls away into the page rather
+            than stopping at a hard edge. */}
         <div
           aria-hidden
           className="absolute inset-0"
           style={{
             background:
-              "radial-gradient(70% 45% at 50% 62%, rgba(150,220,160,0.16), transparent 70%), linear-gradient(to bottom, #070806 0%, rgba(7,8,6,0.86) 26%, rgba(7,8,6,0) 46%)",
+              "linear-gradient(to bottom, rgba(7,8,6,0.97) 0%, rgba(7,8,6,0.72) 30%, rgba(7,8,6,0.42) 58%, rgba(7,8,6,0.66) 100%)",
           }}
         />
-        {/* Touchline. */}
+        {/* A pool of light where the ball sits. */}
         <div
           aria-hidden
-          className="absolute bottom-[16%] left-1/2 h-px w-[150%] -translate-x-1/2 bg-white/[0.09]"
+          className="absolute inset-0"
+          style={{
+            background:
+              "radial-gradient(46% 34% at 50% 46%, rgba(190,235,195,0.13), transparent 70%)",
+          }}
         />
 
         {teams.map((t, i) => {

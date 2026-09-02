@@ -56,27 +56,35 @@ export interface Ball {
 }
 
 /**
- * A regular polygon panel, curved to sit on a sphere.
+ * A regular polygon panel, curved so its corners land exactly on the sphere.
  *
- * `CircleGeometry` cannot do this: it has one vertex at the centre and the rest
- * on the rim, so pushing vertices onto the sphere lifts the centre alone and
- * the panel comes out as a cone. Measured, and it looked like one. This builds
- * the polygon as concentric rings instead, which gives the curve intermediate
- * points to bend through.
+ * Two things were wrong before. The panel centre was placed on the sphere's
+ * surface, but a face of a polyhedron sits *inside* the circumsphere: for a
+ * truncated icosahedron of circumradius 1 the pentagon centres are at 0.9392
+ * and the hexagon centres at 0.9150. Placing both at 1 pushed every panel
+ * outward until they overlapped, and the ball came out looking like a cow.
  *
- * A vertex at distance d from the panel centre belongs at
- * z = R - sqrt(R^2 - d^2) on a sphere of radius R.
+ * And the curve had the wrong sign, which dished each panel instead of bulging
+ * it. With the centre at height h and a corner at planar distance d, the point
+ * belongs at z = sqrt(R^2 - d^2) - h. That is positive at the centre (the panel
+ * stands proud) and exactly zero at the corners (they stay on the polyhedron's
+ * own vertices, which are already on the sphere).
+ *
+ * `CircleGeometry` cannot do any of this: one centre vertex and a rim, so a
+ * curve applied to it lifts the middle alone and makes a cone. Concentric rings
+ * give the surface something to bend through.
  */
 function domePanel(
   sides: number,
-  panelRadius: number,
+  planarRadius: number,
+  centreHeight: number,
   sphereRadius: number,
-  rings = 4,
+  rings = 7,
 ): BufferGeometry {
   const pos: number[] = [];
   const idx: number[] = [];
   const lift = (d: number) =>
-    sphereRadius - Math.sqrt(Math.max(0, sphereRadius * sphereRadius - d * d));
+    Math.sqrt(Math.max(0, sphereRadius * sphereRadius - d * d)) - centreHeight;
 
   pos.push(0, 0, lift(0));
 
@@ -84,17 +92,15 @@ function domePanel(
     const t = ring / rings;
     for (let s = 0; s < sides; s++) {
       const a = (s / sides) * Math.PI * 2 + Math.PI / 2;
-      const x = Math.cos(a) * panelRadius * t;
-      const y = Math.sin(a) * panelRadius * t;
+      const x = Math.cos(a) * planarRadius * t;
+      const y = Math.sin(a) * planarRadius * t;
       pos.push(x, y, lift(Math.hypot(x, y)));
     }
   }
 
-  // Fan from the centre to the innermost ring.
   for (let s = 0; s < sides; s++) {
     idx.push(0, 1 + s, 1 + ((s + 1) % sides));
   }
-  // Quads between successive rings.
   for (let ring = 1; ring < rings; ring++) {
     const inner = 1 + (ring - 1) * sides;
     const outer = 1 + ring * sides;
@@ -117,9 +123,16 @@ export function createBall(radius = 1): Ball {
   const panels: Mesh[] = [];
 
   // The dark under-sphere that shows through the seams.
+  /**
+   * The sphere under the panels does two jobs.
+   *
+   * It fills the seams and it backs the silhouette. The panels now follow the
+   * sphere exactly, so the outline is already a circle; this sits just beneath
+   * them, dark, so the gaps read as stitching rather than as holes.
+   */
   const core = new Mesh(
-    new SphereGeometry(radius * 0.985, 48, 32),
-    new MeshStandardMaterial({ color: new Color("#14100e"), roughness: 0.95 }),
+    new SphereGeometry(radius * 0.972, 64, 48),
+    new MeshStandardMaterial({ color: new Color("#0f0c0a"), roughness: 0.85 }),
   );
   group.add(core);
 
@@ -141,25 +154,31 @@ export function createBall(radius = 1): Ball {
   // a ball. Pushing the panel's own vertices out onto the sphere gives each one
   // the curvature a stitched panel gets from being inflated.
   /**
-   * Panel sizes are the solid's, not a guess.
+   * Every number here is the solid's, measured rather than guessed.
    *
-   * For a truncated icosahedron with circumradius R the edge length is
-   * a = 4R / sqrt(58 + 18*sqrt5) = 0.4035R. A hexagon's circumradius equals its
-   * edge, and a pentagon's is a / (2 sin 36 degrees) = 0.3433R. The first pass
-   * used 0.3708 and 0.3902, which made pentagons too big and hexagons too
-   * small, and the seams opened up between them.
-   *
-   * The 1.06 is for the curve: each panel is bulged onto the sphere, which
-   * pulls its rim in slightly, and the seams should read as stitching rather
-   * than as gaps.
+   * Circumradius R = 1. Edge a = 4 / sqrt(58 + 18*sqrt5) = 0.4035. A hexagon's
+   * circumradius equals its edge; a pentagon's is a / (2 sin 36) = 0.3433. Face
+   * centres then sit at sqrt(1 - r^2): 0.9150 for hexagons, 0.9392 for
+   * pentagons. SEAM shaves a hair off so the panels meet in a stitch line
+   * rather than butting together.
    */
-  const SEAM = 1.06;
-  const pentagon = domePanel(5, radius * 0.3433 * SEAM, radius);
-  const hexagon = domePanel(6, radius * 0.4035 * SEAM, radius);
+  const SEAM = 0.965;
+  const PENTA_R = 0.3433;
+  const HEXA_R = 0.4035;
+  const PENTA_H = Math.sqrt(1 - PENTA_R * PENTA_R);
+  const HEXA_H = Math.sqrt(1 - HEXA_R * HEXA_R);
 
-  const place = (dir: Vector3, geo: BufferGeometry, mat: MeshStandardMaterial) => {
+  const pentagon = domePanel(5, radius * PENTA_R * SEAM, radius * PENTA_H, radius);
+  const hexagon = domePanel(6, radius * HEXA_R * SEAM, radius * HEXA_H, radius);
+
+  const place = (
+    dir: Vector3,
+    geo: BufferGeometry,
+    mat: MeshStandardMaterial,
+    height: number,
+  ) => {
     const m = new Mesh(geo, mat);
-    m.position.copy(dir).multiplyScalar(radius * 0.995);
+    m.position.copy(dir).multiplyScalar(radius * height);
     // A CircleGeometry faces +Z, so pointing it away from the origin lays it
     // flat on the surface.
     m.lookAt(dir.clone().multiplyScalar(radius * 2));
@@ -171,7 +190,7 @@ export function createBall(radius = 1): Ball {
   };
 
   const verts = icoVertices();
-  for (const v of verts) place(v, pentagon, black);
+  for (const v of verts) place(v, pentagon, black, PENTA_H);
 
   for (const [a, b, c] of ICO_FACES) {
     const centre = new Vector3()
@@ -179,7 +198,7 @@ export function createBall(radius = 1): Ball {
       .add(verts[b])
       .add(verts[c])
       .normalize();
-    place(centre, hexagon, white);
+    place(centre, hexagon, white, HEXA_H);
   }
 
   return { group, panels };
@@ -221,13 +240,13 @@ export function createStage(canvas: HTMLCanvasElement): Stage {
 
   // Two lights and a fill: enough shape to read as a sphere, warm enough to sit
   // in a page built on warm near-black.
-  const key = new DirectionalLight(0xfff2e2, 2.5);
+  const key = new DirectionalLight(0xfff2e2, 2.1);
   key.position.set(3, 4, 5);
   scene.add(key);
-  const rim = new DirectionalLight(0xf1800b, 1.1);
+  const rim = new DirectionalLight(0xf1800b, 0.42);
   rim.position.set(-4, -1, -3);
   scene.add(rim);
-  scene.add(new AmbientLight(0xffffff, 0.5));
+  scene.add(new AmbientLight(0xffffff, 0.42));
 
   const resize = (w: number, h: number) => {
     renderer.setSize(w, h, false);
