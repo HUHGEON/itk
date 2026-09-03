@@ -28,8 +28,15 @@ import { Ball3D } from "./Ball3D";
  * with the one asset that already looks right.
  */
 
-/** How many screens of scroll the sequence occupies. */
-export const STAGE_SCREENS = 5;
+/**
+ * How many screens of scroll the sequence occupies.
+ *
+ * Most of this is the hold at the end. The crests finish arriving at 38% and
+ * everything after that is the ring simply sitting there, which is the state
+ * worth staying in: it is the one where every club is on screen and reachable.
+ * At five screens it slid past almost as soon as it had assembled.
+ */
+export const STAGE_SCREENS = 7;
 /**
  * The ring the crests settle on. A circle, and one that always fits.
  *
@@ -90,6 +97,7 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
   const stage = useRef<HTMLDivElement>(null);
   const shot = useRef<HTMLDivElement>(null);
   const copy = useRef<HTMLDivElement>(null);
+  const prompt = useRef<HTMLDivElement>(null);
   /** 0 at the top of the sequence, 1 at the end. Read by the WebGL loop. */
   const progress = useRef(0);
 
@@ -177,14 +185,14 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
-        "22%": {
+        "16%": {
           opacity: 0,
           scale: 0,
           rotate: -60,
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
-        "50%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
+        "38%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
         "100%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
       },
       ease: "outQuad",
@@ -196,11 +204,32 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
       ? animate(copy.current, {
           keyframes: {
             "0%": { opacity: 1, y: 0 },
-            "20%": { opacity: 1, y: 0 },
-            "38%": { opacity: 0, y: 26 },
+            "14%": { opacity: 1, y: 0 },
+            "28%": { opacity: 0, y: 26 },
             "100%": { opacity: 0, y: 26 },
           },
           ease: "linear",
+          autoplay: scrub(),
+        })
+      : null;
+
+    /**
+     * The line that tells you the ring is a menu.
+     *
+     * Seventeen badges appearing around a ball look like decoration, and people
+     * were not clicking them. It arrives as the last crest lands - any earlier
+     * and it competes with the headline that is still leaving - and then stays
+     * put for the rest of the sequence, which is now most of it.
+     */
+    const hint = prompt.current
+      ? animate(prompt.current, {
+          keyframes: {
+            "0%": { opacity: 0, y: 14 },
+            "38%": { opacity: 0, y: 14 },
+            "48%": { opacity: 1, y: 0 },
+            "100%": { opacity: 1, y: 0 },
+          },
+          ease: "outQuad",
           autoplay: scrub(),
         })
       : null;
@@ -210,6 +239,7 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
       push?.revert();
       burst.revert();
       line?.revert();
+      hint?.revert();
       for (const c of crests) {
         c.style.opacity = "";
         c.style.transform = "";
@@ -332,6 +362,20 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           >
             <div className="absolute inset-x-0 bottom-0 h-[26%] bg-[linear-gradient(to_top,rgba(5,11,5,0.80),rgba(5,11,5,0.36)_45%,transparent)]" />
           </div>
+        </div>
+
+        {/*
+          Sits where the headline was, once the headline has gone. Under the
+          ring rather than inside it: the middle is the ball's, and a line of
+          type across the crests would have to fight them for contrast.
+        */}
+        <div
+          ref={prompt}
+          className="pointer-events-none absolute inset-x-0 bottom-[7vh] z-30 px-[var(--gutter)] text-center opacity-0"
+        >
+          <p className="text-[14px] font-medium text-white/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)] sm:text-[15.5px]">
+            보고 싶은 팀을 고르면 그 팀 기사만 모아 보여줍니다
+          </p>
         </div>
 
         <div
