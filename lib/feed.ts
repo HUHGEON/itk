@@ -1,3 +1,4 @@
+import { unstable_cache } from "next/cache";
 import { rpc } from "./supabase";
 
 export interface FeedFilters {
@@ -87,7 +88,7 @@ function orNull<T>(v: T | undefined | null): T | null {
   return v ?? null;
 }
 
-export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
+async function uncached_getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
   const {
     tiers,
     teams,
@@ -141,7 +142,7 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
  * on screen — picking a journalist should change what each club's badge says,
  * not leave a fixed total sitting there.
  */
-export async function getJournalistActivity(
+async function uncached_getJournalistActivity(
   filters: Pick<FeedFilters, "teams" | "league" | "q"> = {},
   hours = 168,
 ) {
@@ -161,7 +162,7 @@ export async function getJournalistActivity(
 }
 
 /** Article counts per team, likewise scoped to the other active filters. */
-export async function getTeamActivity(
+async function uncached_getTeamActivity(
   filters: Pick<
     FeedFilters,
     "tiers" | "journalistId" | "league" | "q" | "tieredOnly"
@@ -194,7 +195,7 @@ export async function getTeamActivity(
  * without belonging to any club badge. Summing clubs undercounted those and,
  * back when an untagged story inherited its reporter's club, miscounted them.
  */
-export async function getLeagueActivity(
+async function uncached_getLeagueActivity(
   filters: Pick<
     FeedFilters,
     "tiers" | "teams" | "journalistId" | "q" | "tieredOnly"
@@ -228,7 +229,7 @@ export interface Pulse {
 }
 
 /** The last 24 hours at a glance — one round trip for the sidebar. */
-export async function getPulse(): Promise<Pulse> {
+async function uncached_getPulse(): Promise<Pulse> {
   const rows = await rpc<
     {
       tier: number | null;
@@ -255,3 +256,43 @@ export async function getPulse(): Promise<Pulse> {
 
   return { byTier, official, total, lastCollect };
 }
+
+/**
+ * Wraps a query so the same question is not asked of the database twice a
+ * minute.
+ *
+ * Collection runs every twenty minutes, so a feed built sixty seconds ago is
+ * the same feed - measured on production, the page was spending most of its
+ * two-second response re-deriving numbers that had not moved. Every entry
+ * carries the `feed` tag, so anything that writes articles can clear the lot in
+ * one call rather than guessing at paths.
+ *
+ * The arguments are part of the key: a filtered view and an unfiltered one are
+ * different questions and must not share an answer.
+ */
+function cached<A extends unknown[], R>(
+  name: string,
+  fn: (...args: A) => Promise<R>,
+  seconds = 60,
+) {
+  return (...args: A): Promise<R> =>
+    unstable_cache(() => fn(...args), [name, JSON.stringify(args ?? [])], {
+      revalidate: seconds,
+      tags: [FEED_TAG],
+    })();
+}
+
+/** Cleared whenever articles are written. */
+export const FEED_TAG = "feed";
+
+export const getFeed = cached("getFeed", uncached_getFeed);
+export const getJournalistActivity = cached(
+  "getJournalistActivity",
+  uncached_getJournalistActivity,
+);
+export const getTeamActivity = cached("getTeamActivity", uncached_getTeamActivity);
+export const getLeagueActivity = cached(
+  "getLeagueActivity",
+  uncached_getLeagueActivity,
+);
+export const getPulse = cached("getPulse", uncached_getPulse);

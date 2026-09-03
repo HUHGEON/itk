@@ -1,8 +1,9 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, revalidateTag } from "next/cache";
 import { collect } from "@/lib/collect";
 import { rpc } from "@/lib/supabase";
+import { FEED_TAG } from "@/lib/feed";
 
 /**
  * Collect on demand, from the button in the header.
@@ -20,6 +21,12 @@ export async function collectNow(): Promise<
 > {
   try {
     const stats = await collect({ maxTier: 0 });
+    // The feed moved to /feed when the landing took the root, and this was
+    // still clearing the old path - so a manual collection inserted rows that
+    // the page then declined to show. The tag covers every cached query at
+    // once, whatever route happens to be reading them.
+    revalidateTag(FEED_TAG);
+    revalidatePath("/feed");
     revalidatePath("/");
     return { ok: true, inserted: stats.inserted, seen: stats.itemsSeen };
   } catch (err) {
@@ -130,6 +137,8 @@ export async function updateSubscription(input: {
       p_pass: input.passphrase?.trim() || null,
       p_auth: input.auth?.trim() || null,
     });
+    revalidateTag(FEED_TAG);
+    revalidatePath("/feed");
     revalidatePath("/");
     return { ok: true };
   } catch (err) {
@@ -156,6 +165,8 @@ export async function addSubscription(input: {
       p_label: input.label.trim(),
       p_pass: input.passphrase?.trim() || null,
     });
+    revalidateTag(FEED_TAG);
+    revalidatePath("/feed");
     revalidatePath("/");
     return { ok: true };
   } catch (err) {
@@ -178,6 +189,8 @@ export async function removeSubscription(
       p_id: id,
       p_auth: auth || null,
     });
+    revalidateTag(FEED_TAG);
+    revalidatePath("/feed");
     revalidatePath("/");
     return n > 0 ? { ok: true } : { ok: false, error: "삭제할 알림을 찾을 수 없습니다" };
   } catch (err) {
@@ -196,6 +209,8 @@ export async function claimSubscriptions(
       p_owner: owner,
       p_pass: passphrase.trim(),
     });
+    revalidateTag(FEED_TAG);
+    revalidatePath("/feed");
     revalidatePath("/");
     return { ok: true, count: n ?? 0 };
   } catch (err) {
