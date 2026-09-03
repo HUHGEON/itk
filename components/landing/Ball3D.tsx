@@ -25,9 +25,9 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { unwrapBallPhoto }] = await Promise.all([
+      const [THREE, { drawBallTexture }] = await Promise.all([
         import("three"),
-        import("./ball-photo"),
+        import("./ball-texture"),
       ]);
       if (cancelled) return;
 
@@ -65,40 +65,39 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
-      const photo = await new Promise<HTMLImageElement>((res, rej) => {
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = "/ball-photo.jpg";
-      });
-      if (cancelled) return;
-
       /**
-       * The source is a technical drawing, not a photograph, and that is the
-       * point.
+       * Markings computed, not photographed.
        *
-       * A photograph has its lighting baked in: the highlight sits on the
-       * texture and turns with the ball, which is wrong twice over. A flat
-       * illustration is closer to an albedo map, so the three lights in this
-       * scene do the shading and the highlight stays put while the ball spins
-       * under it. The drawing also carries no Adidas mark, so nothing has to be
-       * painted out.
+       * Wrapping a photograph of a real ball was tried at length and dropped.
+       * A camera sees one hemisphere, so covering a sphere from one shot means
+       * stretching the rim of the disc across a wide band; fold the longitude
+       * to avoid it and the latitude smears instead, fold both and the pattern
+       * compresses. There is no arrangement that is clean everywhere, and every
+       * one of them showed as mangled stars somewhere in the turn.
        *
-       * Measured off the crop: centred at (221, 226) in a 470px frame, radius
-       * 181.
+       * Computing the markings has no such limit: every texel is decided by
+       * arithmetic, so the sphere is uniform and a full rotation is safe.
        */
       const painted = document.createElement("canvas");
-      unwrapBallPhoto(photo, painted, {
-        cx: (221 / 470) * photo.naturalWidth,
-        cy: (226 / 470) * photo.naturalHeight,
-        r: (181 / 470) * photo.naturalWidth,
+      const relief = document.createElement("canvas");
+      drawBallTexture(painted, relief, {
+        base: "#efebe1",
+        mark: "#14110e",
+        key: "#cdfa2a",
+        seam: "#2c2721",
       });
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
+      // Seams as trenches, panels grained.
+      const bumpMap = new THREE.CanvasTexture(relief);
+      bumpMap.anisotropy = map.anisotropy;
+
+      // Real leather grain over the computed pattern. CC0 scans, tiled 4x2:
+      // finer than that and the grain falls below a pixel on a 380px ball and
+      // averages back to smooth.
       const loader = new THREE.TextureLoader();
       const tile = (url: string) => {
         const t = loader.load(url);
@@ -114,10 +113,12 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         new THREE.SphereGeometry(1, 128, 96),
         new THREE.MeshStandardMaterial({
           map,
+          bumpMap,
+          bumpScale: 5.5,
           normalMap,
-          normalScale: new THREE.Vector2(0.6, 0.6),
+          normalScale: new THREE.Vector2(1.15, 1.15),
           roughnessMap,
-          roughness: 0.6,
+          roughness: 0.66,
           metalness: 0.02,
         }),
       );
@@ -160,6 +161,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cancelAnimationFrame(raf);
         ro.disconnect();
         map.dispose();
+        bumpMap.dispose();
         normalMap.dispose();
         roughnessMap.dispose();
         env.texture.dispose();
