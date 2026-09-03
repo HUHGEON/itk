@@ -40,8 +40,25 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
       const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
-      camera.position.set(0, 0, 4.2);
+      /**
+       * Orthographic, because the texture was made by inverting an orthographic
+       * projection.
+       *
+       * Under a perspective lens the near face of a sphere covers more of the
+       * frame than the parts turning away from it: with the previous 34-degree
+       * lens at 4.2 units, a marking sitting at 0.51 of the photographed disc
+       * came out at 0.62 of the rendered one. The star inflated by a fifth, its
+       * arms thickened, and the panels around it were shoved off the edge -
+       * which is what made the render look nothing like the photograph it was
+       * cut from. An orthographic camera is the exact inverse of the unwrap, so
+       * the face renders at the size it was shot at.
+       *
+       * 1.247 keeps the ball the size the old lens drew it: that lens put the
+       * silhouette at 0.802 of the half-frame, and 1/1.247 is 0.802.
+       */
+      const HALF = 1.247;
+      const camera = new THREE.OrthographicCamera(-HALF, HALF, HALF, -HALF, 0.1, 100);
+      camera.position.set(0, 0, 5);
 
       // Reflections without shipping an HDRI: three carries a small procedural
       // room for exactly this, used as environment only so the page keeps its
@@ -52,7 +69,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const pmrem = new THREE.PMREMGenerator(renderer);
       const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = env.texture;
-      scene.environmentIntensity = 0.22;
+      scene.environmentIntensity = 0.34;
 
       /**
        * Lit for the plate it sits on, not for a studio.
@@ -64,17 +81,17 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * tinted with the green bouncing off it, and a dim up-light stands in for
        * the pitch throwing light back at the underside.
        */
-      const key = new THREE.DirectionalLight(0xffeedd, 1.05);
+      const key = new THREE.DirectionalLight(0xfff6e8, 2.05);
       key.position.set(2.5, 4, 3.5);
       scene.add(key);
       const keyHome = key.position.clone();
 
       // Green bounce from the grass, from below.
-      const bounce = new THREE.DirectionalLight(0x86b06a, 0.5);
+      const bounce = new THREE.DirectionalLight(0x9cc47c, 0.42);
       bounce.position.set(-1, -3, 1);
       scene.add(bounce);
 
-      scene.add(new THREE.AmbientLight(0x9fb59a, 0.32));
+      scene.add(new THREE.AmbientLight(0xd6dad4, 0.6));
 
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
@@ -94,15 +111,22 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         img.crossOrigin = "anonymous";
         img.onload = () => res(img);
         img.onerror = rej;
-        img.src = "/ball-b.jpg";
+        img.src = "/ball-ucl.jpg";
       });
       if (cancelled) return;
 
       const painted = document.createElement("canvas");
       unwrapBallPhoto(photo, painted, {
-        cx: (419 / 773) * photo.naturalWidth,
-        cy: (251 / 580) * photo.naturalHeight,
-        r: (240 / 773) * photo.naturalWidth,
+        cx: (562 / 1024) * photo.naturalWidth,
+        cy: (348 / 768) * photo.naturalHeight,
+        r: (294 / 1024) * photo.naturalWidth,
+        // The Champions League star, not the disc's centre. In this shot it
+        // sits high and slightly right of middle; naming it here brings it
+        // round to face the camera.
+        front: {
+          x: (575 / 1024) * photo.naturalWidth,
+          y: (310 / 768) * photo.naturalHeight,
+        },
       });
 
       const map = new THREE.CanvasTexture(painted);
@@ -129,7 +153,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
           normalMap,
           normalScale: new THREE.Vector2(0.5, 0.5),
           roughnessMap,
-          roughness: 0.58,
+          roughness: 0.72,
           metalness: 0.02,
         }),
       );
@@ -138,7 +162,11 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const fit = () => {
         const r = el.getBoundingClientRect();
         renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
-        camera.aspect = r.width / Math.max(1, r.height);
+        const aspect = r.width / Math.max(1, r.height);
+        camera.left = -HALF * aspect;
+        camera.right = HALF * aspect;
+        camera.top = HALF;
+        camera.bottom = -HALF;
         camera.updateProjectionMatrix();
       };
       fit();
@@ -171,10 +199,11 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          * crests arrive around it - and a ball resting on grass is not a thing
          * that ought to be spinning anyway.
          *
-         * A few degrees of drift keep it from reading as a flat sticker.
+         * It does not drift either. A few degrees of yaw were in here to keep
+         * it from reading as a sticker, but the texture is aligned to the
+         * camera to the pixel now, and any turn at all slides the compressed
+         * rim of the photograph into the face. The light does that job instead.
          */
-        ball.rotation.y = 0.05 - t * 0.1;
-        ball.rotation.x = -0.03 + t * 0.04;
 
         /**
          * The light walks across the ball instead of the ball turning under it.
@@ -221,7 +250,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     <canvas
       ref={canvas}
       aria-hidden
-      className="size-[clamp(15rem,38vmin,27rem)]"
+      className="size-[clamp(17rem,56vmin,38rem)]"
     />
   );
 }

@@ -36,6 +36,16 @@ export interface PhotoBallOptions {
   cy: number;
   /** Radius of the ball in the photograph, in pixels. */
   r: number;
+  /**
+   * The point on the photograph to put dead centre, in pixels.
+   *
+   * A ball is photographed with whatever marking happened to face the camera,
+   * and that is rarely the one worth showing. Naming a point here turns the
+   * sphere underneath the texture so that point ends up facing the lens -
+   * so the Champions League star, sitting up and to the right in the shot,
+   * lands in the middle of the face. Defaults to the centre of the disc.
+   */
+  front?: { x: number; y: number };
   /** Texture width; height is half of it. */
   size?: number;
 }
@@ -48,6 +58,22 @@ export interface PhotoBallOptions {
  * green: turf wrapped onto the top and bottom of the sphere.
  */
 const SAFE = 0.96;
+
+/**
+ * How much further the poles are pulled in.
+ *
+ * The top of the sphere maps to a single point at the very top of the disc -
+ * and in a photograph of a ball lying on grass, that point is the boundary
+ * between the two. So the pole came out the colour of turf, and under an
+ * orthographic camera the pole is not hidden away at the back: it is the top
+ * edge of the silhouette. The ball wore a green rim.
+ *
+ * The exponent matters more than the amount. At |dy| = 0.7 this takes off less
+ * than a percent, so the face - all of what is actually read - is sampled
+ * exactly as before; it only bites in the last few degrees, where the surface
+ * is edge-on and a little compression cannot be seen anyway.
+ */
+const POLE = 0.17;
 
 export function unwrapBallPhoto(
   photo: HTMLImageElement,
@@ -71,6 +97,26 @@ export function unwrapBallPhoto(
   const image = octx.createImageData(out.width, out.height);
   const data = image.data;
   const r = opts.r * SAFE;
+
+  /**
+   * The turn that brings `front` to the middle.
+   *
+   * The named pixel is un-projected the same way every texel is, which gives
+   * the direction it points on the ball. Two angles carry the camera there:
+   * how far up it sits, and how far round. Every texel is then rotated by the
+   * same pair before it is sampled, which slides the whole pattern across the
+   * face together - it does not move one marking and leave the rest, and it
+   * does not stretch anything, because a rotation cannot.
+   */
+  const fx = ((opts.front?.x ?? opts.cx) - opts.cx) / opts.r;
+  const fy = (opts.cy - (opts.front?.y ?? opts.cy)) / opts.r;
+  const fz = Math.sqrt(Math.max(0, 1 - fx * fx - fy * fy));
+  const lift = Math.asin(Math.max(-1, Math.min(1, fy)));
+  const turn = Math.atan2(fx, fz);
+  const cl = Math.cos(lift);
+  const sl = Math.sin(lift);
+  const ct = Math.cos(turn);
+  const stn = Math.sin(turn);
 
   for (let ty = 0; ty < out.height; ty++) {
     const theta = (ty / out.height) * Math.PI;
@@ -105,10 +151,19 @@ export function unwrapBallPhoto(
        * straight off cos(theta), so longitude has to be too, and the rim is
        * kept out of frame by SAFE alone.
        */
-      const dx = st * Math.sin(a);
+      const vx = st * Math.sin(a);
+      const vz = st * Math.cos(a);
 
-      const px = Math.round(opts.cx + dx * r);
-      const py = Math.round(opts.cy - dy * r);
+      // Tilt up by `lift`, then swing round by `turn`. Only the two axes the
+      // photograph is flat in are needed afterwards - depth picks the near or
+      // far side, and both sides read the same pixels here anyway.
+      const y1 = dy * cl + vz * sl;
+      const z1 = vz * cl - dy * sl;
+      const x2 = vx * ct + z1 * stn;
+
+      const rr = r * (1 - POLE * dy * dy * dy * dy);
+      const px = Math.round(opts.cx + x2 * rr);
+      const py = Math.round(opts.cy - y1 * rr);
       const o = (ty * out.width + tx) * 4;
 
       if (px < 0 || py < 0 || px >= src.width || py >= src.height) {
