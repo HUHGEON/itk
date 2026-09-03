@@ -189,10 +189,14 @@ export function paintBall(
   out: HTMLCanvasElement,
   surface: HTMLCanvasElement,
   relief: HTMLCanvasElement,
-  size = 1600,
+  size = 1280,
 ): void {
-  const { hex, faces } = build();
+  const { pent, hex, faces } = build();
   const marks = scuffs(hex);
+  // Identity lookups, so the per-row filtering above can still tell a pentagon
+  // from a hexagon and find a hexagon's own wear.
+  const pentSet = new Set(pent);
+  const hexIndex = new Map(hex.map((h, i) => [h, i] as const));
 
   out.width = size;
   out.height = size / 2;
@@ -235,10 +239,34 @@ export function paintBall(
   const rimage = rg.createImageData(out.width, out.height);
   const rpx = rimage.data;
 
+  /**
+   * How far a panel's own surface reaches from its centre, plus margin.
+   *
+   * A hexagon's furthest corner is about 23 degrees out, so a face centred more
+   * than this from a given latitude cannot own any texel on that row.
+   */
+  const REACH = 45 * DEG;
+
   for (let ty = 0; ty < out.height; ty++) {
     const theta = (ty / out.height) * Math.PI;
     const st = Math.sin(theta);
     const ct = Math.cos(theta);
+
+    /**
+     * Only the faces this row could possibly belong to.
+     *
+     * Finding the nearest of 32 faces per texel was the bulk of the 250ms this
+     * function used to cost - a million texels times thirty-two dot products.
+     * Latitude alone rules most of them out: a face whose centre is nowhere
+     * near this row cannot be the closest to anything on it. Filtering once per
+     * row instead of testing every face per texel cuts the work by about two
+     * thirds and cannot change the answer, because anything excluded was
+     * further away than the winner by construction.
+     */
+    const near = faces.filter(
+      (f) => Math.abs(Math.acos(Math.max(-1, Math.min(1, f[1]))) - theta) < REACH,
+    );
+    const isPent = near.map((f) => pentSet.has(f));
 
     for (let tx = 0; tx < out.width; tx++) {
       // three.js starts a sphere's u on -x and runs it anticlockwise.
@@ -250,8 +278,8 @@ export function paintBall(
       let d1 = -2;
       let d2 = -2;
       let f1 = 0;
-      for (let i = 0; i < faces.length; i++) {
-        const t = dot(d, faces[i]);
+      for (let i = 0; i < near.length; i++) {
+        const t = dot(d, near[i]);
         if (t > d1) {
           d2 = d1;
           d1 = t;
@@ -284,7 +312,7 @@ export function paintBall(
         const rise = Math.min(1, (gap - SEAM) / (SEAM * 11));
         high = 0.42 + 0.58 * (rise * rise * (3 - 2 * rise));
 
-        if (f1 < 12) {
+        if (isPent[f1]) {
           // A pentagon: the dark panels of the classic ball.
           col = INK;
           // Nearly as matt as the white. A glossy black panel was the last
@@ -294,7 +322,7 @@ export function paintBall(
           // A hexagon: the light panels, carrying whatever wear there is.
           col = WHITE;
           rough = 0.70;
-          const m = marks[f1 - 12];
+          const m = marks[hexIndex.get(near[f1])!];
           const lx = dot(d, m.u);
           const ly = dot(d, m.v);
           for (const k of m.marks) {

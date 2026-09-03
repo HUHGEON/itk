@@ -8,7 +8,7 @@
       "Chelsea",
       "Blues"
     ],
-    "crest": "https://www.thesportsdb.com/images/media/team/badge/pbf4ul1782638263.png"
+    "crest": "/crests/chelsea-04c25abc.png"
   },
   {
     "slug": "man-utd",
@@ -22,7 +22,7 @@
       "United",
       "MUFC"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/xzqdr11517660252.png"
+    "crest": "/crests/man-utd-4b5b866f.png"
   },
   {
     "slug": "man-city",
@@ -35,7 +35,7 @@
       "City",
       "MCFC"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/vwpvry1467462651.png"
+    "crest": "/crests/man-city-c8839f70.png"
   },
   {
     "slug": "arsenal",
@@ -47,7 +47,7 @@
       "Gunners",
       "AFC"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/uyhbfe1612467038.png"
+    "crest": "/crests/arsenal-c7175840.png"
   },
   {
     "slug": "liverpool",
@@ -59,7 +59,7 @@
       "Reds",
       "LFC"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/kfaher1737969724.png"
+    "crest": "/crests/liverpool-17f0cfc0.png"
   },
   {
     "slug": "tottenham",
@@ -72,7 +72,7 @@
       "Tottenham Hotspur",
       "THFC"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/dfyfhl1604094109.png"
+    "crest": "/crests/tottenham-763ea6ef.png"
   },
   {
     "slug": "aston-villa",
@@ -83,7 +83,7 @@
       "Aston Villa",
       "Villa"
     ],
-    "crest": "https://www.thesportsdb.com/images/media/team/badge/97mehy1784645865.png"
+    "crest": "/crests/aston-villa-730e11ba.png"
   },
   {
     "slug": "newcastle",
@@ -95,7 +95,7 @@
       "Newcastle United",
       "Magpies"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/lhwuiz1621593302.png"
+    "crest": "/crests/newcastle-5231f07d.png"
   },
   {
     "slug": "real-madrid",
@@ -107,7 +107,7 @@
       "Madrid",
       "Los Blancos"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/vwvwrw1473502969.png"
+    "crest": "/crests/real-madrid-38eab383.png"
   },
   {
     "slug": "barcelona",
@@ -120,7 +120,7 @@
       "Barça",
       "FC Barcelona"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/wq9sir1639406443.png"
+    "crest": "/crests/barcelona-65bb36ea.png"
   },
   {
     "slug": "atletico-madrid",
@@ -133,7 +133,7 @@
       "Atleti",
       "Atletico"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/0ulh3q1719984315.png"
+    "crest": "/crests/atletico-madrid-05db3b92.png"
   },
   {
     "slug": "psg",
@@ -145,7 +145,7 @@
       "Paris Saint-Germain",
       "Paris SG"
     ],
-    "crest": "https://crests.football-data.org/524.png"
+    "crest": "/crests/psg-35cb90e1.png"
   },
   {
     "slug": "strasbourg",
@@ -158,7 +158,7 @@
       "RC Strasbourg Alsace",
       "Racing Strasbourg"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/b8k77w1766625501.png"
+    "crest": "/crests/strasbourg-a2f2cd71.png"
   },
   {
     "slug": "juventus",
@@ -169,7 +169,7 @@
       "Juventus",
       "Juve"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/uxf0gr1742983727.png"
+    "crest": "/crests/juventus-7500bd4f.png"
   },
   {
     "slug": "roma",
@@ -180,7 +180,7 @@
       "Roma",
       "AS Roma"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/jwro2s1760820674.png"
+    "crest": "/crests/roma-8ae735fc.png"
   },
   {
     "slug": "ac-milan",
@@ -192,7 +192,7 @@
       "Milan",
       "Rossoneri"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/wvspur1448806617.png"
+    "crest": "/crests/ac-milan-d83f8f70.png"
   },
   {
     "slug": "inter",
@@ -205,6 +205,6 @@
       "Internazionale",
       "Nerazzurri"
     ],
-    "crest": "https://r2.thesportsdb.com/images/media/team/badge/ryhu6d1617113103.png"
+    "crest": "/crests/inter-0bf6243a.png"
   }
 ]
