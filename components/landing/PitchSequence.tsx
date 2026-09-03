@@ -31,12 +31,17 @@ import { Ball3D } from "./Ball3D";
 /**
  * How many screens of scroll the sequence occupies.
  *
- * Most of this is the hold at the end. The crests finish arriving at 38% and
- * everything after that is the ring simply sitting there, which is the state
- * worth staying in: it is the one where every club is on screen and reachable.
- * At five screens it slid past almost as soon as it had assembled.
+ * This is a compromise between two input devices. A trackpad moves a few pixels
+ * per gesture and a long sequence feels unhurried on one; a mouse wheel moves
+ * about a hundred pixels per notch, so seven screens of stage was roughly sixty
+ * clicks of wheel to get past a single section. Four keeps the hold long enough
+ * to read while cutting that to about twenty-five.
+ *
+ * The hold is what the length is spent on: the crests finish arriving at 30%
+ * and the remaining 70% is the ring simply sitting there, which is the state
+ * worth staying in - every club on screen and reachable.
  */
-export const STAGE_SCREENS = 7;
+export const STAGE_SCREENS = 4;
 /**
  * The ring the crests settle on. A circle, and one that always fits.
  *
@@ -185,14 +190,14 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
-        "16%": {
+        "12%": {
           opacity: 0,
           scale: 0,
           rotate: -60,
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
-        "38%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
+        "30%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
         "100%": { opacity: 1, scale: 1, rotate: 0, x: 0, y: 0 },
       },
       ease: "outQuad",
@@ -204,8 +209,8 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
       ? animate(copy.current, {
           keyframes: {
             "0%": { opacity: 1, y: 0 },
-            "14%": { opacity: 1, y: 0 },
-            "28%": { opacity: 0, y: 26 },
+            "10%": { opacity: 1, y: 0 },
+            "22%": { opacity: 0, y: 26 },
             "100%": { opacity: 0, y: 26 },
           },
           ease: "linear",
@@ -225,8 +230,8 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
       ? animate(prompt.current, {
           keyframes: {
             "0%": { opacity: 0, y: 14 },
-            "38%": { opacity: 0, y: 14 },
-            "48%": { opacity: 1, y: 0 },
+            "30%": { opacity: 0, y: 14 },
+            "40%": { opacity: 1, y: 0 },
             "100%": { opacity: 1, y: 0 },
           },
           ease: "outQuad",

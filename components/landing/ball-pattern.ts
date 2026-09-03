@@ -189,7 +189,7 @@ export function paintBall(
   out: HTMLCanvasElement,
   surface: HTMLCanvasElement,
   relief: HTMLCanvasElement,
-  size = 1280,
+  size = 1024,
 ): void {
   const { pent, hex, faces } = build();
   const marks = scuffs(hex);
