@@ -41,24 +41,24 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
 
       const scene = new THREE.Scene();
       /**
-       * Orthographic, because the texture was made by inverting an orthographic
-       * projection.
+       * The lens the photograph was taken with, rebuilt.
        *
-       * Under a perspective lens the near face of a sphere covers more of the
-       * frame than the parts turning away from it: with the previous 34-degree
-       * lens at 4.2 units, a marking sitting at 0.51 of the photographed disc
-       * came out at 0.62 of the rendered one. The star inflated by a fifth, its
-       * arms thickened, and the panels around it were shoved off the edge -
-       * which is what made the render look nothing like the photograph it was
-       * cut from. An orthographic camera is the exact inverse of the unwrap, so
-       * the face renders at the size it was shot at.
+       * The texture is the photograph un-projected, so it only holds what the
+       * photograph could see: from 2.86 radii out, that is the 69.5 degrees
+       * facing the lens, not a full hemisphere. Viewed through anything wider -
+       * an orthographic camera sees all 90 - the render asks the texture for
+       * surface that was never photographed, and what it gets is the pixels at
+       * the rim of the disc, which are the boundary between ball and grass. The
+       * ball grew a green smear across its shoulder.
        *
-       * 1.247 keeps the ball the size the old lens drew it: that lens put the
-       * silhouette at 0.802 of the half-frame, and 1/1.247 is 0.802.
+       * Standing the camera where the photographer stood makes the render the
+       * exact inverse of the unwrap: same distance, so the same 69.5 degrees is
+       * visible and every marking sits where it sits in the shot. The field of
+       * view then only decides how much of the frame the ball fills - 50
+       * degrees keeps it at the size the page was laid out around.
        */
-      const HALF = 1.247;
-      const camera = new THREE.OrthographicCamera(-HALF, HALF, HALF, -HALF, 0.1, 100);
-      camera.position.set(0, 0, 5);
+      const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
+      camera.position.set(0, 0, 2.86);
 
       // Reflections without shipping an HDRI: three carries a small procedural
       // room for exactly this, used as environment only so the page keeps its
@@ -120,6 +120,8 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cx: (562 / 1024) * photo.naturalWidth,
         cy: (348 / 768) * photo.naturalHeight,
         r: (294 / 1024) * photo.naturalWidth,
+        // Shot from close up - see `dist` in ball-photo.ts.
+        dist: 2.86,
         // The Champions League star, not the disc's centre. In this shot it
         // sits high and slightly right of middle; naming it here brings it
         // round to face the camera.
@@ -162,11 +164,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const fit = () => {
         const r = el.getBoundingClientRect();
         renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
-        const aspect = r.width / Math.max(1, r.height);
-        camera.left = -HALF * aspect;
-        camera.right = HALF * aspect;
-        camera.top = HALF;
-        camera.bottom = -HALF;
+        camera.aspect = r.width / Math.max(1, r.height);
         camera.updateProjectionMatrix();
       };
       fit();

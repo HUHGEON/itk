@@ -46,6 +46,25 @@ export interface PhotoBallOptions {
    * lands in the middle of the face. Defaults to the centre of the disc.
    */
   front?: { x: number; y: number };
+  /**
+   * How far the camera stood, in ball radii.
+   *
+   * This is the difference between a photograph and a diagram. A sphere shot
+   * from close up does not show half of itself - it shows less, and it shows it
+   * spread wider than it really is, because the part pointing at the lens is
+   * nearer than the parts curving away. Read that picture as a flat projection
+   * and every marking near the middle comes out too big.
+   *
+   * Measured off this shot: the ball's disc is 294px in a frame 384px from
+   * centre to edge, so it subtends about 20.5 degrees, and 1/sin(20.5) puts the
+   * lens 2.86 radii out. At that distance a point 30 degrees round the ball
+   * lands at 0.67 of the disc - which, read flat, would be mistaken for 42
+   * degrees. That is a 1.4x on the star, and it is why the render did not look
+   * like the ball.
+   *
+   * Leave it out for a photograph taken from far enough away that the two agree.
+   */
+  dist?: number;
   /** Texture width; height is half of it. */
   size?: number;
 }
@@ -108,11 +127,37 @@ export function unwrapBallPhoto(
    * face together - it does not move one marking and leave the rest, and it
    * does not stretch anything, because a rotation cannot.
    */
-  const fx = ((opts.front?.x ?? opts.cx) - opts.cx) / opts.r;
-  const fy = (opts.cy - (opts.front?.y ?? opts.cy)) / opts.r;
-  const fz = Math.sqrt(Math.max(0, 1 - fx * fx - fy * fy));
-  const lift = Math.asin(Math.max(-1, Math.min(1, fy)));
-  const turn = Math.atan2(fx, fz);
+  const D = opts.dist ?? Infinity;
+  const perspective = Number.isFinite(D) && D > 1;
+  // Half-angle of the disc, as a tangent: the frame edge of the ball.
+  const k = perspective ? Math.sqrt(D * D - 1) : 1;
+
+  /**
+   * Where a point on the ball lands on the photograph, as a share of the disc's
+   * radius. Straight through the lens: further from it means smaller.
+   */
+  const shrink = (z: number) => (perspective ? k / (D - z) : 1);
+
+  /** The reverse, for a point picked off the photograph. */
+  const unproject = (nx: number, ny: number) => {
+    const p = Math.hypot(nx, ny);
+    if (p < 1e-6) return { x: 0, y: 0, z: 1 };
+    if (!perspective) {
+      return { x: nx, y: ny, z: Math.sqrt(Math.max(0, 1 - p * p)) };
+    }
+    const th = Math.atan(p / k);
+    const c = Math.cos(th);
+    const t = D * c - Math.sqrt(Math.max(0, D * D * c * c - D * D + 1));
+    const sa = t * Math.sin(th);
+    return { x: (nx / p) * sa, y: (ny / p) * sa, z: D - t * c };
+  };
+
+  const f = unproject(
+    ((opts.front?.x ?? opts.cx) - opts.cx) / opts.r,
+    (opts.cy - (opts.front?.y ?? opts.cy)) / opts.r,
+  );
+  const lift = Math.asin(Math.max(-1, Math.min(1, f.y)));
+  const turn = Math.atan2(f.x, f.z);
   const cl = Math.cos(lift);
   const sl = Math.sin(lift);
   const ct = Math.cos(turn);
@@ -161,7 +206,8 @@ export function unwrapBallPhoto(
       const z1 = vz * cl - dy * sl;
       const x2 = vx * ct + z1 * stn;
 
-      const rr = r * (1 - POLE * dy * dy * dy * dy);
+      const z2 = z1 * ct - vx * stn;
+      const rr = r * (1 - POLE * dy * dy * dy * dy) * shrink(z2);
       const px = Math.round(opts.cx + x2 * rr);
       const py = Math.round(opts.cy - y1 * rr);
       const o = (ty * out.width + tx) * 4;
