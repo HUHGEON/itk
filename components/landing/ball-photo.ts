@@ -49,29 +49,6 @@ export interface PhotoBallOptions {
  */
 const SAFE = 0.96;
 
-/**
- * How much of the photograph the visible half of the sphere is drawn from.
- *
- * Longitude has to be compressed, not passed straight through. Mapping the full
- * circle onto the disc means the texture reaches the very edge of the
- * photograph, where the ball's silhouette ends and the grass begins - and that
- * edge lands in the middle of the face. Measured: a green stripe straight down
- * the centre of the ball.
- *
- * The number trades two faults against each other, and the trade is not
- * symmetric. Too large and the sampling reaches the rim of the disc, where the
- * projection is already compressed and the surface is turning away: stretching
- * that back out smears the markings badly. Tried at 144 degrees and the stars
- * came apart. Too small only magnifies, which costs sharpness but keeps every
- * edge intact.
- *
- * So it errs small. At 90 degrees the visible half is drawn from the middle 90
- * degrees of the photograph - about a 2x magnification, which reads as a close
- * crop of a real ball rather than as a defect - and the rim is only reached by
- * the far side the camera never sees.
- */
-const SPAN = Math.PI / 2;
-
 export function unwrapBallPhoto(
   photo: HTMLImageElement,
   out: HTMLCanvasElement,
@@ -105,9 +82,30 @@ export function unwrapBallPhoto(
       // under this projection the far side of the sphere maps to the same disc
       // as the near side. Since the camera never leaves the front, the back
       // being a copy is never seen.
+      /**
+       * Longitude, measured from the face the camera sees.
+       *
+       * SphereGeometry starts its u coordinate on -x and runs anticlockwise, so
+       * the point facing a camera on +z is u = 0.25, not u = 0.5. Centring the
+       * photograph on 0.5 put its 45-degree edge dead in front of the lens -
+       * the compressed rim of the disc, stretched across the middle of the
+       * face. That is what the smeared ball was.
+       */
       const phi = (tx / out.width) * Math.PI * 2;
-      const lon = (phi / (Math.PI * 2) - 0.5) * SPAN * 2;
-      const dx = st * Math.sin(lon);
+      let a = phi - Math.PI / 2;
+      if (a > Math.PI) a -= Math.PI * 2;
+      if (a < -Math.PI) a += Math.PI * 2;
+      /**
+       * No compression. This is the plain inverse of the projection.
+       *
+       * Squeezing longitude into a narrower slice of the photograph seemed like
+       * a way to avoid the disc's rim, but it scales one axis and not the
+       * other: the markings get stretched sideways relative to their height and
+       * the stars buckle. That was the "broken" ball. Latitude is already read
+       * straight off cos(theta), so longitude has to be too, and the rim is
+       * kept out of frame by SAFE alone.
+       */
+      const dx = st * Math.sin(a);
 
       const px = Math.round(opts.cx + dx * r);
       const py = Math.round(opts.cy - dy * r);
