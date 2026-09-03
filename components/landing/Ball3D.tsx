@@ -25,9 +25,9 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { drawBallTexture }] = await Promise.all([
+      const [THREE, { unwrapBallPhoto }] = await Promise.all([
         import("three"),
-        import("./ball-texture"),
+        import("./ball-photo"),
       ]);
       if (cancelled) return;
 
@@ -52,52 +52,64 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const pmrem = new THREE.PMREMGenerator(renderer);
       const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = env.texture;
-      scene.environmentIntensity = 0.4;
+      scene.environmentIntensity = 0.22;
 
-      const key = new THREE.DirectionalLight(0xfff4e6, 2.0);
-      key.position.set(3, 4, 5);
+      /**
+       * Lit for the plate it sits on, not for a studio.
+       *
+       * The ball was lit as if for a product shot while the background is a
+       * floodlit pitch at night, so it came out brighter than everything around
+       * it and read as a cut-out pasted on. Three changes fix the join: the key
+       * comes down to roughly the brightness of the grass, the ambient is
+       * tinted with the green bouncing off it, and a dim up-light stands in for
+       * the pitch throwing light back at the underside.
+       */
+      const key = new THREE.DirectionalLight(0xffeedd, 1.05);
+      key.position.set(2.5, 4, 3.5);
       scene.add(key);
-      const rim = new THREE.DirectionalLight(0xf1800b, 0.5);
-      rim.position.set(-4, -1, -3);
-      scene.add(rim);
-      scene.add(new THREE.AmbientLight(0xffffff, 0.4));
+
+      // Green bounce from the grass, from below.
+      const bounce = new THREE.DirectionalLight(0x86b06a, 0.5);
+      bounce.position.set(-1, -3, 1);
+      scene.add(bounce);
+
+      scene.add(new THREE.AmbientLight(0x9fb59a, 0.32));
 
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
+      const photo = await new Promise<HTMLImageElement>((res, rej) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = "/ball-photo.jpg";
+      });
+      if (cancelled) return;
+
       /**
-       * Markings computed, not photographed.
+       * Where the ball sits in the source, checked by eye rather than trusted.
        *
-       * Wrapping a photograph of a real ball was tried at length and dropped.
-       * A camera sees one hemisphere, so covering a sphere from one shot means
-       * stretching the rim of the disc across a wide band; fold the longitude
-       * to avoid it and the latitude smears instead, fold both and the pattern
-       * compresses. There is no arrangement that is clean everywhere, and every
-       * one of them showed as mangled stars somewhere in the turn.
-       *
-       * Computing the markings has no such limit: every texel is decided by
-       * arithmetic, so the sphere is uniform and a full rotation is safe.
+       * Two automatic passes both got this wrong - one measured a row through
+       * the shadow and came out 130px off centre - and the result was a circle
+       * that overlapped the grass, so grass got wrapped onto the middle of the
+       * ball. Drawing the candidate circle back over the photograph and looking
+       * at it settled it in one go: centre (419, 251), radius 240 in a 773x580
+       * frame.
        */
       const painted = document.createElement("canvas");
-      const relief = document.createElement("canvas");
-      drawBallTexture(painted, relief, {
-        base: "#efebe1",
-        mark: "#14110e",
-        key: "#cdfa2a",
-        seam: "#2c2721",
+      unwrapBallPhoto(photo, painted, {
+        cx: (419 / 773) * photo.naturalWidth,
+        cy: (251 / 580) * photo.naturalHeight,
+        r: (240 / 773) * photo.naturalWidth,
       });
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-      // Seams as trenches, panels grained.
-      const bumpMap = new THREE.CanvasTexture(relief);
-      bumpMap.anisotropy = map.anisotropy;
-
-      // Real leather grain over the computed pattern. CC0 scans, tiled 4x2:
-      // finer than that and the grain falls below a pixel on a 380px ball and
-      // averages back to smooth.
+      // Grain over the photograph: a 773px source stretched over a sphere is
+      // smoother than the object it came from. CC0 scans from ambientCG.
       const loader = new THREE.TextureLoader();
       const tile = (url: string) => {
         const t = loader.load(url);
@@ -113,12 +125,10 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         new THREE.SphereGeometry(1, 128, 96),
         new THREE.MeshStandardMaterial({
           map,
-          bumpMap,
-          bumpScale: 5.5,
           normalMap,
-          normalScale: new THREE.Vector2(1.15, 1.15),
+          normalScale: new THREE.Vector2(0.5, 0.5),
           roughnessMap,
-          roughness: 0.66,
+          roughness: 0.58,
           metalness: 0.02,
         }),
       );
@@ -151,7 +161,15 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          */
         const t = Math.min(1, Math.max(0, progress.current) / 0.5);
         ball.rotation.y = t * Math.PI * 3 + 0.5;
-        ball.rotation.x = -0.18 + t * 0.35;
+        /**
+         * Almost no tilt, on purpose.
+         *
+         * The poles are the one part a wrapped photograph cannot supply. Keep
+         * the axis upright and they stay pinned to the top and bottom of the
+         * silhouette, a few pixels each, while the vertical spin - the one that
+         * reads as rolling - runs all the way round.
+         */
+        ball.rotation.x = -0.04;
         renderer.render(scene, camera);
         raf = requestAnimationFrame(tick);
       };
@@ -161,7 +179,6 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cancelAnimationFrame(raf);
         ro.disconnect();
         map.dispose();
-        bumpMap.dispose();
         normalMap.dispose();
         roughnessMap.dispose();
         env.texture.dispose();
