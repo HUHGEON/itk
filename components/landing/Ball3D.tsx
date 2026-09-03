@@ -25,7 +25,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { unwrapBallPhotos }] = await Promise.all([
+      const [THREE, { unwrapBallPhoto }] = await Promise.all([
         import("three"),
         import("./ball-photo"),
       ]);
@@ -67,6 +67,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const key = new THREE.DirectionalLight(0xffeedd, 1.05);
       key.position.set(2.5, 4, 3.5);
       scene.add(key);
+      const keyHome = key.position.clone();
 
       // Green bounce from the grass, from below.
       const bounce = new THREE.DirectionalLight(0x86b06a, 0.5);
@@ -79,36 +80,30 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
       /**
-       * Three faces of the same ball, measured off each photograph.
+       * Where the ball sits in the photograph, found by eye.
        *
-       * Automatic detection was tried twice and failed twice - once it picked a
-       * row through the shadow and came out 130px off, once it counted bright
-       * grass as ball. Both times the resulting circle overlapped the turf and
-       * grass got wrapped onto the middle of the sphere. Drawing candidate
-       * circles back over each photo and looking at them settled it.
+       * Automatic detection was tried twice and missed twice: once it measured
+       * a row through the shadow and landed 130px off centre, once it counted
+       * bright grass as ball. Both times the circle overlapped the turf and
+       * grass ended up wrapped onto the middle of the sphere. Drawing the
+       * candidate circle back over the photo and looking at it settled it in
+       * one pass.
        */
-      const views = [
-        { src: "/ball-a.jpg", cx: 500, cy: 378, r: 345 },
-        { src: "/ball-b.jpg", cx: 419, cy: 251, r: 240 },
-        { src: "/ball-c.jpg", cx: 398, cy: 270, r: 240 },
-      ];
-
-      const photos = await Promise.all(
-        views.map(
-          (v) =>
-            new Promise<HTMLImageElement>((res, rej) => {
-              const img = new window.Image();
-              img.crossOrigin = "anonymous";
-              img.onload = () => res(img);
-              img.onerror = rej;
-              img.src = v.src;
-            }),
-        ),
-      );
+      const photo = await new Promise<HTMLImageElement>((res, rej) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = "/ball-b.jpg";
+      });
       if (cancelled) return;
 
       const painted = document.createElement("canvas");
-      unwrapBallPhotos(photos, views, painted);
+      unwrapBallPhoto(photo, painted, {
+        cx: (419 / 773) * photo.naturalWidth,
+        cy: (251 / 580) * photo.naturalHeight,
+        r: (240 / 773) * photo.naturalWidth,
+      });
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
@@ -167,30 +162,36 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          */
         const t = Math.min(1, Math.max(0, progress.current) / 0.5);
         /**
-         * A slow turn, not a roll, and this is a limit of the source rather
-         * than a preference.
+         * The ball holds still, and the scene moves instead.
          *
-         * One photograph holds one hemisphere. Covering a sphere with it means
-         * repeating that half, repeating means a seam, and a mirrored seam
-         * doubles the pattern back on itself - half a star against its own
-         * reflection. Spin the ball and that seam comes round to the front,
-         * which is exactly what kept showing up as mangled stars.
+         * Everything that went wrong on this ball went wrong at the moment it
+         * turned far enough to show a part that is not in the photograph.
+         * Holding the face to camera is the one arrangement with nothing
+         * invented in it. The sequence still moves - the shot pushes in, the
+         * crests arrive around it - and a ball resting on grass is not a thing
+         * that ought to be spinning anyway.
          *
-         * The seam sits at the far left and right of the face, so the camera is
-         * held within about 25 degrees of centre and never reaches it. The ball
-         * turns enough to read as an object rather than a picture, and the part
-         * that cannot be shown is never shown.
+         * A few degrees of drift keep it from reading as a flat sticker.
          */
-        ball.rotation.y = 0.34 - t * 0.86;
+        ball.rotation.y = 0.05 - t * 0.1;
+        ball.rotation.x = -0.03 + t * 0.04;
+
         /**
-         * Almost no tilt, on purpose.
+         * The light walks across the ball instead of the ball turning under it.
          *
-         * The poles are the one part a wrapped photograph cannot supply. Keep
-         * the axis upright and they stay pinned to the top and bottom of the
-         * silhouette, a few pixels each, while the vertical spin - the one that
-         * reads as rolling - runs all the way round.
+         * A still object under a still light is a photograph, and the scroll has
+         * nothing to show for itself. Swinging the key light around the front
+         * moves the highlight over the panels and rakes the seams, so the
+         * surface reads as three-dimensional and as responding - without ever
+         * exposing the half of the ball that was never photographed.
          */
-        ball.rotation.x = -0.04;
+        const swing = (t - 0.5) * 1.8;
+        key.position.set(
+          keyHome.x * Math.cos(swing) + keyHome.z * Math.sin(swing),
+          keyHome.y - t * 1.2,
+          -keyHome.x * Math.sin(swing) + keyHome.z * Math.cos(swing),
+        );
+
         renderer.render(scene, camera);
         raf = requestAnimationFrame(tick);
       };

@@ -1,125 +1,99 @@
 /**
- * Builds a sphere texture from several photographs of the same ball.
+ * Puts one photograph of a ball onto a sphere, front-on.
  *
  * A camera sees a sphere as a disc, and that projection inverts: a pixel at
  * (nx, ny) from the centre of the disc, in units of its radius, is looking at
- * (nx, ny, sqrt(1 - nx^2 - ny^2)) on the ball. Run it backwards per texel and a
- * photograph goes back onto the shape it came off.
+ * (nx, ny, sqrt(1 - nx^2 - ny^2)) on the ball. Run it backwards per texel and
+ * the photograph goes back onto the shape it came off.
  *
- * One photograph is not enough, and the failure is specific. It holds one
- * hemisphere, so covering a sphere means repeating that half; repeating needs a
- * seam; and a mirrored seam folds the pattern back onto itself - half a star
- * against its own reflection, the round red stamp overlapping itself. Rotate
- * the ball and that seam swings to the front. No amount of choosing where to
- * put it helps, because it only decides which part gets mangled.
+ * That is the whole of what a photograph can give, and the rest of this file is
+ * about not pretending otherwise.
  *
- * Three photographs of three different faces remove the need to repeat at all.
- * The equator is split into three 120 degree arcs and each arc is filled from
- * its own shot, sampling 60 degrees either side of that shot's centre - which
- * is exactly 120 degrees of ball, so nothing is stretched or squeezed. The
- * joins are still there, but they are joins between different real surfaces
- * rather than a reflection, and on a pattern that already repeats twelve times
- * they read as more ball.
+ * A single shot holds one hemisphere. Three earlier attempts tried to cover the
+ * sphere anyway:
+ *
+ *  - Repeat the hemisphere and mirror the join. The mirror folds the pattern
+ *    onto itself: half a star meets its own reflection, the round red stamp
+ *    prints over itself.
+ *  - Repeat it four times, more narrowly. Same fold, and the pattern is
+ *    squeezed as well.
+ *  - Use three photographs, one per 120 degree arc. No mirror, but the three
+ *    were shot at unrelated angles, so the pattern does not continue across a
+ *    join. Cross-fading the joins only blurred both sides into a double
+ *    exposure - which is exactly what it looked like.
+ *
+ * All three fail for the same reason: the far side of the ball is not in the
+ * data, and inventing it is visible the moment the ball turns. So it does not
+ * turn. The face is what was photographed, the camera stays on it, and the
+ * sequence gets its movement from the scene instead - the shot pushing in, the
+ * crests arriving, the light moving. The half that cannot be shown is never
+ * shown.
  */
 
-export interface BallView {
-  src: string;
-  /** Centre of the ball in this photograph, in pixels. */
+export interface PhotoBallOptions {
+  /** Centre of the ball in the photograph, in pixels. */
   cx: number;
   cy: number;
-  /** Radius of the ball in this photograph, in pixels. */
+  /** Radius of the ball in the photograph, in pixels. */
   r: number;
+  /** Texture width; height is half of it. */
+  size?: number;
 }
 
 /**
- * How much of each disc's radius is safe to sample.
+ * How much of the disc's radius is sampled.
  *
- * At the very edge the surface turns away from the camera, so the last pixels
- * are grass and shadow rather than ball. Sampled at full radius the poles came
- * out green: grass wrapped onto the top and bottom of the sphere.
+ * At the very edge the surface turns away from the camera and the last pixels
+ * are grass and shadow rather than ball. At full radius the poles came out
+ * green: turf wrapped onto the top and bottom of the sphere.
  */
-const SAFE = 0.965;
-
-/** Half-arc taken from each photograph. Three of these tile the equator. */
-const ARC = Math.PI / 3;
+const SAFE = 0.96;
 
 /**
- * How wide the cross-fade between neighbouring photographs is, as a fraction of
- * each arc.
+ * How much of the photograph the visible half of the sphere is drawn from.
  *
- * Butted together the three shots met at a hard line: the pattern stopped
- * mid-panel and the exposure jumped, so a seam ran down the ball. Each arc is
- * therefore read a little past its own edge, into what the next shot also
- * covers, and the two are mixed across the overlap. Kept narrow because reading
- * further out means sampling nearer the rim of the disc, where the surface is
- * turning away and detail runs out.
+ * Longitude has to be compressed, not passed straight through. Mapping the full
+ * circle onto the disc means the texture reaches the very edge of the
+ * photograph, where the ball's silhouette ends and the grass begins - and that
+ * edge lands in the middle of the face. Measured: a green stripe straight down
+ * the centre of the ball.
+ *
+ * The number trades two faults against each other, and the trade is not
+ * symmetric. Too large and the sampling reaches the rim of the disc, where the
+ * projection is already compressed and the surface is turning away: stretching
+ * that back out smears the markings badly. Tried at 144 degrees and the stars
+ * came apart. Too small only magnifies, which costs sharpness but keeps every
+ * edge intact.
+ *
+ * So it errs small. At 90 degrees the visible half is drawn from the middle 90
+ * degrees of the photograph - about a 2x magnification, which reads as a close
+ * crop of a real ball rather than as a defect - and the rim is only reached by
+ * the far side the camera never sees.
  */
-const BLEND = 0.09;
+const SPAN = Math.PI / 2;
 
-export function unwrapBallPhotos(
-  images: HTMLImageElement[],
-  views: BallView[],
+export function unwrapBallPhoto(
+  photo: HTMLImageElement,
   out: HTMLCanvasElement,
-  size = 2048,
+  opts: PhotoBallOptions,
 ): void {
+  const size = opts.size ?? 2048;
   out.width = size;
   out.height = size / 2;
   const octx = out.getContext("2d");
-  if (!octx || images.length === 0) return;
+  if (!octx) return;
 
-  // Read every source once.
-  const planes = images.map((img) => {
-    const c = document.createElement("canvas");
-    c.width = img.naturalWidth;
-    c.height = img.naturalHeight;
-    const ctx = c.getContext("2d", { willReadFrequently: true });
-    ctx?.drawImage(img, 0, 0);
-    return {
-      data: ctx?.getImageData(0, 0, c.width, c.height).data,
-      w: c.width,
-      h: c.height,
-    };
-  });
-
-  /**
-   * Match the exposures before blending.
-   *
-   * The three shots were taken in different light, so even a perfect join shows
-   * as a step in brightness. Each plane is scaled so its mean luminance matches
-   * the set's, which is crude but enough: the subject is the same white ball in
-   * all three.
-   */
-  const means = planes.map((p) => {
-    if (!p.data) return 1;
-    let sum = 0;
-    let count = 0;
-    for (let i = 0; i < p.data.length; i += 4 * 37) {
-      sum += 0.299 * p.data[i] + 0.587 * p.data[i + 1] + 0.114 * p.data[i + 2];
-      count++;
-    }
-    return count ? sum / count : 1;
-  });
-  const target = means.reduce((a, b) => a + b, 0) / means.length;
-  const gains = means.map((m) => (m > 1 ? target / m : 1));
+  const src = document.createElement("canvas");
+  src.width = photo.naturalWidth;
+  src.height = photo.naturalHeight;
+  const sctx = src.getContext("2d", { willReadFrequently: true });
+  if (!sctx) return;
+  sctx.drawImage(photo, 0, 0);
+  const sd = sctx.getImageData(0, 0, src.width, src.height).data;
 
   const image = octx.createImageData(out.width, out.height);
   const data = image.data;
-  const n = planes.length;
-  const seg = (Math.PI * 2) / n;
-
-  /** Samples one plane at a given longitude, or null if it falls outside. */
-  const sample = (idx: number, lon: number, st: number, dy: number) => {
-    const view = views[idx] ?? views[0];
-    const plane = planes[idx] ?? planes[0];
-    if (!plane.data) return null;
-    const r = view.r * SAFE;
-    const px = Math.round(view.cx + st * Math.sin(lon) * r);
-    const py = Math.round(view.cy - dy * r);
-    if (px < 0 || py < 0 || px >= plane.w || py >= plane.h) return null;
-    const s = (py * plane.w + px) * 4;
-    const g = gains[idx];
-    return [plane.data[s] * g, plane.data[s + 1] * g, plane.data[s + 2] * g];
-  };
+  const r = opts.r * SAFE;
 
   for (let ty = 0; ty < out.height; ty++) {
     const theta = (ty / out.height) * Math.PI;
@@ -127,45 +101,26 @@ export function unwrapBallPhotos(
     const st = Math.sin(theta);
 
     for (let tx = 0; tx < out.width; tx++) {
+      // Longitude runs the full circle, and both halves read the same pixels:
+      // under this projection the far side of the sphere maps to the same disc
+      // as the near side. Since the camera never leaves the front, the back
+      // being a copy is never seen.
       const phi = (tx / out.width) * Math.PI * 2;
-      const which = Math.min(n - 1, Math.floor(phi / seg));
-      const local = (phi - which * seg) / seg;
+      const lon = (phi / (Math.PI * 2) - 0.5) * SPAN * 2;
+      const dx = st * Math.sin(lon);
+
+      const px = Math.round(opts.cx + dx * r);
+      const py = Math.round(opts.cy - dy * r);
       const o = (ty * out.width + tx) * 4;
 
-      let rgb = sample(which, (local - 0.5) * 2 * ARC, st, dy);
-
-      // Near either end of the arc, mix in the neighbour that also sees it.
-      if (local < BLEND || local > 1 - BLEND) {
-        const before = local < BLEND;
-        const other = before
-          ? (which - 1 + n) % n
-          : (which + 1) % n;
-        // The neighbour's own longitude for this same point, one arc along.
-        const otherLon = before
-          ? (local + 1 - 0.5) * 2 * ARC
-          : (local - 1 - 0.5) * 2 * ARC;
-        const otherRgb = sample(other, otherLon, st, dy);
-        if (rgb && otherRgb) {
-          const edge = before ? local / BLEND : (1 - local) / BLEND;
-          // 0.5 at the join, 1.0 at the inner end of the overlap.
-          const w = 0.5 + 0.5 * edge;
-          rgb = [
-            rgb[0] * w + otherRgb[0] * (1 - w),
-            rgb[1] * w + otherRgb[1] * (1 - w),
-            rgb[2] * w + otherRgb[2] * (1 - w),
-          ];
-        } else if (!rgb) {
-          rgb = otherRgb;
-        }
-      }
-
-      if (!rgb) {
+      if (px < 0 || py < 0 || px >= src.width || py >= src.height) {
         data[o] = 232; data[o + 1] = 230; data[o + 2] = 224; data[o + 3] = 255;
         continue;
       }
-      data[o] = rgb[0];
-      data[o + 1] = rgb[1];
-      data[o + 2] = rgb[2];
+      const s = (py * src.width + px) * 4;
+      data[o] = sd[s];
+      data[o + 1] = sd[s + 1];
+      data[o + 2] = sd[s + 2];
       data[o + 3] = 255;
     }
   }
