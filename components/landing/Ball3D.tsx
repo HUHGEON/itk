@@ -337,7 +337,18 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     <canvas
       ref={canvas}
       aria-hidden
-      className="size-[clamp(17rem,56vmin,38rem)]"
+      /**
+       * Sized against the ring of crests, not against the window.
+       *
+       * The crests sit on a circle whose radius shrinks to fit whatever shape
+       * the window is. Sizing the ball independently meant that on a short or
+       * narrow window the ring came in past it and the crests landed on top of
+       * the ball. Deriving the diameter from the ring - its radius, less the
+       * room a crest and a gap need - keeps the ball inside the circle by
+       * construction, at any size. The `56vmin` is the cap for large windows,
+       * where the ring is roomy and the ball should stop growing.
+       */
+      className="size-[min(56vmin,calc((var(--ring,40vmin)_-_3.4rem)_*_2))] [@media(max-height:520px)]:size-[min(56vmin,68dvh)]"
     />
   );
 }

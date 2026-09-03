@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef } from "react";
+import { useRef, type CSSProperties } from "react";
 import { animate, onScroll, stagger } from "animejs";
 import type { Team } from "@/lib/types";
 import { TeamCrest } from "@/components/TeamCrest";
@@ -30,8 +30,60 @@ import { Ball3D } from "./Ball3D";
 
 /** How many screens of scroll the sequence occupies. */
 const STAGE_SCREENS = 5;
-/** Radius of the ring the crests settle on, as a share of the shorter side. */
-const RING = 0.4;
+/**
+ * The ring the crests settle on. A circle, and one that always fits.
+ *
+ * One radius, taken as the smallest of three limits: the size it would like to
+ * be, the widest it can be without touching the sides, and the tallest it can
+ * be without going under the header or off the bottom. Whichever limit bites
+ * first, the ring stays a circle - an ellipse was tried and looks like a
+ * mistake rather than a layout.
+ *
+ * The vertical inset is the larger of the two because that end has the header
+ * above it as well as the crest's own height; the sides only have to clear the
+ * crest.
+ */
+const RING = {
+  /** Preferred radius, as a share of the shorter side. */
+  vmin: 0.4,
+  /** Room a crest needs at that end of the window, in rem. */
+  xInset: 3.6,
+  yInset: 7,
+  /**
+   * The ring rides with the ball, which sits a little above centre to leave the
+   * headline its space. Measured from the top of the window, that means the
+   * distance it has to clear the header in is only 45dvh, not 50.
+   */
+  lift: 0.05,
+};
+
+/**
+ * One definition of a crest's size, used to place it and to size it.
+ *
+ * The floor is what matters on a phone. Seventeen crests on a ring that narrow
+ * leaves about 50px of arc each, so a 3.2rem crest touched its neighbours all
+ * the way round and the ring read as a solid band rather than as clubs.
+ */
+const CREST = "clamp(2.4rem,7vw,4.4rem)";
+
+/**
+ * The same ring, for the stylesheet and for the animation.
+ *
+ * The placement is CSS and the travel distance is JS, and for a while each had
+ * its own copy of the maths. That works right up until the CSS grows a `min()`
+ * the JS does not know about - then the crests fly to the wrong place, which is
+ * exactly what happened. Both are derived from the constants above instead, so
+ * they cannot drift apart.
+ */
+const ringCss = `min(${RING.vmin * 100}vmin,calc(50vw - ${RING.xInset}rem),calc(${(0.5 - RING.lift) * 100}dvh - ${RING.yInset}rem))`;
+
+function ringPx(w: number, h: number, rem: number) {
+  return Math.min(
+    RING.vmin * Math.min(w, h),
+    0.5 * w - RING.xInset * rem,
+    (0.5 - RING.lift) * h - RING.yInset * rem,
+  );
+}
 
 export function PitchSequence({ teams }: { teams: Team[] }) {
   const wrapper = useRef<HTMLDivElement>(null);
@@ -105,7 +157,9 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
      */
     const pull = (i: number) => {
       const a = (i / crests.length) * Math.PI * 2 - Math.PI / 2;
-      const r = Math.min(stageEl.clientWidth, stageEl.clientHeight) * RING;
+      const rem =
+        parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      const r = ringPx(stageEl.clientWidth, stageEl.clientHeight, rem);
       return { x: -Math.cos(a) * r, y: -Math.sin(a) * r };
     };
 
@@ -159,6 +213,9 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
       <div
         ref={stage}
         className="sticky top-0 flex h-[100dvh] items-center justify-center overflow-hidden bg-[#070806]"
+        // Published so the ball can size itself against the ring rather than
+        // against the window - see Ball3D.
+        style={{ "--ring": ringCss } as CSSProperties}
       >
         <div ref={shot} aria-hidden className="absolute inset-0 will-change-transform">
           <Image
@@ -187,18 +244,34 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
             <div
               key={t.slug}
               data-crest
-              className="absolute z-20 will-change-transform"
+              /**
+               * Hidden when the window is too short to hold the ring and the
+               * ball at once - a phone on its side, mostly. Below about 520px
+               * of height the ring closes to within a crest's width of the
+               * ball, and the choice is between crests lying across it and no
+               * crests. The ball alone still reads; a ball wearing badges does
+               * not.
+               */
+              className="absolute z-20 will-change-transform [@media(max-height:520px)]:hidden"
               style={{
-                left: `calc(50% + ${(Math.cos(a) * RING * 100).toFixed(2)}vmin)`,
-                top: `calc(50% + ${(Math.sin(a) * RING * 100).toFixed(2)}vmin)`,
-                marginLeft: "-1.7rem",
-                marginTop: "-1.7rem",
+                left: `calc(50% + ${Math.cos(a).toFixed(4)} * ${ringCss})`,
+                // Same -5dvh the ball carries, so the two share a centre. With
+                // the ring centred and the ball lifted, the circle read as
+                // sitting low and lopsided rather than around anything.
+                top: `calc(50% - ${RING.lift * 100}dvh + ${Math.sin(a).toFixed(4)} * ${ringCss})`,
+                // Half a crest, whatever a crest currently is. This was a flat
+                // -1.7rem while the crest itself is up to 4.4rem, so every one
+                // of them sat about 8px down and right of where it belonged -
+                // enough to pull the circle visibly out of true.
+                marginLeft: `calc(${CREST} / -2)`,
+                marginTop: `calc(${CREST} / -2)`,
               }}
             >
               <Link
                 href={`/feed?team=${t.slug}`}
                 title={t.ko}
-                className="flex size-[clamp(3.2rem,7vw,4.4rem)] items-center justify-center rounded-full border border-white/12 bg-black/60 backdrop-blur-sm transition-colors hover:border-accent/60"
+                className="flex items-center justify-center rounded-full border border-white/12 bg-black/60 backdrop-blur-sm transition-colors hover:border-accent/60"
+                style={{ width: CREST, height: CREST }}
               >
                 <TeamCrest team={t} size={32} />
               </Link>
