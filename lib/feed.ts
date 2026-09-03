@@ -39,6 +39,13 @@ export interface FeedRow {
   outlet: string | null;
   /** journalist the story credits, when it isn't their own byline */
   citedKo: string | null;
+  /**
+   * The name on the article when it belongs to nobody we track.
+   *
+   * Last resort behind `journalistKo` and `citedKo`: a real name with no tier
+   * still tells the reader more than "기자 미확인".
+   */
+  byline: string | null;
   /** the club's own announcement */
   official: boolean;
   teams: string[];
@@ -69,6 +76,7 @@ interface FeedRpcRow {
   handle: string | null;
   cited_id: string | null;
   cited_ko: string | null;
+  byline: string | null;
   official: boolean | null;
   teams: string[] | null;
   league: string | null;
@@ -119,6 +127,7 @@ export async function getFeed(filters: FeedFilters = {}): Promise<FeedRow[]> {
     journalistKo: r.journalist_ko,
     outlet: r.outlet,
     citedKo: r.cited_ko,
+    byline: r.byline,
     official: Boolean(r.official),
     teams: r.teams ?? [],
     league: r.league,

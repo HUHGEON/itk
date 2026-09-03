@@ -153,6 +153,17 @@ alter table itk.articles add column if not exists image_url text;
 alter table itk.articles add column if not exists cited_id text
   references itk.journalists(id) on delete set null;
 create index if not exists idx_articles_cited on itk.articles (cited_id, published_at desc);
+-- Whoever the article says wrote it, whether or not we track them.
+--
+-- `journalist_id` can only hold one of the 244 reporters in the registry, so
+-- for every other article the byline was simply thrown away and the row showed
+-- as "기자 미확인". Measured before adding this: 69% of stored articles had no
+-- journalist at all, while 80% of a sample of those pages carried a readable
+-- author in their own metadata. This keeps that name even when it belongs to
+-- nobody we follow; `journalist_id` still fills in when it does match, and
+-- carries the tier with it.
+alter table itk.articles add column if not exists byline text;
+
 -- A club announcing its own signing is the end of the story, not a report
 -- about it — it belongs in the feed even though it has no byline.
 alter table itk.articles add column if not exists official boolean not null default false;
@@ -258,7 +269,7 @@ returns table (
   published_at timestamptz, tier real, title_ko text, summary_ko text,
   image_url text, journalist_id text, journalist_ko text, journalist_en text,
   outlet text, handle text, cited_id text, cited_ko text, official boolean,
-  teams text[], league text
+  teams text[], league text, byline text
 )
 language sql
 stable
@@ -275,7 +286,8 @@ as $$
          -- names no tracked club. Crystal Palace is not one of the seventeen,
          -- so a Palace story can never carry a crest — but a Chelsea reporter
          -- filing it still places it in the Premier League.
-         coalesce(j.league, c.league)
+         coalesce(j.league, c.league),
+         a.byline
   from articles a
   left join journalists j on j.id = a.journalist_id
   left join journalists c on c.id = a.cited_id
@@ -345,6 +357,51 @@ as $$
   group by at.team_slug
 $$;
 
+-- Story count per league, for the tabs above the feed.
+--
+-- This function was live on the database but missing from this file, so the
+-- first `db:push` after that divergence dropped it and the feed went to 500.
+-- A league is the reporter's beat rather than a tag on the story: seventeen
+-- clubs carry crests, but a reporter who covers the Premier League places
+-- everything they file under it, which is the same expression `itk_feed` uses
+-- so a tab's count always matches what opening it shows.
+create or replace function public.itk_league_activity(
+  p_hours         integer default 48,
+  p_tiers         real[]  default null,
+  p_teams         text[]  default null,
+  p_journalist_id text    default null,
+  p_q             text    default null,
+  p_tiered_only   boolean default false
+)
+returns table (league text, n bigint, best_tier real)
+language sql
+stable
+security definer
+set search_path = itk, public
+as $$
+  select coalesce(j.league, c.league) as league, count(*), min(a.tier)
+  from articles a
+  left join journalists j on j.id = a.journalist_id
+  left join journalists c on c.id = a.cited_id
+  where a.published_at > now() - make_interval(hours => greatest(p_hours, 1))
+    and coalesce(j.league, c.league) is not null
+    and (not p_tiered_only
+         or a.journalist_id is not null
+         or a.cited_id is not null
+         or a.official)
+    and (p_tiers is null or (a.tier = any(p_tiers) and not a.official))
+    and (p_teams is null or exists (
+          select 1 from article_teams at
+          where at.article_id = a.id and at.team_slug = any(p_teams)))
+    and (p_journalist_id is null
+         or a.journalist_id = p_journalist_id
+         or a.cited_id = p_journalist_id)
+    and (p_q is null or (
+          a.search_vector @@ websearch_to_tsquery('english', p_q)
+       or a.search_vector @@ websearch_to_tsquery('simple',  p_q)))
+  group by coalesce(j.league, c.league)
+$$;
+
 -- Which journalists actually filed recently, so the picker can lead with them
 -- instead of listing 244 names in registry order.
 create or replace function public.itk_journalist_activity(
@@ -389,13 +446,14 @@ begin
     select * from jsonb_to_recordset(p_items) as t(
       id text, url text, title text, snippet text, source text,
       published_at timestamptz, journalist_id text, tier real, image_url text,
-      cited_id text, official boolean, lang text)
+      cited_id text, official boolean, lang text, byline text)
   ), ins as (
     insert into articles
       (id, url, title, snippet, source, published_at, journalist_id, tier,
-       image_url, cited_id, official, lang)
+       image_url, cited_id, official, lang, byline)
     select id, url, title, snippet, source, published_at, journalist_id, tier,
-           image_url, cited_id, coalesce(official, false), coalesce(lang, 'en')
+           image_url, cited_id, coalesce(official, false), coalesce(lang, 'en'),
+           byline
     from input
     on conflict (url) do update set
       -- a later sighting may carry the image or blurb the first one lacked
@@ -407,9 +465,11 @@ begin
       -- and dropped out of the default view.
       journalist_id = coalesce(articles.journalist_id, excluded.journalist_id),
       -- A citation found on a later pass also settles the trust level.
-      tier      = coalesce(articles.tier, excluded.tier)
+      tier      = coalesce(articles.tier, excluded.tier),
+      byline    = coalesce(articles.byline, excluded.byline)
     where articles.image_url is null or articles.snippet = ''
        or articles.cited_id is null or articles.journalist_id is null
+       or articles.byline is null
     returning (xmax = 0) as is_new
   )
   select count(*) filter (where is_new) into v_inserted from ins;
@@ -512,12 +572,24 @@ stable
 security definer
 set search_path = itk, public
 as $$
+  -- Two reasons to open an article: it arrived with no summary, or it arrived
+  -- with no author.
+  --
+  -- The second is new, and it is the larger group by far. This used to require
+  -- a known journalist, which meant the stories that most needed a byline were
+  -- the only ones never fetched - 69% of the table sat as "기자 미확인" because
+  -- nothing ever looked at the page that would have said who wrote it.
   select a.id, a.url
   from articles a
   where a.hydrated_at is null
-    and coalesce(a.snippet, '') = ''
     and a.published_at > now() - interval '14 days'
-    and (a.journalist_id is not null or a.cited_id is not null or a.official)
+    and (
+      coalesce(a.snippet, '') = ''
+      or (a.journalist_id is null
+          and a.cited_id is null
+          and a.byline is null
+          and not a.official)
+    )
   order by a.published_at desc
   limit greatest(least(p_limit, 300), 1);
 $$;
@@ -537,13 +609,21 @@ begin
       x->>'id'           as id,
       nullif(x->>'snippet', '')      as snippet,
       nullif(x->>'image_url', '')    as image_url,
-      nullif(x->>'resolved_url', '') as resolved_url
+      nullif(x->>'resolved_url', '') as resolved_url,
+      nullif(x->>'byline', '')       as byline,
+      nullif(x->>'journalist_id', '') as journalist_id,
+      (x->>'tier')::real             as tier
     from jsonb_array_elements(coalesce(p_rows, '[]'::jsonb)) x
   )
   update articles a
   set snippet      = coalesce(i.snippet, a.snippet),
       image_url    = coalesce(a.image_url, i.image_url),
       resolved_url = coalesce(i.resolved_url, a.resolved_url),
+      -- Never overwrite an attribution the collector already made: the feed's
+      -- own byline field is more reliable than a name scraped off the page.
+      byline       = coalesce(a.byline, i.byline),
+      journalist_id = coalesce(a.journalist_id, i.journalist_id),
+      tier         = coalesce(a.tier, case when a.journalist_id is null then i.tier end),
       hydrated_at  = now()
   from incoming i
   where a.id = i.id;
@@ -1391,6 +1471,7 @@ declare
   read_fns text[] := array[
     'public.itk_feed(real[],text[],text,text,text,timestamptz,text,timestamptz,integer,boolean)',
     'public.itk_team_activity(integer,real[],text,text,text,boolean)',
+    'public.itk_league_activity(integer,real[],text[],text,text,boolean)',
     'public.itk_journalist_activity(integer,text[],text,text)'
   ];
   write_fns text[] := array[

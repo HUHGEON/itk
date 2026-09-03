@@ -35,6 +35,8 @@ function stripTags(s: string): string {
     .replace(/<[^>]*>/g, " ");
 }
 
+import { cleanByline } from "./byline";
+
 export interface Hydrated {
   id: string;
   snippet: string;
@@ -42,6 +44,8 @@ export interface Hydrated {
   resolved_url: string;
   /** the fetched page revealed this is women's football */
   womens?: boolean;
+  /** whoever the page says wrote it, tracked or not */
+  byline?: string | null;
 }
 
 async function get(
@@ -193,6 +197,58 @@ function fromJsonLd(html: string): string {
   return "";
 }
 
+/**
+ * Who the page says wrote it.
+ *
+ * Feeds are the first place to look for a byline and most of them do not carry
+ * one - measured: 69% of stored articles had no journalist attached. The page
+ * itself is far more forthcoming, since a byline is something publishers want
+ * in search results and social cards: a sample of 25 such articles had a
+ * readable author on 20 of them. Nothing extra is fetched for this; the page is
+ * already open for the summary.
+ */
+const AUTHOR_META = [
+  "author",
+  "article:author",
+  "parsely-author",
+  "sailthru.author",
+  "byl",
+  "twitter:creator",
+];
+
+function authorFromJsonLd(html: string): string {
+  const blocks =
+    html.match(
+      /<script[^>]+type=["']application\/ld\+json["'][^>]*>([\s\S]*?)<\/script>/gi,
+    ) ?? [];
+  for (const block of blocks) {
+    const body = block.replace(/^[\s\S]*?>/, "").replace(/<\/script>$/i, "");
+    try {
+      const seen = JSON.parse(body);
+      const nodes = Array.isArray(seen)
+        ? seen
+        : [seen, ...(seen["@graph"] ?? [])];
+      for (const node of nodes) {
+        const a = node?.author;
+        if (!a) continue;
+        const name = Array.isArray(a)
+          ? a[0]?.name
+          : typeof a === "string"
+            ? a
+            : a?.name;
+        if (typeof name === "string" && name.trim()) return name.trim();
+      }
+    } catch {
+      // A malformed block is not a reason to skip the rest of the page.
+    }
+  }
+  return "";
+}
+
+export function extractAuthor(html: string): string {
+  return decodeEntities(metaContent(html, AUTHOR_META) || authorFromJsonLd(html));
+}
+
 /** The first substantial paragraph, when the page ships no metadata at all. */
 function firstParagraph(html: string): string {
   const paras = html.match(/<p[^>]*>([\s\S]{60,1200}?)<\/p>/gi) ?? [];
@@ -295,5 +351,6 @@ export async function hydrateOne(row: {
     image_url: image,
     resolved_url: target === row.url ? "" : target,
     womens: looksWomens(snippet, image, target),
+    byline: cleanByline(extractAuthor(html)),
   };
 }

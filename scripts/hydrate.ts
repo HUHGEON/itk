@@ -11,6 +11,8 @@
 import "../lib/load-env";
 import { rpc } from "../lib/supabase";
 import { hydrateOne, type Hydrated } from "../lib/collect/hydrate";
+import { matchByline } from "../lib/collect/byline";
+import { loadJournalists } from "../lib/registry";
 
 /** Concurrency is per-host, not global: news.google.com is the bottleneck. */
 const CONCURRENCY = 4;
@@ -75,9 +77,27 @@ async function main() {
     ? await rpc<number>("itk_drop_articles", { p_ids: womens })
     : 0;
 
-  const written = await rpc<number>("itk_hydrate_apply", {
-    p_rows: done.filter((d) => !d.womens),
-  });
+  /**
+   * A name off the page can also be a reporter we follow.
+   *
+   * The collector only ever sees the byline a feed chose to publish, and most
+   * do not publish one. Matching here as well is what turns a scraped name into
+   * a tier: the row stops being "기자 미확인" and starts carrying the trust
+   * level of whoever actually wrote it.
+   */
+  const journalists = loadJournalists();
+  const rows = done
+    .filter((d) => !d.womens)
+    .map((d) => {
+      const j = matchByline(d.byline, journalists);
+      return j
+        ? { ...d, journalist_id: j.id, tier: j.tier }
+        : { ...d, journalist_id: null, tier: null };
+    });
+  const matched = rows.filter((r) => r.journalist_id).length;
+  const named = rows.filter((r) => r.byline).length;
+
+  const written = await rpc<number>("itk_hydrate_apply", { p_rows: rows });
   // Only now can the wrapper links be matched against the outlet's own, so the
   // merge belongs here rather than in the collector.
   const merged = await rpc<number>("itk_dedupe_resolved", {});
@@ -88,7 +108,8 @@ async function main() {
   console.log(
     `본문 요약: ${pending.length}건 시도 · 요약 ${gotText} · 이미지 ${gotImage} · ` +
       `원문링크 ${gotUrl} · 기록 ${written} · 중복병합 ${merged}` +
-      (dropped ? ` · 여자축구 ${dropped}건 제외` : ""),
+      (dropped ? ` · 여자축구 ${dropped}건 제외` : "") +
+      `\n  저자: 이름 확보 ${named} · 추적 기자 매칭 ${matched}`,
   );
 }
 

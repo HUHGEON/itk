@@ -61,8 +61,11 @@ export function ArticleCard({
   const showImage = Boolean(row.imageUrl) && imageOk;
   const expandable = Boolean(body) || showImage;
 
-  // Byline first; failing that, the reporter an outlet credited.
-  const byline = row.journalistKo ?? row.citedKo;
+  // Byline first; failing that, the reporter an outlet credited; failing that,
+  // whatever name the article itself carried. Only the first two have a tier -
+  // the third is a person we do not track, shown so the row still says who
+  // wrote it rather than admitting we do not know.
+  const byline = row.journalistKo ?? row.citedKo ?? row.byline;
   const leagueLabel = row.league
     ? (LEAGUE_LABEL[row.league as League] ?? null)
     : null;

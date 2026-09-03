@@ -7,6 +7,7 @@ import {
   loadTeams,
 } from "../registry";
 import type { Journalist } from "../types";
+import { cleanByline, matchByline } from "./byline";
 import { FeedFetcher, type FeedItem, type FetchOutcome } from "./fetch";
 import {
   OTHER_SPORT,
@@ -32,6 +33,14 @@ export interface RawItem {
   imageUrl: string | null;
   /** journalist the story credits, when it isn't their own byline */
   citedId: string | null;
+  /**
+   * Whoever the feed says wrote it, tracked or not.
+   *
+   * `journalistId` only holds one of the registry's 244; this keeps the name
+   * for everyone else, so a story by a reporter we do not follow still shows
+   * who wrote it instead of "기자 미확인".
+   */
+  byline?: string | null;
   /** the club's own announcement, not a report about it */
   official?: boolean;
   /** source language, so the translator can pick the right pair */
@@ -209,28 +218,6 @@ function journalistItems(j: Journalist, items: FeedItem[]): RawItem[] {
  * Matches an outlet byline against the registry. Exact full-name match first —
  * substring matching on its own produced too many wrong attributions.
  */
-function matchByline(
-  creator: string,
-  journalists: Journalist[],
-): Journalist | null {
-  const cleaned = creator.replace(/\s+/g, " ").trim().toLowerCase();
-  if (!cleaned) return null;
-
-  const active = journalists.filter((j) => j.active);
-  const exact = active.find((j) => cleaned === j.en.toLowerCase());
-  if (exact) return exact;
-
-  // "Matt Lawton, Chief Sports Reporter" must not match "Matt Law" just
-  // because it comes first in the registry — take the longest name that fits.
-  let best: Journalist | null = null;
-  for (const j of active) {
-    if (j.en.length <= 6) continue;
-    if (!cleaned.includes(j.en.toLowerCase())) continue;
-    if (!best || j.en.length > best.en.length) best = j;
-  }
-  return best;
-}
-
 function outletItems(
   feed: (typeof OUTLET_FEEDS)[number],
   items: FeedItem[],
@@ -272,6 +259,9 @@ function outletItems(
         source: feed.name,
         publishedAt: parseDate(item.isoDate),
         journalistId: match?.id ?? null,
+        // Kept whether or not it matched the registry: an unfamiliar name is
+        // still better than no name.
+        byline: item.creator ? cleanByline(item.creator) : null,
         // A credited scoop carries that reporter's trust level even though
         // someone else typed the article.
         tier: match?.tier ?? cited?.tier ?? null,
@@ -323,6 +313,7 @@ async function persist(items: RawItem[]): Promise<number> {
     teams: item.teams,
     image_url: item.imageUrl,
     cited_id: item.citedId,
+    byline: item.byline ?? null,
     official: item.official ?? false,
     // The headline itself decides. A feed's declared language is only a
     // fallback: a Google News query for a Dutch reporter returns English
