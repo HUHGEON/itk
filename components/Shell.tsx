@@ -70,8 +70,8 @@ export function Shell({
             wedged against the two rules on either side. */}
         <div className="relative shrink-0 border-b border-border px-[var(--gutter)] py-3.5">
           <Link
-            href="/"
-            aria-label="ITK plus 홈 · 필터 초기화"
+            href="/feed"
+            aria-label="ITK plus 피드 · 필터 초기화"
             title="필터 초기화"
             className="mx-auto block w-[80%] rounded-md transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
@@ -98,13 +98,13 @@ export function Shell({
 
         {rail}
 
-        {/* The way to the explainer, at the bottom of the rail rather than in
-            the header: someone who opens this daily needs the feed, not the
-            pitch, and a nav item above the stories would sell to them every
-            time. */}
+        {/* The way back to the front page, at the bottom of the rail rather
+            than in the header: someone who opens this daily is here for the
+            stories, and a nav item above them would sell the site to someone
+            already using it. */}
         <div className="mt-auto border-t border-border px-[var(--gutter)] py-3">
           <Link
-            href="/about"
+            href="/"
             className="text-[11.5px] text-faint transition-colors hover:text-muted"
           >
             ITK+ 소개
@@ -125,8 +125,8 @@ export function Shell({
             <Menu />
           </button>
           <Link
-            href="/"
-            aria-label="ITK plus 홈 · 필터 초기화"
+            href="/feed"
+            aria-label="ITK plus 피드 · 필터 초기화"
             className="shrink-0"
           >
             <Logo height={26} />

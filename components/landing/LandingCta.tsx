@@ -41,7 +41,7 @@ export function LandingCta({ todayCount }: { todayCount: number }) {
         </p>
         <div data-rise className="mt-9">
           <Link
-            href="/"
+            href="/feed"
             className="inline-flex items-center gap-2 rounded-[6px] px-6 py-3.5 text-[14.5px] font-semibold text-accent-ink transition-opacity hover:opacity-90 focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 focus-visible:ring-offset-bg focus-visible:outline-none"
             style={{ background: "var(--ribbon)" }}
           >

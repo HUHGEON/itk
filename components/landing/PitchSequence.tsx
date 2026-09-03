@@ -196,7 +196,7 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
               }}
             >
               <Link
-                href={`/?team=${t.slug}`}
+                href={`/feed?team=${t.slug}`}
                 title={t.ko}
                 className="flex size-[clamp(3.2rem,7vw,4.4rem)] items-center justify-center rounded-full border border-white/12 bg-black/60 backdrop-blur-sm transition-colors hover:border-accent/60"
               >

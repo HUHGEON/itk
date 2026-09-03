@@ -29,7 +29,7 @@ export function SearchBox({ state }: { state: FilterState }) {
     if (state.who) next.set("who", state.who);
     if (value) next.set("q", value);
     startTransition(() => {
-      router.push(next.toString() ? `/?${next}` : "/", { scroll: false });
+      router.push(next.toString() ? `/feed?${next}` : "/feed", { scroll: false });
     });
   };
 

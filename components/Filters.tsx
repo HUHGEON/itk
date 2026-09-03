@@ -97,7 +97,7 @@ export function Filters({
         if (!j || !tiers.includes(String(j.tier))) next.delete("who");
       }
       startTransition(() => {
-        router.push(next.toString() ? `/?${next}` : "/", { scroll: false });
+        router.push(next.toString() ? `/feed?${next}` : "/feed", { scroll: false });
       });
     },
     [state, router, journalists],
@@ -176,7 +176,7 @@ export function Filters({
           <button
             type="button"
             onClick={() =>
-              startTransition(() => router.push("/", { scroll: false }))
+              startTransition(() => router.push("/feed", { scroll: false }))
             }
             className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted transition-colors hover:border-border-strong hover:text-text"
           >

@@ -1,175 +1,107 @@
-import {
-  getFeed,
-  getJournalistActivity,
-  getPulse,
-  getLeagueActivity,
-  getTeamActivity,
-} from "@/lib/feed";
-import { loadTeams, loadJournalists } from "@/lib/registry";
-import type { Team } from "@/lib/types";
-import { Filters } from "@/components/Filters";
-import { ArticleList } from "@/components/ArticleList";
-import { NewArticles } from "@/components/NewArticles";
-import { AlertPanel } from "@/components/AlertPanel";
-import { Suspense } from "react";
-import { Shell } from "@/components/Shell";
-import { CollectButton } from "@/components/CollectButton";
-import { SearchBox } from "@/components/SearchBox";
-import { PulsePanel } from "@/components/PulsePanel";
-import { DiscordPanel } from "@/components/DiscordPanel";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { getPulse } from "@/lib/feed";
+import { loadJournalists, loadTeams } from "@/lib/registry";
+import { ALL_TIERS } from "@/lib/types";
+import { Logo } from "@/components/Logo";
+import { PitchSequence } from "@/components/landing/PitchSequence";
+import { TierLadder } from "@/components/landing/LandingHero";
+import { ScaleStrip } from "@/components/landing/ScaleStrip";
+import { WhyAuthor } from "@/components/landing/WhyAuthor";
+
+import { LandingCta } from "@/components/landing/LandingCta";
+
+/**
+ * The front door.
+ *
+ * This used to sit at /about, behind a small link at the bottom of the rail,
+ * on the reasoning that a daily reader wants the stories rather than the pitch.
+ * That reasoning held right up until it meant almost nobody ever saw it. The
+ * feed moved to /feed and this took the root; /about still resolves, as a
+ * permanent redirect here, so old links and search results keep working.
+ *
+ * Every number on this page is read from the registry and the database at
+ * request time. Nothing here is a figure typed into the markup.
+ */
+
+export const metadata: Metadata = {
+  title: "ITK+ 축구 이적 소식",
+  description:
+    "해외 축구 기자 244명을 신뢰도 티어로 나눠, 이적설을 최초 보도자 기준으로 모읍니다.",
+};
 
 export const dynamic = "force-dynamic";
 
-type SearchParams = Promise<Record<string, string | string[] | undefined>>;
-
-function csv(v: string | string[] | undefined): string[] {
-  if (!v) return [];
-  const s = Array.isArray(v) ? v.join(",") : v;
-  return s.split(",").filter(Boolean);
-}
-
-export default async function Home({
-  searchParams,
-}: {
-  searchParams: SearchParams;
-}) {
-  const sp = await searchParams;
-
-  const tiers = csv(sp.tier)
-    .map(Number)
-    .filter((n) => !Number.isNaN(n));
-  const teamSlugs = csv(sp.team);
-  const league = typeof sp.league === "string" ? sp.league : undefined;
-  const q = typeof sp.q === "string" ? sp.q : undefined;
-  const who = typeof sp.who === "string" ? sp.who : undefined;
-  // The feed is only what we can attribute to a ranked reporter — outlet churn
-  // with no recognised byline was four in five articles and buried everything
-  // the tier ranking exists to surface. `?feed=all` is the escape hatch.
-  const tieredOnly = sp.feed !== "all";
-
-  const base = { tiers, teams: teamSlugs, league, q, journalistId: who };
-
-  // The filter bar renders on the server from this, so it is present in the
-  // first byte instead of arriving as a streamed swap.
-  const filterState = {
-    tiers: csv(sp.tier),
-    teams: teamSlugs,
-    league: league ?? "",
-    who: who ?? "",
-    q: q ?? "",
-  };
-
-  // Matches ArticleList's page size so the first "load more" lines up.
-  const PAGE_SIZE = 40;
-
-  const [rows, activity, leagueActivity, journalistActivity, pulse] =
-    await Promise.all([
-      getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
-      // Counts describe the combination on screen, so each excludes its own
-      // dimension: team badges ignore the team filter, league badges ignore
-      // the league filter, journalist badges ignore the journalist filter.
-      getTeamActivity({ ...base, tieredOnly }),
-      getLeagueActivity({
-        tiers,
-        teams: teamSlugs,
-        journalistId: who,
-        q,
-        tieredOnly,
-      }),
-      getJournalistActivity({ teams: teamSlugs, league, q }),
-      getPulse(),
-    ]);
-
-  const teams = loadTeams();
-  const teamMap = new Map<string, Team>(teams.map((t) => [t.slug, t]));
+export default async function About() {
+  const [pulse] = await Promise.all([getPulse()]);
   const journalists = loadJournalists();
-  const now = Date.now();
+  const teams = loadTeams();
 
-  // Handed to the client so paging keeps whatever filters are on screen.
-  const feedQuery = new URLSearchParams(
-    Object.entries({
-      tier: tiers.join(","),
-      team: teamSlugs.join(","),
-      league: league ?? "",
-      q: q ?? "",
-      who: who ?? "",
-      feed: tieredOnly ? "" : "all",
-    }).filter(([, v]) => v !== ""),
-  ).toString();
+  const tiers = ALL_TIERS.map((t) => ({
+    tier: t,
+    count: journalists.filter((j) => j.tier === t).length,
+  })).filter((t) => t.count > 0);
+
+  const outlets = new Set(
+    journalists.map((j) => j.outlet).filter((o): o is string => Boolean(o)),
+  );
+  const countries = new Set(
+    journalists.map((j) => j.country).filter((c): c is string => Boolean(c)),
+  );
+
+  // The 0-tier names, alphabetical by Korean so the pick is not editorialised.
+  const topTier = journalists
+    .filter((j) => j.tier === 0 && j.outlet)
+    .sort((a, b) => a.ko.localeCompare(b.ko))
+    .slice(0, 6)
+    .map((j) => ({ ko: j.ko, outlet: j.outlet! }));
 
   return (
-    <Suspense fallback={null}>
-      <Shell
-        rail={
-          <>
-            <PulsePanel pulse={pulse} now={now} />
-            <DiscordPanel teams={teams} />
-            <AlertPanel teams={teams} />
-          </>
-        }
-        actions={
-          <>
-            <SearchBox state={filterState} />
-            <CollectButton lastCollect={pulse.lastCollect} />
-          </>
-        }
-      >
-        <Filters
-          teams={teams}
-          activity={activity}
-          leagueActivity={leagueActivity}
-          journalists={journalists}
-          journalistActivity={journalistActivity}
-          state={filterState}
+    <div className="min-h-screen bg-bg">
+      <header className="sticky top-0 z-20 bg-bg/80 backdrop-blur-sm">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-[var(--gutter)]">
+          <Link href="/" aria-label="ITK plus 홈" className="shrink-0">
+            <Logo height={26} />
+          </Link>
+          <Link
+            href="/feed"
+            className="rounded-md px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-text"
+          >
+            오늘의 이적 소식
+          </Link>
+        </div>
+      </header>
+
+      <main>
+        <PitchSequence teams={teams} />
+
+        <TierLadder tiers={tiers} total={journalists.length} />
+
+        <ScaleStrip
+          stats={[
+            { value: journalists.length, unit: "명", label: "추적 중인 기자" },
+            { value: outlets.size, unit: "곳", label: "소속 매체" },
+            { value: countries.size, unit: "개국", label: "취재 국가" },
+            { value: pulse.total, unit: "건", label: "최근 24시간 기사" },
+          ]}
         />
 
-        <NewArticles query={feedQuery} since={now} />
+        <WhyAuthor names={topTier} />
 
-        {rows.length === 0 ? (
-          <EmptyState
-            tieredOnly={tieredOnly}
-            hasJournalists={journalists.length > 0}
-          />
-        ) : (
-          <ArticleList
-            initialRows={rows}
-            teams={teamMap}
-            now={now}
-            query={feedQuery}
-          />
-        )}
-      </Shell>
-    </Suspense>
-  );
-}
+        <LandingCta todayCount={pulse.total} />
+      </main>
 
-function EmptyState({
-  tieredOnly,
-  hasJournalists,
-}: {
-  tieredOnly: boolean;
-  hasJournalists: boolean;
-}) {
-  return (
-    <div className="px-6 py-16 text-center">
-      <p className="text-[15px] font-semibold">조건에 맞는 기사가 없습니다</p>
-      <p className="mt-2 text-[13px] leading-relaxed text-muted">
-        {!hasJournalists ? (
-          <>
-            기자 명단이 비어 있습니다.{" "}
-            <code className="rounded bg-surface-3 px-1.5 py-0.5">
-              npm run seed
-            </code>{" "}
-            를 먼저 실행하세요.
-          </>
-        ) : (
-          <>
-            기본 화면은 기자가 확인된 기사만 보여줍니다.
-            <br />
-            신뢰도·구단 필터를 풀거나 검색어를 바꿔보세요.
-          </>
-        )}
-      </p>
+      <footer className="border-t border-border px-[var(--gutter)] py-8">
+        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-x-5 gap-y-2">
+          <span className="text-[12px] text-faint">ITK plus</span>
+          <Link
+            href="/feed"
+            className="text-[12px] text-muted transition-colors hover:text-text"
+          >
+            피드
+          </Link>
+        </div>
+      </footer>
     </div>
   );
 }

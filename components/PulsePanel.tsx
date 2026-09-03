@@ -215,7 +215,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
         {tiers.map((s, i) => (
           <li key={s.tier}>
             <Link
-              href={`/?tier=${s.tier}`}
+              href={`/feed?tier=${s.tier}`}
               onMouseEnter={() => setLit(i)}
               // Same signal without a pointer: tabbing the legend walks the bar.
               onFocus={() => setLit(i)}
