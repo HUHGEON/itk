@@ -1,71 +1,125 @@
 /**
- * Wraps a straight-on photograph of a ball around a sphere.
+ * Builds a sphere texture from several photographs of the same ball.
  *
  * A camera sees a sphere as a disc, and that projection inverts: a pixel at
- * (nx, ny) from the centre of the disc, in units of its radius, looks at
- * (nx, ny, sqrt(1 - nx^2 - ny^2)) on the ball. Run it backwards per texel and
- * the photograph goes back onto the shape it came off.
+ * (nx, ny) from the centre of the disc, in units of its radius, is looking at
+ * (nx, ny, sqrt(1 - nx^2 - ny^2)) on the ball. Run it backwards per texel and a
+ * photograph goes back onto the shape it came off.
  *
- * Two things are not in the photograph, and they are handled differently.
+ * One photograph is not enough, and the failure is specific. It holds one
+ * hemisphere, so covering a sphere means repeating that half; repeating needs a
+ * seam; and a mirrored seam folds the pattern back onto itself - half a star
+ * against its own reflection, the round red stamp overlapping itself. Rotate
+ * the ball and that seam swings to the front. No amount of choosing where to
+ * put it helps, because it only decides which part gets mangled.
  *
- * The far side is easy: under this projection front and back share the same
- * pixels, so the sphere is covered by repeating what was photographed. The
- * middle of the disc is used, never the rim - at the rim the surface turns away
- * from the camera and a few pixels smear across a wide band of sphere.
- *
- * The poles are not solved here at all. They sit at the very top and bottom of
- * the disc, the worst part of the projection, and no folding fixes that without
- * squashing the pattern instead. They are hidden by the camera instead: the
- * ball is rendered with almost no tilt, so its poles stay at the silhouette's
- * top and bottom edge where they are barely a few pixels. That is what buys a
- * full rotation on the vertical axis, which is the one that reads as rolling.
+ * Three photographs of three different faces remove the need to repeat at all.
+ * The equator is split into three 120 degree arcs and each arc is filled from
+ * its own shot, sampling 60 degrees either side of that shot's centre - which
+ * is exactly 120 degrees of ball, so nothing is stretched or squeezed. The
+ * joins are still there, but they are joins between different real surfaces
+ * rather than a reflection, and on a pattern that already repeats twelve times
+ * they read as more ball.
  */
 
-export interface PhotoBallOptions {
-  /** Centre of the ball in the photograph, in pixels. */
+export interface BallView {
+  src: string;
+  /** Centre of the ball in this photograph, in pixels. */
   cx: number;
   cy: number;
-  /** Radius of the ball in the photograph, in pixels. */
+  /** Radius of the ball in this photograph, in pixels. */
   r: number;
-  /** Texture width; height is half of it. */
-  size?: number;
 }
 
 /**
- * How many copies of the photographed hemisphere go around the equator, and how
- * much of it each copy uses.
+ * How much of each disc's radius is safe to sample.
  *
- * SPAN is the half-angle sampled either side of the photograph's centre. Two
- * copies, not four, because the fold below already halves each one: a 180
- * degree segment spends 90 going and 90 returning, and 90 degrees of sphere
- * takes 90 degrees of photograph one to one. With four copies the same 90
- * degrees got squeezed into 45 and every star came out stretched.
+ * At the very edge the surface turns away from the camera, so the last pixels
+ * are grass and shadow rather than ball. Sampled at full radius the poles came
+ * out green: grass wrapped onto the top and bottom of the sphere.
  */
-const COPIES = 2;
-const SPAN = Math.PI / 4;
+const SAFE = 0.965;
 
-export function unwrapBallPhoto(
-  photo: HTMLImageElement,
+/** Half-arc taken from each photograph. Three of these tile the equator. */
+const ARC = Math.PI / 3;
+
+/**
+ * How wide the cross-fade between neighbouring photographs is, as a fraction of
+ * each arc.
+ *
+ * Butted together the three shots met at a hard line: the pattern stopped
+ * mid-panel and the exposure jumped, so a seam ran down the ball. Each arc is
+ * therefore read a little past its own edge, into what the next shot also
+ * covers, and the two are mixed across the overlap. Kept narrow because reading
+ * further out means sampling nearer the rim of the disc, where the surface is
+ * turning away and detail runs out.
+ */
+const BLEND = 0.09;
+
+export function unwrapBallPhotos(
+  images: HTMLImageElement[],
+  views: BallView[],
   out: HTMLCanvasElement,
-  opts: PhotoBallOptions,
+  size = 2048,
 ): void {
-  const size = opts.size ?? 2048;
   out.width = size;
   out.height = size / 2;
   const octx = out.getContext("2d");
-  if (!octx) return;
+  if (!octx || images.length === 0) return;
 
-  const src = document.createElement("canvas");
-  src.width = photo.naturalWidth;
-  src.height = photo.naturalHeight;
-  const sctx = src.getContext("2d", { willReadFrequently: true });
-  if (!sctx) return;
-  sctx.drawImage(photo, 0, 0);
-  const sd = sctx.getImageData(0, 0, src.width, src.height).data;
+  // Read every source once.
+  const planes = images.map((img) => {
+    const c = document.createElement("canvas");
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const ctx = c.getContext("2d", { willReadFrequently: true });
+    ctx?.drawImage(img, 0, 0);
+    return {
+      data: ctx?.getImageData(0, 0, c.width, c.height).data,
+      w: c.width,
+      h: c.height,
+    };
+  });
+
+  /**
+   * Match the exposures before blending.
+   *
+   * The three shots were taken in different light, so even a perfect join shows
+   * as a step in brightness. Each plane is scaled so its mean luminance matches
+   * the set's, which is crude but enough: the subject is the same white ball in
+   * all three.
+   */
+  const means = planes.map((p) => {
+    if (!p.data) return 1;
+    let sum = 0;
+    let count = 0;
+    for (let i = 0; i < p.data.length; i += 4 * 37) {
+      sum += 0.299 * p.data[i] + 0.587 * p.data[i + 1] + 0.114 * p.data[i + 2];
+      count++;
+    }
+    return count ? sum / count : 1;
+  });
+  const target = means.reduce((a, b) => a + b, 0) / means.length;
+  const gains = means.map((m) => (m > 1 ? target / m : 1));
 
   const image = octx.createImageData(out.width, out.height);
   const data = image.data;
-  const seg = (Math.PI * 2) / COPIES;
+  const n = planes.length;
+  const seg = (Math.PI * 2) / n;
+
+  /** Samples one plane at a given longitude, or null if it falls outside. */
+  const sample = (idx: number, lon: number, st: number, dy: number) => {
+    const view = views[idx] ?? views[0];
+    const plane = planes[idx] ?? planes[0];
+    if (!plane.data) return null;
+    const r = view.r * SAFE;
+    const px = Math.round(view.cx + st * Math.sin(lon) * r);
+    const py = Math.round(view.cy - dy * r);
+    if (px < 0 || py < 0 || px >= plane.w || py >= plane.h) return null;
+    const s = (py * plane.w + px) * 4;
+    const g = gains[idx];
+    return [plane.data[s] * g, plane.data[s + 1] * g, plane.data[s + 2] * g];
+  };
 
   for (let ty = 0; ty < out.height; ty++) {
     const theta = (ty / out.height) * Math.PI;
@@ -74,27 +128,44 @@ export function unwrapBallPhoto(
 
     for (let tx = 0; tx < out.width; tx++) {
       const phi = (tx / out.width) * Math.PI * 2;
-
-      // Fold longitude into one copy, then into the photograph's dense middle.
-      // Each segment is walked out and back, so neighbouring copies meet as a
-      // mirror rather than as a jump.
-      let u = (phi % seg) / seg;
-      u = u < 0.5 ? u * 2 : (1 - u) * 2;
-      const lon = (u - 0.5) * 2 * SPAN;
-
-      const dx = st * Math.sin(lon);
-      const px = Math.round(opts.cx + dx * opts.r);
-      const py = Math.round(opts.cy - dy * opts.r);
+      const which = Math.min(n - 1, Math.floor(phi / seg));
+      const local = (phi - which * seg) / seg;
       const o = (ty * out.width + tx) * 4;
 
-      if (px < 0 || py < 0 || px >= src.width || py >= src.height) {
+      let rgb = sample(which, (local - 0.5) * 2 * ARC, st, dy);
+
+      // Near either end of the arc, mix in the neighbour that also sees it.
+      if (local < BLEND || local > 1 - BLEND) {
+        const before = local < BLEND;
+        const other = before
+          ? (which - 1 + n) % n
+          : (which + 1) % n;
+        // The neighbour's own longitude for this same point, one arc along.
+        const otherLon = before
+          ? (local + 1 - 0.5) * 2 * ARC
+          : (local - 1 - 0.5) * 2 * ARC;
+        const otherRgb = sample(other, otherLon, st, dy);
+        if (rgb && otherRgb) {
+          const edge = before ? local / BLEND : (1 - local) / BLEND;
+          // 0.5 at the join, 1.0 at the inner end of the overlap.
+          const w = 0.5 + 0.5 * edge;
+          rgb = [
+            rgb[0] * w + otherRgb[0] * (1 - w),
+            rgb[1] * w + otherRgb[1] * (1 - w),
+            rgb[2] * w + otherRgb[2] * (1 - w),
+          ];
+        } else if (!rgb) {
+          rgb = otherRgb;
+        }
+      }
+
+      if (!rgb) {
         data[o] = 232; data[o + 1] = 230; data[o + 2] = 224; data[o + 3] = 255;
         continue;
       }
-      const s = (py * src.width + px) * 4;
-      data[o] = sd[s];
-      data[o + 1] = sd[s + 1];
-      data[o + 2] = sd[s + 2];
+      data[o] = rgb[0];
+      data[o + 1] = rgb[1];
+      data[o + 2] = rgb[2];
       data[o + 3] = 255;
     }
   }

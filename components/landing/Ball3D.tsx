@@ -25,7 +25,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { unwrapBallPhoto }] = await Promise.all([
+      const [THREE, { unwrapBallPhotos }] = await Promise.all([
         import("three"),
         import("./ball-photo"),
       ]);
@@ -78,31 +78,37 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
-      const photo = await new Promise<HTMLImageElement>((res, rej) => {
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => res(img);
-        img.onerror = rej;
-        img.src = "/ball-photo.jpg";
-      });
+      /**
+       * Three faces of the same ball, measured off each photograph.
+       *
+       * Automatic detection was tried twice and failed twice - once it picked a
+       * row through the shadow and came out 130px off, once it counted bright
+       * grass as ball. Both times the resulting circle overlapped the turf and
+       * grass got wrapped onto the middle of the sphere. Drawing candidate
+       * circles back over each photo and looking at them settled it.
+       */
+      const views = [
+        { src: "/ball-a.jpg", cx: 500, cy: 378, r: 345 },
+        { src: "/ball-b.jpg", cx: 419, cy: 251, r: 240 },
+        { src: "/ball-c.jpg", cx: 398, cy: 270, r: 240 },
+      ];
+
+      const photos = await Promise.all(
+        views.map(
+          (v) =>
+            new Promise<HTMLImageElement>((res, rej) => {
+              const img = new window.Image();
+              img.crossOrigin = "anonymous";
+              img.onload = () => res(img);
+              img.onerror = rej;
+              img.src = v.src;
+            }),
+        ),
+      );
       if (cancelled) return;
 
-      /**
-       * Where the ball sits in the source, checked by eye rather than trusted.
-       *
-       * Two automatic passes both got this wrong - one measured a row through
-       * the shadow and came out 130px off centre - and the result was a circle
-       * that overlapped the grass, so grass got wrapped onto the middle of the
-       * ball. Drawing the candidate circle back over the photograph and looking
-       * at it settled it in one go: centre (419, 251), radius 240 in a 773x580
-       * frame.
-       */
       const painted = document.createElement("canvas");
-      unwrapBallPhoto(photo, painted, {
-        cx: (419 / 773) * photo.naturalWidth,
-        cy: (251 / 580) * photo.naturalHeight,
-        r: (240 / 773) * photo.naturalWidth,
-      });
+      unwrapBallPhotos(photos, views, painted);
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
@@ -160,7 +166,22 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          * for the whole sphere.
          */
         const t = Math.min(1, Math.max(0, progress.current) / 0.5);
-        ball.rotation.y = t * Math.PI * 3 + 0.5;
+        /**
+         * A slow turn, not a roll, and this is a limit of the source rather
+         * than a preference.
+         *
+         * One photograph holds one hemisphere. Covering a sphere with it means
+         * repeating that half, repeating means a seam, and a mirrored seam
+         * doubles the pattern back on itself - half a star against its own
+         * reflection. Spin the ball and that seam comes round to the front,
+         * which is exactly what kept showing up as mangled stars.
+         *
+         * The seam sits at the far left and right of the face, so the camera is
+         * held within about 25 degrees of centre and never reaches it. The ball
+         * turns enough to read as an object rather than a picture, and the part
+         * that cannot be shown is never shown.
+         */
+        ball.rotation.y = 0.34 - t * 0.86;
         /**
          * Almost no tilt, on purpose.
          *
