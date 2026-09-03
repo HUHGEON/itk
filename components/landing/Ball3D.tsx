@@ -25,9 +25,9 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { drawBallTexture }] = await Promise.all([
+      const [THREE, { unwrapBallPhoto }] = await Promise.all([
         import("three"),
-        import("./ball-texture"),
+        import("./ball-photo"),
       ]);
       if (cancelled) return;
 
@@ -65,46 +65,32 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
+      const photo = await new Promise<HTMLImageElement>((res, rej) => {
+        const img = new window.Image();
+        img.crossOrigin = "anonymous";
+        img.onload = () => res(img);
+        img.onerror = rej;
+        img.src = "/ball-photo.jpg";
+      });
+      if (cancelled) return;
+
+      // Measured off the source: the ball is centred at (350, 350) in a 700px
+      // frame with a radius of 295.
       const painted = document.createElement("canvas");
-      const relief = document.createElement("canvas");
-      drawBallTexture(painted, relief, {
-        base: "#efebe1",
-        mark: "#14110e",
-        // The fluorescent lime border, sampled off a photograph of the ball.
-        key: "#cdfa2a",
-        seam: "#2c2721",
+      unwrapBallPhoto(photo, painted, {
+        cx: (350 / 700) * photo.naturalWidth,
+        cy: (350 / 700) * photo.naturalHeight,
+        r: (295 / 700) * photo.naturalWidth,
       });
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-      // The height pass: seams become trenches and the panels pick up grain.
-      // Without it the markings sit on a perfectly smooth surface and the whole
-      // thing reads as a painted balloon rather than as a ball.
-      const bumpMap = new THREE.CanvasTexture(relief);
-      bumpMap.anisotropy = map.anisotropy;
-
-      /**
-       * Real leather grain, tiled over the computed markings.
-       *
-       * The pattern has to be computed - no photograph gives you a star layout
-       * that wraps a sphere correctly - but grain is the opposite: it is small,
-       * repeating and unstructured, which is exactly what a photographed
-       * material is good for and what a hash function only approximates. These
-       * are CC0 scans from ambientCG, tiled several times around the ball so
-       * the grain sits at roughly the right scale against a 22cm object.
-       *
-       * Only normal and roughness are used. The colour map would fight the
-       * markings, and the markings are the part that has to stay exact.
-       */
       const loader = new THREE.TextureLoader();
       const tile = (url: string) => {
         const t = loader.load(url);
         t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        // 4x2 rather than a finer tiling: on screen the ball is about 380px,
-        // so grain repeated seven times around it lands below a pixel and
-        // averages back out to smooth.
         t.repeat.set(4, 2);
         t.anisotropy = map.anisotropy;
         return t;
@@ -116,16 +102,10 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         new THREE.SphereGeometry(1, 128, 96),
         new THREE.MeshStandardMaterial({
           map,
-          // Seams and panel roll, computed.
-          bumpMap,
-          bumpScale: 5.5,
-          // Grain, photographed.
           normalMap,
-          normalScale: new THREE.Vector2(1.15, 1.15),
+          normalScale: new THREE.Vector2(0.6, 0.6),
           roughnessMap,
-          // Match-ball surface is close to matte; a glossy sphere was the other
-          // half of why it looked like plastic.
-          roughness: 0.66,
+          roughness: 0.6,
           metalness: 0.02,
         }),
       );
@@ -146,6 +126,16 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         // Completes at half the scroll and holds: the sticky stage releases
         // well before the scrub reaches 1, so anything finishing late finishes
         // off screen.
+        /**
+         * A full turn and a half, which the photograph could not give.
+         *
+         * A wrapped photo of a real ball was tried and dropped: a camera only
+         * sees one hemisphere, so the far side has to be invented, and the
+         * moment the ball turns past 90 degrees the invented half swings into
+         * view and smears. Choosing between "looks real" and "can rotate" is
+         * not a choice worth making when the markings can simply be computed
+         * for the whole sphere.
+         */
         const t = Math.min(1, Math.max(0, progress.current) / 0.5);
         ball.rotation.y = t * Math.PI * 3 + 0.5;
         ball.rotation.x = -0.18 + t * 0.35;
@@ -158,7 +148,6 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cancelAnimationFrame(raf);
         ro.disconnect();
         map.dispose();
-        bumpMap.dispose();
         normalMap.dispose();
         roughnessMap.dispose();
         env.texture.dispose();
