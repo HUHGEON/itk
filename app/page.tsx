@@ -3,8 +3,8 @@ import Link from "next/link";
 import { getPulse } from "@/lib/feed";
 import { loadJournalists, loadTeams } from "@/lib/registry";
 import { ALL_TIERS } from "@/lib/types";
-import { Logo } from "@/components/Logo";
 import { PitchSequence } from "@/components/landing/PitchSequence";
+import { LandingHeader } from "@/components/landing/LandingHeader";
 import { TierLadder } from "@/components/landing/LandingHero";
 import { ScaleStrip } from "@/components/landing/ScaleStrip";
 import { WhyAuthor } from "@/components/landing/WhyAuthor";
@@ -27,7 +27,7 @@ import { LandingCta } from "@/components/landing/LandingCta";
 export const metadata: Metadata = {
   title: "ITK+ 축구 이적 소식",
   description:
-    "해외 축구 기자 244명을 신뢰도 티어로 나눠, 이적설을 최초 보도자 기준으로 모읍니다.",
+    "이적설은 매체가 아니라 기자가 씁니다. 해외 기자 244명을 티어로 나눠, 처음 쓴 사람 기준으로 모아 보여줍니다.",
 };
 
 export const dynamic = "force-dynamic";
@@ -57,20 +57,8 @@ export default async function About() {
     .map((j) => ({ ko: j.ko, outlet: j.outlet! }));
 
   return (
-    <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-20 bg-bg/80 backdrop-blur-sm">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-[var(--gutter)]">
-          <Link href="/" aria-label="ITK plus 홈" className="shrink-0">
-            <Logo height={26} />
-          </Link>
-          <Link
-            href="/feed"
-            className="rounded-md px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-text"
-          >
-            오늘의 이적 소식
-          </Link>
-        </div>
-      </header>
+    <div className="relative min-h-screen bg-bg">
+      <LandingHeader />
 
       <main>
         <PitchSequence teams={teams} />
@@ -79,10 +67,10 @@ export default async function About() {
 
         <ScaleStrip
           stats={[
-            { value: journalists.length, unit: "명", label: "추적 중인 기자" },
-            { value: outlets.size, unit: "곳", label: "소속 매체" },
-            { value: countries.size, unit: "개국", label: "취재 국가" },
-            { value: pulse.total, unit: "건", label: "최근 24시간 기사" },
+            { value: journalists.length, unit: "명", label: "지켜보는 기자" },
+            { value: outlets.size, unit: "곳", label: "이들이 쓰는 매체" },
+            { value: countries.size, unit: "개국", label: "기자가 있는 나라" },
+            { value: pulse.total, unit: "건", label: "하루 동안 모인 기사" },
           ]}
         />
 

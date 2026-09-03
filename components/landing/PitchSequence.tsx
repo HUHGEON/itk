@@ -29,7 +29,7 @@ import { Ball3D } from "./Ball3D";
  */
 
 /** How many screens of scroll the sequence occupies. */
-const STAGE_SCREENS = 5;
+export const STAGE_SCREENS = 5;
 /**
  * The ring the crests settle on. A circle, and one that always fits.
  *
@@ -111,7 +111,12 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
      * which had the ball sitting 139 degrees round from its front.
      */
     const scrub = () =>
-      onScroll({ target: wrap, sync: true, enter: "top top", leave: "bottom bottom" });
+      onScroll({
+        target: wrap,
+        sync: true,
+        enter: "top top",
+        leave: "bottom bottom",
+      });
 
     // One scrubbed number drives the 3D scene: anime owns it, the render loop
     // reads it. A canvas cannot be animated by anime.js directly.
@@ -166,12 +171,16 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
     const burst = animate(crests, {
       keyframes: {
         "0%": {
-          opacity: 0, scale: 0, rotate: -60,
+          opacity: 0,
+          scale: 0,
+          rotate: -60,
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
         "22%": {
-          opacity: 0, scale: 0, rotate: -60,
+          opacity: 0,
+          scale: 0,
+          rotate: -60,
           x: (_t: unknown, i?: number) => pull(i ?? 0).x,
           y: (_t: unknown, i?: number) => pull(i ?? 0).y,
         },
@@ -217,7 +226,11 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
         // against the window - see Ball3D.
         style={{ "--ring": ringCss } as CSSProperties}
       >
-        <div ref={shot} aria-hidden className="absolute inset-0 will-change-transform">
+        <div
+          ref={shot}
+          aria-hidden
+          className="absolute inset-0 will-change-transform"
+        >
           <Image
             src="/pitch.jpg"
             alt=""
@@ -326,10 +339,10 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           className="pointer-events-none absolute inset-x-0 bottom-[9vh] z-30 px-[var(--gutter)] text-center"
         >
           <h1 className="text-[2.2rem] leading-[1.1] font-bold tracking-tight text-text drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)] sm:text-5xl">
-            <span className="text-accent">저자</span>를 보고 읽는 이적 소식
+            <span className="text-accent">누가</span> 말했는지가 먼저다
           </h1>
           <p className="mx-auto mt-4 max-w-[38ch] text-[14px] text-white/70 sm:text-[15px]">
-            유럽 17개 구단, 해외 기자 244명.
+            매체가 아니라 기자를 봅니다
           </p>
         </div>
       </div>

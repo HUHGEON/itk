@@ -73,9 +73,8 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       // Reflections without shipping an HDRI: three carries a small procedural
       // room for exactly this, used as environment only so the page keeps its
       // own dark ground.
-      const { RoomEnvironment } = await import(
-        "three/examples/jsm/environments/RoomEnvironment.js"
-      );
+      const { RoomEnvironment } =
+        await import("three/examples/jsm/environments/RoomEnvironment.js");
       const pmrem = new THREE.PMREMGenerator(renderer);
       const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = env.texture;
@@ -119,7 +118,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       bounce.position.set(-1, -3, 1);
       scene.add(bounce);
 
-            /**
+      /**
        * Deliberately low.
        *
        * Ambient light reaches every part of the ball equally, so raising it
@@ -199,7 +198,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
           bumpMap: reliefMap,
           bumpScale: 3.8,
           displacementMap: reliefMap,
-          displacementScale: 0.030,
+          displacementScale: 0.03,
           displacementBias: -0.019,
           // Occlusion from the same height map: the seams are the deepest part
           // of the surface, so they are the part light struggles to reach.
@@ -288,7 +287,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          * to the front than the one you started on.
          */
         ball.rotation.y = t * Math.PI * 2.5;
-        ball.rotation.x = -0.10 + t * 0.16;
+        ball.rotation.x = -0.1 + t * 0.16;
 
         /**
          * The light walks across the ball instead of the ball turning under it.

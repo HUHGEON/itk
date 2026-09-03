@@ -19,7 +19,8 @@ export function WhyAuthor({
   names: { ko: string; outlet: string }[];
 }) {
   const root = useReveal<HTMLElement>(
-    (el) => utils.set(el.querySelectorAll("[data-name]"), { opacity: 0, x: -10 }),
+    (el) =>
+      utils.set(el.querySelectorAll("[data-name]"), { opacity: 0, x: -10 }),
     (el) =>
       animate(el.querySelectorAll("[data-name]"), {
         opacity: 1,
@@ -37,13 +38,13 @@ export function WhyAuthor({
     >
       <div className="mx-auto max-w-3xl">
         <h2 className="text-[1.9rem] leading-tight font-bold tracking-tight text-text sm:text-4xl">
-          이적설의 출처는
-          <br className="hidden sm:block" /> 대개 한 사람입니다
+          큰 건은 결국
+          <br className="hidden sm:block" /> 한 사람한테서 나옵니다
         </h2>
         <p className="mt-6 text-[15px] leading-[1.8] text-text/75">
-          큰 이적이 뜨면 수십 개 매체가 같은 내용을 옮깁니다. 그중 실제로 취재한
-          사람은 보통 하나고, 나머지는 그 사람을 인용합니다. 그래서 매체 이름이
-          아니라 최초 보도자를 기준으로 모읍니다. 아래는 0티어 기자들입니다.
+          이적설 하나가 터지면 수십 개 매체가 같은 내용을 실어 나릅니다. 정작
+          취재한 사람은 하나, 나머지는 그를 인용한 것뿐입니다. 그래서 매체가
+          아니라 처음 쓴 사람으로 묶었습니다. 아래가 그 0티어입니다.
         </p>
 
         <ul className="mt-10 space-y-0">

@@ -13,7 +13,8 @@ import { useReveal } from "@/lib/motion";
  */
 export function LandingCta({ todayCount }: { todayCount: number }) {
   const root = useReveal<HTMLElement>(
-    (el) => utils.set(el.querySelectorAll("[data-rise]"), { opacity: 0, y: 16 }),
+    (el) =>
+      utils.set(el.querySelectorAll("[data-rise]"), { opacity: 0, y: 16 }),
     (el) =>
       animate(el.querySelectorAll("[data-rise]"), {
         opacity: 1,
@@ -31,13 +32,13 @@ export function LandingCta({ todayCount }: { todayCount: number }) {
           data-rise
           className="text-[2.1rem] leading-tight font-bold tracking-tight text-text sm:text-5xl"
         >
-          지금 {todayCount}건이 올라와 있습니다
+          오늘만 {todayCount}건 올라왔습니다
         </h2>
         <p
           data-rise
           className="mx-auto mt-5 max-w-[44ch] text-[14.5px] leading-relaxed text-muted"
         >
-          20분마다 새로 모읍니다. 계정도, 결제도 없습니다.
+          20분마다 다시 가져옵니다. 로그인도 결제도 없습니다.
         </p>
         <div data-rise className="mt-9">
           <Link
@@ -46,7 +47,13 @@ export function LandingCta({ todayCount }: { todayCount: number }) {
             style={{ background: "var(--ribbon)" }}
           >
             오늘의 이적 소식
-            <svg width="14" height="14" viewBox="0 0 12 12" fill="none" aria-hidden>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 12 12"
+              fill="none"
+              aria-hidden
+            >
               <path
                 d="M2 6h8M6.5 2.5 10 6l-3.5 3.5"
                 stroke="currentColor"

@@ -80,19 +80,21 @@ export function TierLadder({
       <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
         <div className="min-w-0">
           <h2 className="text-[1.9rem] leading-tight font-bold tracking-tight text-text sm:text-4xl">
-            기자를 다섯 층으로
-            <br className="hidden sm:block" /> 나눠 둡니다
+            같은 기사라도
+            <br className="hidden sm:block" /> 무게가 다릅니다
           </h2>
           <p className="mt-5 max-w-[46ch] text-[14.5px] leading-[1.8] text-text/75">
-            0티어는 자기가 취재해서 처음 알리는 사람입니다. 아래로 내려갈수록
-            남의 말을 옮기는 비중이 커집니다. 화면에서는 색으로 구분되니 기사
-            하나하나를 검증할 필요가 없습니다.
+            0티어는 직접 취재해서 처음 터뜨리는 쪽입니다. 아래로 갈수록
+            받아쓰기가 늘어납니다. 티어는 색으로 붙어 있으니, 기사마다 이게 믿을
+            만한지 따져볼 일은 없습니다.
           </p>
         </div>
 
         <div className="min-w-0">
           <div className="flex items-baseline justify-between border-b border-border pb-2.5">
-            <span className="text-[13px] font-semibold text-text">기자 티어</span>
+            <span className="text-[13px] font-semibold text-text">
+              기자 티어
+            </span>
             <span className="tnum text-[12px] text-faint">
               <span data-total>{total}</span>명
             </span>
