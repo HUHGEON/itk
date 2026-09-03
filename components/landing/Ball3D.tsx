@@ -39,6 +39,23 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       });
       renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
+      /**
+       * Film response rather than raw light values.
+       *
+       * Without tone mapping the renderer writes linear intensity straight out,
+       * so the lit side of a white panel clips to flat white and takes the
+       * leather grain with it - the ball was brightest exactly where it should
+       * have shown the most texture. ACES rolls the highlights off the way a
+       * camera does, which keeps the grain alive in the light and lets the key
+       * be pushed harder for the shadow side.
+       */
+      renderer.toneMapping = THREE.ACESFilmicToneMapping;
+      renderer.toneMappingExposure = 0.94;
+
+      // Real shadows: see the ground plane below.
+      renderer.shadowMap.enabled = true;
+      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+
       const scene = new THREE.Scene();
       /**
        * A normal viewing distance again.
@@ -62,7 +79,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const pmrem = new THREE.PMREMGenerator(renderer);
       const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = env.texture;
-      scene.environmentIntensity = 0.26;
+      scene.environmentIntensity = 0.36;
 
       /**
        * Lit for the plate it sits on, not for a studio.
@@ -74,13 +91,31 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * tinted with the green bouncing off it, and a dim up-light stands in for
        * the pitch throwing light back at the underside.
        */
-      const key = new THREE.DirectionalLight(0xfff6e8, 2.25);
+      const key = new THREE.DirectionalLight(0xfff6e8, 2.7);
       key.position.set(2.5, 4, 3.5);
+      key.castShadow = true;
+      key.shadow.mapSize.set(2048, 2048);
+      /**
+       * Wide enough for the whole cast shadow.
+       *
+       * The light comes in from one side, so the shadow lands well off to the
+       * other - at a tight 1.6 the frustum cut straight through it and left a
+       * dark shape with a clean edge, which read as a disc lying on the grass
+       * rather than as shade. Three units covers where it actually falls.
+       */
+      key.shadow.camera.near = 1;
+      key.shadow.camera.far = 14;
+      key.shadow.camera.left = -3;
+      key.shadow.camera.right = 3;
+      key.shadow.camera.top = 3;
+      key.shadow.camera.bottom = -3;
+      key.shadow.radius = 7;
+      key.shadow.bias = -0.0012;
       scene.add(key);
       const keyHome = key.position.clone();
 
       // Green bounce from the grass, from below.
-      const bounce = new THREE.DirectionalLight(0x9cc47c, 0.22);
+      const bounce = new THREE.DirectionalLight(0x9cc47c, 0.3);
       bounce.position.set(-1, -3, 1);
       scene.add(bounce);
 
@@ -93,7 +128,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * here rather than from a direction. Enough to keep the shadow side from
        * going black, and no more.
        */
-      scene.add(new THREE.AmbientLight(0xd6dad4, 0.26));
+      scene.add(new THREE.AmbientLight(0xd6dad4, 0.34));
 
       /**
        * A rim from behind, which is what separates the ball from the pitch.
@@ -103,7 +138,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * soft and the whole thing read as flat. A cool light from behind and
        * above catches just the edge and draws it back out.
        */
-      const rim = new THREE.DirectionalLight(0xdce8ff, 1.15);
+      const rim = new THREE.DirectionalLight(0xdce8ff, 1.5);
       rim.position.set(-2.6, 2.2, -3.4);
       scene.add(rim);
 
@@ -146,7 +181,17 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         // Dense enough for the displacement to have something to move: at the
         // old 128x96 the seams pushed the mesh around in visible facets.
         new THREE.SphereGeometry(1, 320, 240),
-        new THREE.MeshStandardMaterial({
+        /**
+         * Physical rather than standard, for the two things leather does that
+         * a plain rough surface does not.
+         *
+         * `sheen` is the soft glance of light off a fibrous surface - it is
+         * what stops the white panels reading as matt plastic at grazing
+         * angles. `clearcoat` is the thin sealed layer a match ball actually
+         * has: a weak, blurred second reflection over the top, which is where
+         * the wet-looking gleam on a real ball comes from.
+         */
+        new THREE.MeshPhysicalMaterial({
           map,
           roughnessMap,
           // The map carries the real values; this only scales them.
@@ -156,10 +201,49 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
           displacementMap: reliefMap,
           displacementScale: 0.030,
           displacementBias: -0.019,
+          // Occlusion from the same height map: the seams are the deepest part
+          // of the surface, so they are the part light struggles to reach.
+          aoMap: reliefMap,
+          aoMapIntensity: 0.7,
+          // Restrained. Sheen adds light everywhere it applies, and the dark
+          // panels have almost none to spare - at 0.4 they lifted to a milky
+          // brown and stopped reading as black at all.
+          sheen: 0.11,
+          sheenRoughness: 0.9,
+          sheenColor: new THREE.Color(0xf2f0ea),
+          clearcoat: 0.07,
+          clearcoatRoughness: 0.8,
           metalness: 0.02,
         }),
       );
+      /**
+       * Ambient occlusion reads its own UV set, which a sphere does not have.
+       * The relief map is laid out on the same coordinates as everything else,
+       * so the main set is simply shared.
+       */
+      ball.geometry.setAttribute("uv1", ball.geometry.attributes.uv);
+      ball.castShadow = true;
       scene.add(ball);
+
+      /**
+       * The grass, as something that can only catch a shadow.
+       *
+       * The pitch behind the ball is a photograph in the page, not geometry, so
+       * there was nothing in the scene for the ball to cast onto - which is why
+       * the contact had to be faked with a gradient. `ShadowMaterial` draws
+       * nothing but the shadow that lands on it, so this plane stays invisible
+       * over the photo and only the shade the ball throws comes through. The
+       * camera sits almost level with the pitch, the same as the shot behind
+       * it, so what shows is a tight dark pool right under the ball.
+       */
+      const ground = new THREE.Mesh(
+        new THREE.PlaneGeometry(8, 8),
+        new THREE.ShadowMaterial({ opacity: 0.42 }),
+      );
+      ground.rotation.x = -Math.PI / 2;
+      ground.position.y = -1.02;
+      ground.receiveShadow = true;
+      scene.add(ground);
       const fit = () => {
         const r = el.getBoundingClientRect();
         renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
@@ -235,6 +319,8 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         roughnessMap.dispose();
         env.texture.dispose();
         pmrem.dispose();
+        ground.geometry.dispose();
+        (ground.material as Material).dispose();
         ball.geometry.dispose();
         (ball.material as Material).dispose();
         renderer.dispose();
