@@ -207,7 +207,45 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
         })}
 
         <div className="relative z-10 -translate-y-[5vh]">
+          {/*
+            The ball had nothing under it, so it floated.
+
+            A contact shadow is what puts an object on a surface: dense and
+            tight where the ball meets the grass, fading out fast. It is drawn
+            here rather than in the 3D scene because there is no ground plane
+            in there to catch one - the grass is a photograph behind the canvas.
+          */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-[6%] bottom-[3%] h-[13%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.72),rgba(0,0,0,0.42)_42%,transparent_72%)] blur-[7px]"
+          />
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-[26%] bottom-[5.5%] h-[6%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.85),transparent_70%)] blur-[3px]"
+          />
           <Ball3D progress={progress} />
+          {/*
+            Grass shadow falling on the ball itself.
+
+            A shadow cast onto the turf is invisible here - the turf is already
+            near-black - so the thing that actually seats the ball is the
+            darkening across its own underside, where the grass it is sitting in
+            blocks the light. Over the canvas rather than under it, for that
+            reason.
+          */}
+          {/*
+            Clipped to the ball, or it is a dark band lying across the grass.
+
+            The circle is where the ball actually is in the canvas: the camera
+            puts its silhouette at 80.2% of the frame, centred, so half of that
+            is the radius.
+          */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0 z-20 [clip-path:circle(40.1%_at_50%_50%)]"
+          >
+            <div className="absolute inset-x-0 bottom-0 h-[26%] bg-[linear-gradient(to_top,rgba(5,11,5,0.80),rgba(5,11,5,0.36)_45%,transparent)]" />
+          </div>
         </div>
 
         <div

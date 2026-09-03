@@ -62,7 +62,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const pmrem = new THREE.PMREMGenerator(renderer);
       const env = pmrem.fromScene(new RoomEnvironment(), 0.04);
       scene.environment = env.texture;
-      scene.environmentIntensity = 0.34;
+      scene.environmentIntensity = 0.26;
 
       /**
        * Lit for the plate it sits on, not for a studio.
@@ -74,17 +74,38 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * tinted with the green bouncing off it, and a dim up-light stands in for
        * the pitch throwing light back at the underside.
        */
-      const key = new THREE.DirectionalLight(0xfff6e8, 1.72);
+      const key = new THREE.DirectionalLight(0xfff6e8, 2.25);
       key.position.set(2.5, 4, 3.5);
       scene.add(key);
       const keyHome = key.position.clone();
 
       // Green bounce from the grass, from below.
-      const bounce = new THREE.DirectionalLight(0x9cc47c, 0.42);
+      const bounce = new THREE.DirectionalLight(0x9cc47c, 0.22);
       bounce.position.set(-1, -3, 1);
       scene.add(bounce);
 
-      scene.add(new THREE.AmbientLight(0xd6dad4, 0.52));
+            /**
+       * Deliberately low.
+       *
+       * Ambient light reaches every part of the ball equally, so raising it
+       * flattens the very thing that makes a sphere read as a sphere. The ball
+       * looked lit but not solid because most of its brightness was coming from
+       * here rather than from a direction. Enough to keep the shadow side from
+       * going black, and no more.
+       */
+      scene.add(new THREE.AmbientLight(0xd6dad4, 0.26));
+
+      /**
+       * A rim from behind, which is what separates the ball from the pitch.
+       *
+       * The background is a dark blurred field and the ball's shadow side sat
+       * straight on top of it with nothing between them, so the outline went
+       * soft and the whole thing read as flat. A cool light from behind and
+       * above catches just the edge and draws it back out.
+       */
+      const rim = new THREE.DirectionalLight(0xdce8ff, 1.15);
+      rim.position.set(-2.6, 2.2, -3.4);
+      scene.add(rim);
 
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
@@ -131,10 +152,10 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
           // The map carries the real values; this only scales them.
           roughness: 1,
           bumpMap: reliefMap,
-          bumpScale: 2.6,
+          bumpScale: 3.8,
           displacementMap: reliefMap,
-          displacementScale: 0.022,
-          displacementBias: -0.014,
+          displacementScale: 0.030,
+          displacementBias: -0.019,
           metalness: 0.02,
         }),
       );
