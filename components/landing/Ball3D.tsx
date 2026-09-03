@@ -25,9 +25,9 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
     let cancelled = false;
 
     void (async () => {
-      const [THREE, { unwrapBallPhoto }] = await Promise.all([
+      const [THREE, { paintBall }] = await Promise.all([
         import("three"),
-        import("./ball-photo"),
+        import("./ball-pattern"),
       ]);
       if (cancelled) return;
 
@@ -41,24 +41,17 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
 
       const scene = new THREE.Scene();
       /**
-       * The lens the photograph was taken with, rebuilt.
+       * A normal viewing distance again.
        *
-       * The texture is the photograph un-projected, so it only holds what the
-       * photograph could see: from 2.86 radii out, that is the 69.5 degrees
-       * facing the lens, not a full hemisphere. Viewed through anything wider -
-       * an orthographic camera sees all 90 - the render asks the texture for
-       * surface that was never photographed, and what it gets is the pixels at
-       * the rim of the disc, which are the boundary between ball and grass. The
-       * ball grew a green smear across its shoulder.
-       *
-       * Standing the camera where the photographer stood makes the render the
-       * exact inverse of the unwrap: same distance, so the same 69.5 degrees is
-       * visible and every marking sits where it sits in the shot. The field of
-       * view then only decides how much of the frame the ball fills - 50
-       * degrees keeps it at the size the page was laid out around.
+       * While the ball wore a photograph the camera had to stand exactly where
+       * the photographer stood, or the render asked the texture for surface the
+       * shot never held. The markings are computed now - they cover the whole
+       * sphere - so the lens is free, and 4.2 units at 34 degrees is the
+       * flattering one: enough perspective to read as an object, not so much
+       * that the near face bulges.
        */
-      const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 100);
-      camera.position.set(0, 0, 2.86);
+      const camera = new THREE.PerspectiveCamera(34, 1, 0.1, 100);
+      camera.position.set(0, 0, 4.2);
 
       // Reflections without shipping an HDRI: three carries a small procedural
       // room for exactly this, used as environment only so the page keeps its
@@ -93,74 +86,62 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
 
       scene.add(new THREE.AmbientLight(0xd6dad4, 0.6));
 
-      // The markings are drawn once into a canvas and used as a map, so the
-      // mesh stays a single smooth sphere: the outline is a circle by
-      // construction and there are no panel edges to fight the depth buffer.
       /**
-       * Where the ball sits in the photograph, found by eye.
-       *
-       * Automatic detection was tried twice and missed twice: once it measured
-       * a row through the shadow and landed 130px off centre, once it counted
-       * bright grass as ball. Both times the circle overlapped the turf and
-       * grass ended up wrapped onto the middle of the sphere. Drawing the
-       * candidate circle back over the photo and looking at it settled it in
-       * one pass.
+       * The photograph is now only where the competition mark comes from - see
+       * `badge` in ball-pattern.ts. If it fails to load the ball is painted
+       * without it rather than not painted at all.
        */
-      const photo = await new Promise<HTMLImageElement>((res, rej) => {
+      const photo = await new Promise<HTMLImageElement | null>((res) => {
         const img = new window.Image();
         img.crossOrigin = "anonymous";
         img.onload = () => res(img);
-        img.onerror = rej;
+        img.onerror = () => res(null);
         img.src = "/ball-ucl.jpg";
       });
       if (cancelled) return;
 
+      // The markings are drawn once into a canvas and used as a map, so the
+      // mesh stays a single smooth sphere: the outline is a circle by
+      // construction and there are no panel edges to fight the depth buffer.
       const painted = document.createElement("canvas");
-      unwrapBallPhoto(photo, painted, {
-        cx: (562 / 1024) * photo.naturalWidth,
-        cy: (348 / 768) * photo.naturalHeight,
-        r: (294 / 1024) * photo.naturalWidth,
-        // Shot from close up - see `dist` in ball-photo.ts.
-        dist: 2.86,
-        // The Champions League star, not the disc's centre. In this shot it
-        // sits high and slightly right of middle; naming it here brings it
-        // round to face the camera.
-        front: {
-          x: (575 / 1024) * photo.naturalWidth,
-          y: (310 / 768) * photo.naturalHeight,
-        },
-      });
+      const surfaced = document.createElement("canvas");
+      paintBall(painted, surfaced, photo);
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-      // Grain over the photograph: a 773px source stretched over a sphere is
-      // smoother than the object it came from. CC0 scans from ambientCG.
+      /**
+       * How rough each part of the surface is, painted alongside the colour.
+       *
+       * Left in linear space deliberately: this is a material property, not a
+       * colour, and running it through sRGB would bend every value.
+       */
+      const roughnessMap = new THREE.CanvasTexture(surfaced);
+      roughnessMap.anisotropy = map.anisotropy;
+
+      // Grain, tiled over the whole ball: at this size leather is not a flat
+      // fill. CC0 scan from ambientCG. Only the normal map is tiled now - the
+      // roughness comes from the pattern, which knows where the star is.
       const loader = new THREE.TextureLoader();
-      const tile = (url: string) => {
-        const t = loader.load(url);
-        t.wrapS = t.wrapT = THREE.RepeatWrapping;
-        t.repeat.set(4, 2);
-        t.anisotropy = map.anisotropy;
-        return t;
-      };
-      const normalMap = tile("/tex/leather-normal.jpg");
-      const roughnessMap = tile("/tex/leather-rough.jpg");
+      const normalMap = loader.load("/tex/leather-normal.jpg");
+      normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
+      normalMap.repeat.set(5, 2.5);
+      normalMap.anisotropy = map.anisotropy;
 
       const ball = new THREE.Mesh(
         new THREE.SphereGeometry(1, 128, 96),
         new THREE.MeshStandardMaterial({
           map,
           normalMap,
-          normalScale: new THREE.Vector2(0.5, 0.5),
+          normalScale: new THREE.Vector2(0.42, 0.42),
           roughnessMap,
-          roughness: 0.72,
+          // The map carries the real values; this only scales them.
+          roughness: 1,
           metalness: 0.02,
         }),
       );
       scene.add(ball);
-
       const fit = () => {
         const r = el.getBoundingClientRect();
         renderer.setSize(Math.max(1, r.width), Math.max(1, r.height), false);
@@ -197,11 +178,15 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
          * crests arrive around it - and a ball resting on grass is not a thing
          * that ought to be spinning anyway.
          *
-         * It does not drift either. A few degrees of yaw were in here to keep
-         * it from reading as a sticker, but the texture is aligned to the
-         * camera to the pixel now, and any turn at all slides the compressed
-         * rim of the photograph into the face. The light does that job instead.
+         * And now it turns.
+         *
+         * This is what the computed pattern bought: the markings close all the
+         * way round, so there is no far side to expose and no seam to cross.
+         * A turn and a quarter over the scroll, which brings a different star
+         * to the front than the one you started on.
          */
+        ball.rotation.y = t * Math.PI * 2.5;
+        ball.rotation.x = -0.10 + t * 0.16;
 
         /**
          * The light walks across the ball instead of the ball turning under it.

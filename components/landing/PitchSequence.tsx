@@ -49,7 +49,17 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
     const crests = Array.from(
       stageEl.querySelectorAll<HTMLElement>("[data-crest]"),
     );
-    const scrub = () => onScroll({ target: wrap, sync: true });
+    /**
+     * The scrub runs from the top of the sequence to the end of it.
+     *
+     * Without `enter`/`leave` anime measures from the moment the wrapper
+     * appears at the bottom of the window, which for a wrapper that starts at
+     * the top of the page means the scrub is already a sixth of the way in
+     * before the reader has scrolled at all - measured: 0.155 at scrollY 0,
+     * which had the ball sitting 139 degrees round from its front.
+     */
+    const scrub = () =>
+      onScroll({ target: wrap, sync: true, enter: "top top", leave: "bottom bottom" });
 
     // One scrubbed number drives the 3D scene: anime owns it, the render loop
     // reads it. A canvas cannot be animated by anime.js directly.
