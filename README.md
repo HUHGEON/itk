@@ -179,5 +179,3 @@ Postgres는 새 함수에 `EXECUTE`를 `PUBLIC`으로 기본 부여하기 때문
   회전 주기도 길다.
 - **FotMob 데이터는 쓰지 않는다.** 공개 API가 없고 내부 엔드포인트는 ToS 위반 + 차단
   대상이라, UI 스타일만 참고하고 데이터는 football-data.org / TheSportsDB를 쓴다.
-
-<!-- deploy probe 20260903T054822Z -->
