@@ -205,6 +205,10 @@ begin
 end $$;
 
 create index if not exists idx_articles_published    on itk.articles (published_at desc);
+-- The feed's exact sort. Ordering by published_at alone left the tie-break on
+-- id to a sort step over the whole table, which is most of what made an
+-- unfiltered feed query take seconds rather than milliseconds.
+create index if not exists idx_articles_feed_order  on itk.articles (published_at desc, id desc);
 create index if not exists idx_articles_tier         on itk.articles (tier, published_at desc);
 create index if not exists idx_articles_journalist   on itk.articles (journalist_id, published_at desc);
 create index if not exists idx_articles_search       on itk.articles using gin (search_vector);
