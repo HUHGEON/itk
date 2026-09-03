@@ -80,13 +80,12 @@ export function TierLadder({
       <div className="mx-auto grid max-w-6xl gap-12 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
         <div className="min-w-0">
           <h2 className="text-[1.9rem] leading-tight font-bold tracking-tight text-text sm:text-4xl">
-            같은 기사라도
-            <br className="hidden sm:block" /> 무게가 다릅니다
+            믿을 만한 기사인지
+            <br className="hidden sm:block" /> 표시해 뒀습니다
           </h2>
           <p className="mt-5 max-w-[46ch] text-[14.5px] leading-[1.8] text-text/75">
-            0티어는 직접 취재해서 처음 터뜨리는 쪽입니다. 아래로 갈수록
-            받아쓰기가 늘어납니다. 티어는 색으로 붙어 있으니, 기사마다 이게 믿을
-            만한지 따져볼 일은 없습니다.
+            기사마다 쓴 기자의 등급을 색으로 붙여 놨습니다. 0티어는 직접 취재한
+            기자, 아래로 갈수록 받아쓴 기사입니다. 색만 보고 걸러 읽으면 됩니다.
           </p>
         </div>
 

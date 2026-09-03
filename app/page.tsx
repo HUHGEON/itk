@@ -27,7 +27,7 @@ import { LandingCta } from "@/components/landing/LandingCta";
 export const metadata: Metadata = {
   title: "ITK+ 축구 이적 소식",
   description:
-    "이적설은 매체가 아니라 기자가 씁니다. 해외 기자 244명을 티어로 나눠, 처음 쓴 사람 기준으로 모아 보여줍니다.",
+    "유럽 주요 구단 이적 소식을 한곳에 모읍니다. 해외 기자 244명의 기사를 20분마다 가져와, 처음 쓴 기자 기준으로 정리해 보여줍니다.",
 };
 
 export const dynamic = "force-dynamic";
@@ -67,10 +67,10 @@ export default async function About() {
 
         <ScaleStrip
           stats={[
-            { value: journalists.length, unit: "명", label: "지켜보는 기자" },
-            { value: outlets.size, unit: "곳", label: "이들이 쓰는 매체" },
-            { value: countries.size, unit: "개국", label: "기자가 있는 나라" },
-            { value: pulse.total, unit: "건", label: "하루 동안 모인 기사" },
+            { value: journalists.length, unit: "명", label: "모으는 기자" },
+            { value: outlets.size, unit: "곳", label: "매체" },
+            { value: countries.size, unit: "개국", label: "나라" },
+            { value: pulse.total, unit: "건", label: "오늘 올라온 기사" },
           ]}
         />
 

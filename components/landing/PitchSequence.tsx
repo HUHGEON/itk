@@ -339,10 +339,10 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           className="pointer-events-none absolute inset-x-0 bottom-[9vh] z-30 px-[var(--gutter)] text-center"
         >
           <h1 className="text-[2.2rem] leading-[1.1] font-bold tracking-tight text-text drop-shadow-[0_2px_18px_rgba(0,0,0,0.9)] sm:text-5xl">
-            <span className="text-accent">누가</span> 말했는지가 먼저다
+            축구 이적 소식, <span className="text-accent">한 번에</span>
           </h1>
           <p className="mx-auto mt-4 max-w-[38ch] text-[14px] text-white/70 sm:text-[15px]">
-            매체가 아니라 기자를 봅니다
+            유럽 주요 구단 소식을 모아서 보여줍니다
           </p>
         </div>
       </div>

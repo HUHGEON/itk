@@ -38,13 +38,13 @@ export function WhyAuthor({
     >
       <div className="mx-auto max-w-3xl">
         <h2 className="text-[1.9rem] leading-tight font-bold tracking-tight text-text sm:text-4xl">
-          큰 건은 결국
-          <br className="hidden sm:block" /> 한 사람한테서 나옵니다
+          같은 소식이
+          <br className="hidden sm:block" /> 열 번씩 뜨지 않게
         </h2>
         <p className="mt-6 text-[15px] leading-[1.8] text-text/75">
-          이적설 하나가 터지면 수십 개 매체가 같은 내용을 실어 나릅니다. 정작
-          취재한 사람은 하나, 나머지는 그를 인용한 것뿐입니다. 그래서 매체가
-          아니라 처음 쓴 사람으로 묶었습니다. 아래가 그 0티어입니다.
+          이적설 하나에 수십 개 매체가 같은 내용을 씁니다. 여기서는 처음 쓴
+          기자를 기준으로 묶어서 한 번만 보여줍니다. 아래가 그 0티어
+          기자들입니다.
         </p>
 
         <ul className="mt-10 space-y-0">
