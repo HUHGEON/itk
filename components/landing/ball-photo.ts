@@ -31,24 +31,6 @@ export interface PhotoBallOptions {
 }
 
 /**
- * The Adidas three-stripe mark, which is a trademark and is painted out.
- *
- * Tested on channel differences rather than absolute values: the stripes are
- * antialiased and JPEG-blurred, so their outer pixels drift toward the panel
- * white and fall outside any threshold tight enough to spare the printed detail
- * elsewhere. Distance between channels does not care where the bucket edge fell.
- */
-function isBrandOrange(r: number, g: number, b: number): boolean {
-  return r > 165 && r - g > 42 && r - b > 62;
-}
-
-/**
- * Where the mark sits in the source photograph, as fractions of its size.
- * Measured: the stripes occupy x 259..397, y 453..639 of a 700px frame.
- */
-const MARK_BOX = { x0: 0.33, x1: 0.60, y0: 0.61, y1: 0.95 };
-
-/**
  * How many copies of the photographed hemisphere go around the equator, and how
  * much of that hemisphere each copy uses.
  *
@@ -84,37 +66,15 @@ export function unwrapBallPhoto(
   sctx.drawImage(photo, 0, 0);
   const sd = sctx.getImageData(0, 0, src.width, src.height).data;
 
-  // Paint out the stripes on the flat photograph, where the mark is a
-  // contiguous shape. Each orange pixel takes the colour of the nearest clean
-  // panel pixel on its row.
-  const patched = new Uint8ClampedArray(sd);
-  const bx0 = Math.floor(MARK_BOX.x0 * src.width);
-  const bx1 = Math.ceil(MARK_BOX.x1 * src.width);
-  const by0 = MARK_BOX.y0 * src.height;
-  const by1 = MARK_BOX.y1 * src.height;
-
-  for (let y = 0; y < src.height; y++) {
-    if (y < by0 || y > by1) continue;
-    for (let x = bx0; x <= bx1 && x < src.width; x++) {
-      const i = (y * src.width + x) * 4;
-      if (!isBrandOrange(sd[i], sd[i + 1], sd[i + 2])) continue;
-      for (let step = 1; step < 200; step++) {
-        let done = false;
-        for (const sx of [x - step, x + step]) {
-          if (sx < 0 || sx >= src.width) continue;
-          const j = (y * src.width + sx) * 4;
-          if (isBrandOrange(sd[j], sd[j + 1], sd[j + 2])) continue;
-          if (sd[j] < 150) continue;
-          patched[i] = sd[j];
-          patched[i + 1] = sd[j + 1];
-          patched[i + 2] = sd[j + 2];
-          done = true;
-          break;
-        }
-        if (done) break;
-      }
-    }
-  }
+  /**
+   * No mark to remove.
+   *
+   * Earlier revisions unwrapped a product photograph and had to paint the
+   * Adidas stripes out of it, which meant detecting them by colour and filling
+   * from neighbouring pixels. The technical drawing has no branding on it, so
+   * that whole pass is gone and the source is used as it is.
+   */
+  const patched = sd;
 
   const image = octx.createImageData(out.width, out.height);
   const data = image.data;

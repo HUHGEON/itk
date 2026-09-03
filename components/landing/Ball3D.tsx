@@ -74,13 +74,25 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       });
       if (cancelled) return;
 
-      // Measured off the source: the ball is centred at (350, 350) in a 700px
-      // frame with a radius of 295.
+      /**
+       * The source is a technical drawing, not a photograph, and that is the
+       * point.
+       *
+       * A photograph has its lighting baked in: the highlight sits on the
+       * texture and turns with the ball, which is wrong twice over. A flat
+       * illustration is closer to an albedo map, so the three lights in this
+       * scene do the shading and the highlight stays put while the ball spins
+       * under it. The drawing also carries no Adidas mark, so nothing has to be
+       * painted out.
+       *
+       * Measured off the crop: centred at (221, 226) in a 470px frame, radius
+       * 181.
+       */
       const painted = document.createElement("canvas");
       unwrapBallPhoto(photo, painted, {
-        cx: (350 / 700) * photo.naturalWidth,
-        cy: (350 / 700) * photo.naturalHeight,
-        r: (295 / 700) * photo.naturalWidth,
+        cx: (221 / 470) * photo.naturalWidth,
+        cy: (226 / 470) * photo.naturalHeight,
+        r: (181 / 470) * photo.naturalWidth,
       });
 
       const map = new THREE.CanvasTexture(painted);
