@@ -74,7 +74,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
        * tinted with the green bouncing off it, and a dim up-light stands in for
        * the pitch throwing light back at the underside.
        */
-      const key = new THREE.DirectionalLight(0xfff6e8, 2.05);
+      const key = new THREE.DirectionalLight(0xfff6e8, 1.72);
       key.position.set(2.5, 4, 3.5);
       scene.add(key);
       const keyHome = key.position.clone();
@@ -84,28 +84,15 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       bounce.position.set(-1, -3, 1);
       scene.add(bounce);
 
-      scene.add(new THREE.AmbientLight(0xd6dad4, 0.6));
-
-      /**
-       * The photograph is now only where the competition mark comes from - see
-       * `badge` in ball-pattern.ts. If it fails to load the ball is painted
-       * without it rather than not painted at all.
-       */
-      const photo = await new Promise<HTMLImageElement | null>((res) => {
-        const img = new window.Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => res(img);
-        img.onerror = () => res(null);
-        img.src = "/ball-ucl.jpg";
-      });
-      if (cancelled) return;
+      scene.add(new THREE.AmbientLight(0xd6dad4, 0.52));
 
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
       const painted = document.createElement("canvas");
       const surfaced = document.createElement("canvas");
-      paintBall(painted, surfaced, photo);
+      const relieved = document.createElement("canvas");
+      paintBall(painted, surfaced, relieved);
 
       const map = new THREE.CanvasTexture(painted);
       map.colorSpace = THREE.SRGBColorSpace;
@@ -120,24 +107,34 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       const roughnessMap = new THREE.CanvasTexture(surfaced);
       roughnessMap.anisotropy = map.anisotropy;
 
-      // Grain, tiled over the whole ball: at this size leather is not a flat
-      // fill. CC0 scan from ambientCG. Only the normal map is tiled now - the
-      // roughness comes from the pattern, which knows where the star is.
-      const loader = new THREE.TextureLoader();
-      const normalMap = loader.load("/tex/leather-normal.jpg");
-      normalMap.wrapS = normalMap.wrapT = THREE.RepeatWrapping;
-      normalMap.repeat.set(5, 2.5);
-      normalMap.anisotropy = map.anisotropy;
+      /**
+       * The height of the surface, used twice.
+       *
+       * As a bump map it tilts the shading, which is what makes the leather
+       * read as leather and the seams as grooves rather than as lines. As a
+       * displacement map it moves the mesh itself, so the seams also break the
+       * ball's outline - a real ball is not a perfect circle in silhouette, and
+       * that edge is most of what says "object" rather than "picture". Small:
+       * two per cent of the radius is a deep enough groove at this size, and
+       * more starts to look quilted.
+       */
+      const reliefMap = new THREE.CanvasTexture(relieved);
+      reliefMap.anisotropy = map.anisotropy;
 
       const ball = new THREE.Mesh(
-        new THREE.SphereGeometry(1, 128, 96),
+        // Dense enough for the displacement to have something to move: at the
+        // old 128x96 the seams pushed the mesh around in visible facets.
+        new THREE.SphereGeometry(1, 320, 240),
         new THREE.MeshStandardMaterial({
           map,
-          normalMap,
-          normalScale: new THREE.Vector2(0.42, 0.42),
           roughnessMap,
           // The map carries the real values; this only scales them.
           roughness: 1,
+          bumpMap: reliefMap,
+          bumpScale: 2.6,
+          displacementMap: reliefMap,
+          displacementScale: 0.022,
+          displacementBias: -0.014,
           metalness: 0.02,
         }),
       );
@@ -213,7 +210,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         cancelAnimationFrame(raf);
         ro.disconnect();
         map.dispose();
-        normalMap.dispose();
+        reliefMap.dispose();
         roughnessMap.dispose();
         env.texture.dispose();
         pmrem.dispose();

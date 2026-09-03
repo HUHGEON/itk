@@ -51,13 +51,10 @@ const SEAM = 0.5 * DEG;
 const INK: Vec3 = [26, 26, 30];
 const WHITE: Vec3 = [242, 241, 234];
 /** The stitched trough between panels, and the thread sitting in it. */
-const SEAM_DARK: Vec3 = [120, 120, 116];
-const SEAM_LIGHT: Vec3 = [206, 205, 198];
+const SEAM_DARK: Vec3 = [96, 96, 92];
+const SEAM_LIGHT: Vec3 = [168, 167, 160];
 const HASH: Vec3 = [222, 221, 213];
 
-
-/** Which pentagons carry the competition mark. Not every panel does. */
-const BADGED = new Set([0, 4, 8]);
 
 function build() {
   let pent: Vec3[] = [];
@@ -103,35 +100,39 @@ function build() {
   pent = pent.map(tilt);
   hex = hex.map(tilt);
 
-  /**
-   * Each panel's own left-to-right, used to stand the badge up on it.
-   *
-   * A pentagon has five neighbours and any of them would do as a reference, but
-   * taking the first put the badge on a random one of five tilts - on the front
-   * panel it came out leaning about 15 degrees, which reads as a misprint
-   * rather than as a ball. Choosing the neighbour that lies flattest instead
-   * means the direction is as close to level as that panel allows, and the
-   * choice still travels with the ball when it turns.
-   */
-  const axis = pent.map((c) => {
-    let best: Vec3 = [1, 0, 0];
-    let flattest = 2;
-    for (const n of pent) {
-      if (!isNeighbour(dot(c, n))) continue;
-      const d = dot(c, n);
-      const t = norm([n[0] - d * c[0], n[1] - d * c[1], n[2] - d * c[2]]);
-      const tilt = Math.abs(t[1]);
-      if (tilt < flattest) {
-        flattest = tilt;
-        // Point it right rather than left, so the badge is never handed.
-        best = t[0] < 0 ? [-t[0], -t[1], -t[2]] : t;
-      }
-    }
-    return best;
-  });
-  const binormal = pent.map((c, i) => cross(c, axis[i]));
+  return { pent, hex, faces: [...pent, ...hex] };
+}
 
-  return { pent, hex, axis, binormal, faces: [...pent, ...hex] };
+/**
+ * The tooth of the leather.
+ *
+ * Value noise over the map, at three scales, wrapped in x so nothing shows at
+ * the back seam where the texture meets itself. It is deliberately fine: this
+ * is the grain you only notice at a glancing angle, not a pebbled surface.
+ */
+const GRAIN = 220;
+const grainSeed = (x: number, y: number) => {
+  let h = Math.imul(x, 0x27d4eb2d) ^ Math.imul(y, 0x165667b1);
+  h = Math.imul(h ^ (h >>> 15), 0x2545f491);
+  return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
+};
+
+function grainAt(u: number, v: number, cells: number) {
+  const x = u * cells;
+  const y = v * (cells / 2);
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = x - x0;
+  const fy = y - y0;
+  const sx = fx * fx * (3 - 2 * fx);
+  const sy = fy * fy * (3 - 2 * fy);
+  // Wrapped in x so the two edges of the map agree.
+  const wrap = (i: number) => ((i % cells) + cells) % cells;
+  const a = grainSeed(wrap(x0), y0);
+  const b = grainSeed(wrap(x0 + 1), y0);
+  const c = grainSeed(wrap(x0), y0 + 1);
+  const dd = grainSeed(wrap(x0 + 1), y0 + 1);
+  return (a + (b - a) * sx) * (1 - sy) + (c + (dd - c) * sx) * sy;
 }
 
 /** Deterministic noise, so the ball is the same ball on every load. */
@@ -181,68 +182,17 @@ function scuffs(hex: Vec3[]) {
 }
 
 /**
- * Cuts the competition mark out of the photograph.
- *
- * Drawing it from scratch would mean redrawing the starball glyph, and it is
- * already sitting in the photo on a flat part of a panel facing the lens. The
- * white pixels are dropped so the crop's corners, which catch the panel behind
- * the star, do not print a pale block on the star's shoulder.
- */
-function badge(photo: HTMLImageElement) {
-  const CROP = { x: 498, y: 232, w: 166, h: 140 };
-  const s = photo.naturalWidth / 1024;
-  const c = document.createElement("canvas");
-  c.width = Math.round(CROP.w * s);
-  c.height = Math.round(CROP.h * s);
-  const g = c.getContext("2d", { willReadFrequently: true });
-  if (!g) return null;
-  g.drawImage(
-    photo,
-    CROP.x * s,
-    CROP.y * s,
-    CROP.w * s,
-    CROP.h * s,
-    0,
-    0,
-    c.width,
-    c.height,
-  );
-  const d = g.getImageData(0, 0, c.width, c.height);
-  for (let i = 0; i < d.data.length; i += 4) {
-    /**
-     * Keep the lettering, drop everything it was printed on.
-     *
-     * Dropping only the pale pixels left the crop's own dark background in
-     * place, and against this ball's flat black panel that read as a square
-     * smudge sitting under the badge. The mark is the only strongly green
-     * thing in the crop, so that is what is kept - the panel underneath then
-     * shows through everywhere else, and the badge sits on the ball instead of
-     * on a patch of a different ball.
-     */
-    const r = d.data[i];
-    const gg = d.data[i + 1];
-    const b = d.data[i + 2];
-    const lime = gg > 120 && gg - b > 55 && r > 80;
-    if (!lime) d.data[i + 3] = 0;
-  }
-  return { data: d.data, w: c.width, h: c.height };
-}
-
-/**
- * Paints the equirectangular map three.js will wrap onto the sphere.
- *
- * `photo` only supplies the competition mark; every line and colour around it
- * is computed. Pass null and the ball is simply unbadged.
+ * Paints the three maps three.js wraps onto the sphere: colour, roughness, and
+ * height. Everything is computed - no image is loaded.
  */
 export function paintBall(
   out: HTMLCanvasElement,
   surface: HTMLCanvasElement,
-  photo: HTMLImageElement | null,
+  relief: HTMLCanvasElement,
   size = 1600,
 ): void {
-  const { pent, hex, axis, binormal, faces } = build();
+  const { hex, faces } = build();
   const marks = scuffs(hex);
-  const mark = photo ? badge(photo) : null;
 
   out.width = size;
   out.height = size / 2;
@@ -266,6 +216,24 @@ export function paintBall(
   if (!sg) return;
   const simage = sg.createImageData(out.width, out.height);
   const spx = simage.data;
+
+  /**
+   * A third map: how high the surface stands, not how it is coloured.
+   *
+   * This is the one that was missing. Every earlier version painted the panels
+   * as light and shade straight into the colour map, which looks right in a
+   * still and wrong the moment the light moves - baked shading cannot respond
+   * to anything, so the ball read as a picture of a ball rather than as an
+   * object. Given a real height the renderer works out the shading itself: the
+   * seams sink, the panels stand proud of them, the leather has tooth, and all
+   * of it turns with the light.
+   */
+  relief.width = out.width;
+  relief.height = out.height;
+  const rg = relief.getContext("2d");
+  if (!rg) return;
+  const rimage = rg.createImageData(out.width, out.height);
+  const rpx = rimage.data;
 
   for (let ty = 0; ty < out.height; ty++) {
     const theta = (ty / out.height) * Math.PI;
@@ -296,83 +264,63 @@ export function paintBall(
 
       let col: Vec3;
       let rough: number;
+      /** 0 at the bottom of a seam, 1 on the crown of a panel. */
+      let high: number;
 
       if (gap < SEAM) {
         /**
-         * The seam, as two tones rather than one line.
+         * The seam, as a trough with thread in it.
          *
-         * A single grey line between panels reads as drawn on. A real ball has
-         * a trough with thread lying in it, so the outer half of the seam is
-         * in shadow and the middle catches the light - which is what makes the
-         * panels look joined rather than printed.
+         * The outer half is the shadowed wall of the groove and the middle is
+         * the stitching sitting up in it, which is why this is two tones and
+         * two heights rather than one grey line.
          */
-        col = gap < SEAM * 0.42 ? SEAM_LIGHT : SEAM_DARK;
+        const mid = gap < SEAM * 0.42;
+        col = mid ? SEAM_LIGHT : SEAM_DARK;
         rough = 0.86;
-      } else if (f1 < 12) {
-        // A pentagon: the dark panels of the classic ball.
-        col = INK;
-        rough = 0.44;
-
-        if (mark && BADGED.has(f1)) {
-          const delta = Math.acos(Math.min(1, d1));
-          const around = Math.atan2(dot(d, binormal[f1]), dot(d, axis[f1]));
-          /**
-           * Laying the mark on the panel, worked out rather than guessed at.
-           *
-           * Seen from outside the ball the panel's frame reads as (axis right,
-           * binormal up), so `around` is an anticlockwise screen angle. Image
-           * coordinates run down the page, so v is the axis that flips, not u -
-           * flipping both only turned the mark upside down and left it still
-           * mirrored. No quarter turn: the panel's axis already points along
-           * the mark's own width, and adding one stood the whole badge on its
-           * side. The aspect correction belongs on v - the crop is wider than
-           * it is tall, so it is the vertical span that has to be squeezed to
-           * keep the mark from stretching.
-           */
-          const k = (Math.tan(delta) / Math.tan(PENT * 0.72)) * 0.5;
-          const u = 0.5 + k * Math.cos(around);
-          const v = 0.5 - k * Math.sin(around) * (mark.w / mark.h);
-          if (u >= 0 && u < 1 && v >= 0 && v < 1) {
-            const mx = Math.floor(u * mark.w);
-            const my = Math.floor(v * mark.h);
-            const o = (my * mark.w + mx) * 4;
-            if (mark.data[o + 3] > 0) {
-              col = [mark.data[o], mark.data[o + 1], mark.data[o + 2]];
-              rough = 0.34;
-            }
-          }
-        }
+        high = mid ? 0.30 : 0.10;
       } else {
-        // A hexagon: the light panels, with the mouldings and the wear.
-        col = WHITE;
-        rough = 0.68;
-        const m = marks[f1 - 12];
-        const lx = dot(d, m.u);
-        const ly = dot(d, m.v);
-        for (const k of m.marks) {
-          // Distance to the segment, in the panel's own frame.
-          const wx = lx - k.x;
-          const wy = ly - k.y;
-          const len = k.dx * k.dx + k.dy * k.dy;
-          const t = Math.max(0, Math.min(1, (wx * k.dx + wy * k.dy) / len));
-          if (Math.hypot(wx - t * k.dx, wy - t * k.dy) < 0.0045) {
-            col = HASH;
-            break;
+        // Panels stand proud, doming towards the middle.
+        const rise = Math.min(1, (gap - SEAM) / (SEAM * 11));
+        high = 0.42 + 0.58 * (rise * rise * (3 - 2 * rise));
+
+        if (f1 < 12) {
+          // A pentagon: the dark panels of the classic ball.
+          col = INK;
+          // Nearly as matt as the white. A glossy black panel was the last
+          // thing on the ball still reading as moulded plastic.
+          rough = 0.60;
+        } else {
+          // A hexagon: the light panels, carrying whatever wear there is.
+          col = WHITE;
+          rough = 0.70;
+          const m = marks[f1 - 12];
+          const lx = dot(d, m.u);
+          const ly = dot(d, m.v);
+          for (const k of m.marks) {
+            // Distance to the segment, in the panel's own frame.
+            const wx = lx - k.x;
+            const wy = ly - k.y;
+            const len = k.dx * k.dx + k.dy * k.dy;
+            const t = Math.max(0, Math.min(1, (wx * k.dx + wy * k.dy) / len));
+            if (Math.hypot(wx - t * k.dx, wy - t * k.dy) < 0.0045) {
+              col = HASH;
+              rough = 0.80;
+              break;
+            }
           }
         }
       }
 
       /**
-       * The panels are baked as domes.
+       * The colour map keeps only a trace of the shading.
        *
-       * Each panel of a real ball is stitched under pressure and bulges, so it
-       * is brightest in the middle and falls away into a shadowed trough at the
-       * seam. None of that can come from a light, because the mesh really is a
-       * smooth sphere - there is no geometry there to catch one. Painting it in
-       * is what turns 32 flat regions into 32 panels, and it was the single
-       * biggest thing separating the computed ball from the photographed one.
+       * The height map does the real work now, but a little darkening in the
+       * crease survives as ambient occlusion - light that would not reach into
+       * a groove no matter where it came from. Any more than this and the baked
+       * version fights the lit one.
        */
-      const dome = 0.84 + 0.16 * Math.min(1, gap / (SEAM * 10));
+      const dome = 0.90 + 0.10 * high;
       const o = (ty * out.width + tx) * 4;
       px[o] = col[0] * dome;
       px[o + 1] = col[1] * dome;
@@ -383,9 +331,25 @@ export function paintBall(
       spx[o + 1] = r8;
       spx[o + 2] = r8;
       spx[o + 3] = 255;
+
+      // Leather on top of the panel shape: fine tooth everywhere, so the white
+      // is never a flat fill and the black is never a hole.
+      const u = tx / out.width;
+      const v = ty / out.height;
+      const tooth =
+        grainAt(u, v, GRAIN) * 0.55 +
+        grainAt(u, v, GRAIN * 2) * 0.30 +
+        grainAt(u, v, GRAIN * 4) * 0.15;
+      const h = Math.max(0, Math.min(1, high * 0.90 + tooth * 0.10));
+      const h8 = Math.round(h * 255);
+      rpx[o] = h8;
+      rpx[o + 1] = h8;
+      rpx[o + 2] = h8;
+      rpx[o + 3] = 255;
     }
   }
 
   g.putImageData(image, 0, 0);
   sg.putImageData(simage, 0, 0);
+  rg.putImageData(rimage, 0, 0);
 }
