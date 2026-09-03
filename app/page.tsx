@@ -30,7 +30,17 @@ export const metadata: Metadata = {
     "유럽 주요 구단 이적 소식을 한곳에 모읍니다. 해외 기자 244명의 기사를 20분마다 가져와, 처음 쓴 기자 기준으로 정리해 보여줍니다.",
 };
 
-export const dynamic = "force-dynamic";
+/**
+ * Rebuilt on a timer rather than on every request.
+ *
+ * Measured on production: this page was taking 0.6-1.6s to first byte, because
+ * `force-dynamic` meant every visitor waited for a database round trip before
+ * a single byte left the server. Nothing on the page is per-visitor and the
+ * only figure that moves is the day's article count, so it can be served from
+ * the edge and refreshed behind the reader's back. The feed keeps its live
+ * rendering - that one really is different every time you open it.
+ */
+export const revalidate = 300;
 
 export default async function About() {
   const [pulse] = await Promise.all([getPulse()]);
