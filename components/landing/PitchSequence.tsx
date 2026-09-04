@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useRef, type CSSProperties } from "react";
+import { useCallback, useRef, useState, type CSSProperties } from "react";
 import { animate, onScroll, stagger } from "animejs";
 import type { Team } from "@/lib/types";
 import { TeamCrest } from "@/components/TeamCrest";
@@ -103,6 +103,8 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
   const shot = useRef<HTMLDivElement>(null);
   const copy = useRef<HTMLDivElement>(null);
   const prompt = useRef<HTMLDivElement>(null);
+  const [ballReady, setBallReady] = useState(false);
+  const onBallReady = useCallback(() => setBallReady(true), []);
   /** 0 at the top of the sequence, 1 at the end. Read by the WebGL loop. */
   const progress = useRef(0);
 
@@ -344,7 +346,32 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
             aria-hidden
             className="pointer-events-none absolute inset-x-[26%] bottom-[5.5%] h-[6%] rounded-[50%] bg-[radial-gradient(ellipse_at_center,rgba(0,0,0,0.85),transparent_70%)] blur-[3px]"
           />
-          <Ball3D progress={progress} />
+          {/*
+            A still of the ball, shown until the real one is drawn.
+
+            three.js has to be fetched and the markings computed before there is
+            anything on the canvas - about half a second, measured. The grass
+            behind it renders immediately, so for that half second the page was
+            a photograph of an empty pitch with a hole where the ball goes, and
+            that gap is what made the site feel slow rather than the numbers.
+            This is the first frame of the real thing, 21kB, so the swap is
+            invisible: same ball, same size, same place.
+          */}
+          <img
+            src="/ball-poster.webp"
+            alt=""
+            aria-hidden
+            width={530}
+            height={530}
+            // 86%, not 80.2%: the still was cropped to the middle 86% of the
+            // canvas, so the ball fills 93% of the image rather than all of it.
+            // Sized this way the two land on exactly the same pixels and the
+            // handover is invisible.
+            className={`pointer-events-none absolute inset-0 m-auto h-[86%] w-[86%] object-contain transition-opacity duration-300 ${
+              ballReady ? "opacity-0" : "opacity-100"
+            }`}
+          />
+          <Ball3D progress={progress} onReady={onBallReady} />
           {/*
             Grass shadow falling on the ball itself.
 

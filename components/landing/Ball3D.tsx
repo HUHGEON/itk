@@ -14,7 +14,14 @@ import { reducedMotion } from "@/lib/motion";
  * `progress` runs 0 to 1 across the sequence. The parent owns it because the
  * parent is what is tied to the scrollbar.
  */
-export function Ball3D({ progress }: { progress: { current: number } }) {
+export function Ball3D({
+  progress,
+  onReady,
+}: {
+  progress: { current: number };
+  /** Fired on the first rendered frame, so the poster can step aside. */
+  onReady?: () => void;
+}) {
   const canvas = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -254,6 +261,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       ro.observe(el);
 
       let raf = 0;
+      let announced = false;
       const tick = () => {
         // Completes at half the scroll and holds: the sticky stage releases
         // well before the scrub reaches 1, so anything finishing late finishes
@@ -306,6 +314,10 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
         );
 
         renderer.render(scene, camera);
+        if (!announced) {
+          announced = true;
+          onReady?.();
+        }
         raf = requestAnimationFrame(tick);
       };
       tick();
@@ -330,7 +342,7 @@ export function Ball3D({ progress }: { progress: { current: number } }) {
       cancelled = true;
       stop?.();
     };
-  }, [progress]);
+  }, [progress, onReady]);
 
   return (
     <canvas
