@@ -73,9 +73,11 @@ jobs:
 
       # Google News and club sitemaps carry no description, so more than half
       # the feed arrives with nothing to expand. This resolves the real article
-      # address and reads the summary out of the page's own metadata.
+      # address, and reads the summary and the byline out of the page's own
+      # metadata. 150 rather than 80 while the backlog of author-less articles
+      # drains: at 80 a pass covers 5,700 a day, and there were 10,000 waiting.
       - name: Fetch article summaries
-        run: npm run hydrate -- --limit 80
+        run: npm run hydrate -- --limit 150
 
       # Google's public translate backend is the default and needs no key;
       # MyMemory catches whatever it drops, and ANTHROPIC_API_KEY upgrades the

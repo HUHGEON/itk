@@ -585,14 +585,21 @@ as $$
   -- nothing ever looked at the page that would have said who wrote it.
   select a.id, a.url
   from articles a
-  where a.hydrated_at is null
-    and a.published_at > now() - interval '14 days'
+  where a.published_at > now() - interval '14 days'
     and (
-      coalesce(a.snippet, '') = ''
+      -- Never opened, and arrived with no summary.
+      (a.hydrated_at is null and coalesce(a.snippet, '') = '')
+      -- Or nobody is credited. Articles stored before the page was ever read
+      -- for a byline are stamped as hydrated but have no author, so this has
+      -- to look past that stamp - otherwise the backlog can never be filled.
+      -- Three days between attempts keeps a page that simply has no byline
+      -- from being fetched on every pass.
       or (a.journalist_id is null
           and a.cited_id is null
           and a.byline is null
-          and not a.official)
+          and not a.official
+          and (a.hydrated_at is null
+               or a.hydrated_at < now() - interval '3 days'))
     )
   order by a.published_at desc
   limit greatest(least(p_limit, 300), 1);
