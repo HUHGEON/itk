@@ -22,7 +22,8 @@
     "audit": "tsx scripts/audit-journalists.ts",
     "retag": "tsx scripts/retag.ts",
     "lang:bench": "tsx scripts/lang-bench.ts",
-    "crests:cache": "tsx scripts/cache-crests.ts"
+    "crests:cache": "tsx scripts/cache-crests.ts",
+    "ball:bake": "tsx scripts/bake-ball.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",

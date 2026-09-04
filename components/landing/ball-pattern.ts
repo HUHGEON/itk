@@ -185,12 +185,26 @@ function scuffs(hex: Vec3[]) {
  * Paints the three maps three.js wraps onto the sphere: colour, roughness, and
  * height. Everything is computed - no image is loaded.
  */
-export function paintBall(
-  out: HTMLCanvasElement,
-  surface: HTMLCanvasElement,
-  relief: HTMLCanvasElement,
-  size = 1024,
-): void {
+/** The three maps as raw RGBA, with no canvas anywhere in sight. */
+export interface BallMaps {
+  width: number;
+  height: number;
+  /** colour */
+  albedo: Uint8ClampedArray<ArrayBuffer>;
+  /** roughness, in the green channel three.js reads */
+  surface: Uint8ClampedArray<ArrayBuffer>;
+  /** height, for the bump and displacement maps */
+  relief: Uint8ClampedArray<ArrayBuffer>;
+}
+
+/**
+ * Works out the three maps.
+ *
+ * Deliberately free of the DOM so it can run at build time as well as in the
+ * browser: the markings never change, so they can be baked into files once
+ * instead of being recomputed on every visit. See `scripts/bake-ball.ts`.
+ */
+export function computeBallMaps(size = 1024): BallMaps {
   const { pent, hex, faces } = build();
   const marks = scuffs(hex);
   // Identity lookups, so the per-row filtering above can still tell a pentagon
@@ -198,12 +212,11 @@ export function paintBall(
   const pentSet = new Set(pent);
   const hexIndex = new Map(hex.map((h, i) => [h, i] as const));
 
-  out.width = size;
-  out.height = size / 2;
-  const g = out.getContext("2d");
-  if (!g) return;
-  const image = g.createImageData(out.width, out.height);
-  const px = image.data;
+  const out = { width: size, height: size / 2 };
+  const bytes = out.width * out.height * 4;
+  // Backed by explicit ArrayBuffers: `ImageData` will not take a view over a
+  // SharedArrayBuffer, and the plain constructor leaves the type ambiguous.
+  const px = new Uint8ClampedArray(new ArrayBuffer(bytes));
 
   /**
    * A second map for how the surface behaves, not what colour it is.
@@ -214,12 +227,7 @@ export function paintBall(
    * same single roughness was most of why the computed ball read as plastic -
    * a real ball is never uniformly shiny.
    */
-  surface.width = out.width;
-  surface.height = out.height;
-  const sg = surface.getContext("2d");
-  if (!sg) return;
-  const simage = sg.createImageData(out.width, out.height);
-  const spx = simage.data;
+  const spx = new Uint8ClampedArray(new ArrayBuffer(bytes));
 
   /**
    * A third map: how high the surface stands, not how it is coloured.
@@ -232,12 +240,7 @@ export function paintBall(
    * seams sink, the panels stand proud of them, the leather has tooth, and all
    * of it turns with the light.
    */
-  relief.width = out.width;
-  relief.height = out.height;
-  const rg = relief.getContext("2d");
-  if (!rg) return;
-  const rimage = rg.createImageData(out.width, out.height);
-  const rpx = rimage.data;
+  const rpx = new Uint8ClampedArray(new ArrayBuffer(bytes));
 
   /**
    * How far a panel's own surface reaches from its centre, plus margin.
@@ -377,7 +380,36 @@ export function paintBall(
     }
   }
 
-  g.putImageData(image, 0, 0);
-  sg.putImageData(simage, 0, 0);
-  rg.putImageData(rimage, 0, 0);
+  return {
+    width: out.width,
+    height: out.height,
+    albedo: px,
+    surface: spx,
+    relief: rpx,
+  };
+}
+
+/**
+ * Draws the computed maps onto canvases, for the browser path.
+ *
+ * Kept as a wrapper so the rendering code does not have to know whether the
+ * maps were computed just now or loaded from a file.
+ */
+export function paintBall(
+  out: HTMLCanvasElement,
+  surface: HTMLCanvasElement,
+  relief: HTMLCanvasElement,
+  size = 1024,
+): void {
+  const maps = computeBallMaps(size);
+  const put = (c: HTMLCanvasElement, data: Uint8ClampedArray<ArrayBuffer>) => {
+    c.width = maps.width;
+    c.height = maps.height;
+    const g = c.getContext("2d");
+    if (!g) return;
+    g.putImageData(new ImageData(data, maps.width, maps.height), 0, 0);
+  };
+  put(out, maps.albedo);
+  put(surface, maps.surface);
+  put(relief, maps.relief);
 }

@@ -151,12 +151,48 @@ export function Ball3D({
       // The markings are drawn once into a canvas and used as a map, so the
       // mesh stays a single smooth sphere: the outline is a circle by
       // construction and there are no panel edges to fight the depth buffer.
-      const painted = document.createElement("canvas");
-      const surfaced = document.createElement("canvas");
-      const relieved = document.createElement("canvas");
-      paintBall(painted, surfaced, relieved);
+      /**
+       * The maps, loaded if they were baked and computed if they were not.
+       *
+       * `scripts/bake-ball.ts` writes them to /ball as WebP - 122kB for all
+       * three, against the ~100ms of main thread that generating them costs on
+       * every visit. Downloads are cached and parallel; the computation is
+       * neither. The fallback is not dead code either: it keeps a checkout
+       * that has not run the bake script rendering the right ball.
+       */
+      const loader = new THREE.TextureLoader();
+      const load = (url: string) =>
+        new Promise<InstanceType<typeof THREE.Texture> | null>((res) =>
+          loader.load(url, res, undefined, () => res(null)),
+        );
 
-      const map = new THREE.CanvasTexture(painted);
+      const baked = await Promise.all([
+        load("/ball/albedo.webp"),
+        load("/ball/surface.webp"),
+        load("/ball/relief.webp"),
+      ]);
+      if (cancelled) return;
+
+      let map: InstanceType<typeof THREE.Texture>;
+      let roughnessSource: InstanceType<typeof THREE.Texture>;
+      let reliefSource: InstanceType<typeof THREE.Texture>;
+
+      if (baked[0] && baked[1] && baked[2]) {
+        [map, roughnessSource, reliefSource] = baked as [
+          InstanceType<typeof THREE.Texture>,
+          InstanceType<typeof THREE.Texture>,
+          InstanceType<typeof THREE.Texture>,
+        ];
+      } else {
+        const painted = document.createElement("canvas");
+        const surfaced = document.createElement("canvas");
+        const relieved = document.createElement("canvas");
+        paintBall(painted, surfaced, relieved);
+        map = new THREE.CanvasTexture(painted);
+        roughnessSource = new THREE.CanvasTexture(surfaced);
+        reliefSource = new THREE.CanvasTexture(relieved);
+      }
+
       map.colorSpace = THREE.SRGBColorSpace;
       map.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
@@ -166,7 +202,7 @@ export function Ball3D({
        * Left in linear space deliberately: this is a material property, not a
        * colour, and running it through sRGB would bend every value.
        */
-      const roughnessMap = new THREE.CanvasTexture(surfaced);
+      const roughnessMap = roughnessSource;
       roughnessMap.anisotropy = map.anisotropy;
 
       /**
@@ -180,7 +216,7 @@ export function Ball3D({
        * two per cent of the radius is a deep enough groove at this size, and
        * more starts to look quilted.
        */
-      const reliefMap = new THREE.CanvasTexture(relieved);
+      const reliefMap = reliefSource;
       reliefMap.anisotropy = map.anisotropy;
 
       const ball = new THREE.Mesh(

@@ -29,6 +29,18 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Baked ball maps: regenerated only when the pattern code changes, and
+        // committed alongside it, so a week is safe and a repeat visitor pays
+        // nothing for them.
+        source: "/ball/:file*",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=604800, stale-while-revalidate=86400",
+          },
+        ],
+      },
+      {
         source: "/pitch.jpg",
         headers: [
           {
