@@ -201,6 +201,7 @@ export function MatchReport({
             homeName={match.home.name}
             awayName={match.away.name}
             events={detail.events}
+            faces={faces}
             bare
           />
         </section>

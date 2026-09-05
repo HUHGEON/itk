@@ -52,17 +52,16 @@ export default async function Game({ params }: { params: Params }) {
    * once for everyone rather than repeated by every visitor. A failure costs
    * nothing: the pitch falls back to squad numbers.
    */
+  const squad = (side: "home" | "away") => {
+    const l = detail.lineups?.[side];
+    const club = detail.match[side].sourceName;
+    return [...(l?.starters ?? []), ...(l?.bench ?? [])].map((p) => ({
+      name: p.name,
+      club,
+    }));
+  };
   const faces = detail.lineups
-    ? await facesFor([
-        ...(detail.lineups.home?.starters ?? []).map((p) => ({
-          name: p.name,
-          club: detail.match.home.sourceName,
-        })),
-        ...(detail.lineups.away?.starters ?? []).map((p) => ({
-          name: p.name,
-          club: detail.match.away.sourceName,
-        })),
-      ])
+    ? await facesFor([...squad("home"), ...squad("away")])
     : {};
 
   return (

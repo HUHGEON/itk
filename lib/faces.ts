@@ -252,25 +252,32 @@ const cached = unstable_cache(
 );
 
 /**
- * Photos for a set of players, keyed by name.
+ * Portraits for a set of players, keyed by name.
  *
- * Looked up together so one slow answer does not hold up the rest, and missing
- * names simply do not appear in the map.
+ * Run a few at a time rather than all at once. A full match sheet is around
+ * forty players across both benches, and firing forty requests together at a
+ * free tier is how a rate limit is found - this one answered 429 during
+ * development at roughly that volume. Eight in flight keeps a cold match under
+ * a second while staying well inside what the service will take, and a warm one
+ * costs nothing at all because every answer is cached for a week.
+ *
+ * Names that could not be placed simply do not appear in the map.
  */
 export async function facesFor(
   players: { name: string; club: string }[],
 ): Promise<Record<string, string>> {
   const seen = new Map<string, string>();
-  const unique = players.filter((p) => {
-    if (seen.has(p.name)) return false;
-    seen.set(p.name, p.club);
-    return true;
-  });
+  for (const p of players) if (!seen.has(p.name)) seen.set(p.name, p.club);
+  const unique = [...seen.entries()];
 
-  const found = await Promise.all(
-    unique.map(async (p) => [p.name, await cached(p.name, p.club)] as const),
-  );
   const out: Record<string, string> = {};
-  for (const [name, url] of found) if (url) out[name] = url;
+  const BATCH = 8;
+  for (let i = 0; i < unique.length; i += BATCH) {
+    const slice = unique.slice(i, i + BATCH);
+    const found = await Promise.all(
+      slice.map(async ([name, club]) => [name, await cached(name, club)] as const),
+    );
+    for (const [name, url] of found) if (url) out[name] = url;
+  }
   return out;
 }

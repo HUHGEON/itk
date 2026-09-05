@@ -11,9 +11,33 @@ import type { Lineup, LineupPlayer, MatchEvent } from "@/lib/matches";
  * the timeline: a name with an arrow beside it answers "did he play" without
  * making anyone cross-reference two sections.
  */
-function Player({ p, minute }: { p: LineupPlayer; minute?: string }) {
+function Player({
+  p,
+  minute,
+  face,
+}: {
+  p: LineupPlayer;
+  minute?: string;
+  face?: string;
+}) {
   return (
-    <li className="flex items-baseline gap-2 py-[3px]">
+    <li className="flex items-center gap-2 py-[3px]">
+      {/* The same portrait as the pitch, at list size. A player without one
+          keeps the empty ring so the column of names stays aligned. */}
+      <span className="size-[22px] shrink-0 overflow-hidden rounded-full bg-surface-3">
+        {face && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={face}
+            alt=""
+            width={22}
+            height={22}
+            loading="lazy"
+            decoding="async"
+            className="size-full object-cover object-top"
+          />
+        )}
+      </span>
       <span className="tnum w-5 shrink-0 text-right text-[11px] text-faint">
         {p.jersey}
       </span>
@@ -68,10 +92,12 @@ function Column({
   name,
   lineup,
   minutes,
+  faces,
 }: {
   name: string;
   lineup: Lineup;
   minutes: Record<string, string>;
+  faces: Record<string, string>;
 }) {
   return (
     <div className="min-w-0">
@@ -87,7 +113,12 @@ function Column({
       </h3>
       <ul className="border-t border-border/60 pt-1.5">
         {lineup.starters.map((p) => (
-          <Player key={p.name + p.jersey} p={p} minute={minutes[p.name]} />
+          <Player
+            key={p.name + p.jersey}
+            p={p}
+            minute={minutes[p.name]}
+            face={faces[p.name]}
+          />
         ))}
       </ul>
       {lineup.bench.length > 0 && (
@@ -95,7 +126,12 @@ function Column({
           <h4 className="pt-3 pb-1 text-[11px] font-medium text-faint">교체 명단</h4>
           <ul className="border-t border-border/60 pt-1.5">
             {lineup.bench.map((p) => (
-              <Player key={p.name + p.jersey} p={p} minute={minutes[p.name]} />
+              <Player
+                key={p.name + p.jersey}
+                p={p}
+                minute={minutes[p.name]}
+                face={faces[p.name]}
+              />
             ))}
           </ul>
         </>
@@ -110,6 +146,7 @@ export function Lineups({
   homeName,
   awayName,
   events = [],
+  faces = {},
   bare = false,
 }: {
   home: Lineup | null;
@@ -118,6 +155,8 @@ export function Lineups({
   awayName: string;
   /** Used to put the minute on each substitution. */
   events?: MatchEvent[];
+  /** Portraits by player name, shared with the pitch. */
+  faces?: Record<string, string>;
   /** The pitch above already carries the heading and the section rule. */
   bare?: boolean;
 }) {
@@ -137,8 +176,12 @@ export function Lineups({
 
   const inner = (
     <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-      {home && <Column name={homeName} lineup={home} minutes={minutes} />}
-      {away && <Column name={awayName} lineup={away} minutes={minutes} />}
+      {home && (
+        <Column name={homeName} lineup={home} minutes={minutes} faces={faces} />
+      )}
+      {away && (
+        <Column name={awayName} lineup={away} minutes={minutes} faces={faces} />
+      )}
     </div>
   );
 
