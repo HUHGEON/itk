@@ -1,4 +1,5 @@
 import { unstable_cache } from "next/cache";
+import { norm, sameClub, samePlayer } from "@/lib/names";
 
 /**
  * Player photographs.
@@ -34,60 +35,6 @@ import { unstable_cache } from "next/cache";
  */
 
 const API = "https://www.thesportsdb.com/api/v1/json/3";
-
-/** Strips accents and punctuation so "Milos" finds "Miloš". */
-function norm(s: string): string {
-  return s
-    .normalize("NFKD")
-    .replace(/[̀-ͯ]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
-}
-
-/**
- * Do these two names refer to the same club?
- *
- * The two sources word clubs differently - "Manchester United" against "Man
- * United", "Internazionale" against "Inter Milan" - so this asks whether either
- * name's distinctive words are contained in the other, ignoring the filler that
- * half the clubs in Europe share.
- */
-const FILLER = new Set([
-  "fc", "afc", "cf", "sc", "ac", "as", "ss", "us", "united", "city", "club",
-  "football", "de", "the",
-]);
-
-function sameClub(a: string, b: string): boolean {
-  const words = (s: string) =>
-    new Set(norm(s).split(" ").filter((w) => w.length > 2 && !FILLER.has(w)));
-  const x = words(a);
-  const y = words(b);
-  if (x.size === 0 || y.size === 0) return false;
-  for (const w of x) if (y.has(w)) return true;
-  return false;
-}
-
-/**
- * Do these two strings name the same player?
- *
- * The two sources disagree about which of a player's names to lead with -
- * Ipswich's winger is "Fatawu Issahaku" on one and "Abdul Fatawu" on the other,
- * and requiring the whole string to match threw him away. Sharing one
- * substantial name is enough here because the club has already been checked:
- * the risk this guards against is a different player elsewhere, and two players
- * at one club sharing a name is not a case that arises.
- */
-function sameName(a: string, b: string): boolean {
-  const x = norm(a);
-  const y = norm(b);
-  if (x === y) return true;
-  const words = (s: string) => new Set(s.split(" ").filter((w) => w.length >= 4));
-  const wx = words(x);
-  for (const w of words(y)) if (wx.has(w)) return true;
-  return false;
-}
 
 interface SportsDbPlayer {
   strPlayer?: string;
@@ -126,7 +73,7 @@ function pick(
 ): string | null {
   for (const p of found) {
     if (!p.strTeam || !sameClub(p.strTeam, club)) continue;
-    if (!sameName(p.strPlayer ?? "", name)) continue;
+    if (!samePlayer(p.strPlayer ?? "", name)) continue;
     const portrait = p.strThumb ?? p.strCutout;
     if (!portrait) continue;
     /*

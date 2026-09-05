@@ -11,10 +11,12 @@ import {
 } from "@/lib/matches";
 import { markGoal } from "@/lib/motion";
 import { MEASURE } from "./Measure";
+import type { FmLineup, FmTeam } from "@/lib/fotmob";
+import { spots } from "@/lib/pitch";
 import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
-import { Pitch } from "./Pitch";
+import { Pitch, type PitchPlayer } from "./Pitch";
 
 /**
  * One match, kept current.
@@ -46,10 +48,13 @@ const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function MatchReport({
   initial,
+  fm = null,
   faces = {},
 }: {
   initial: MatchDetail;
-  /** Player photographs, resolved once on the server. */
+  /** Ratings, photographs and exact positions, when the match was found. */
+  fm?: FmLineup | null;
+  /** Fallback photographs, keyed by player name. */
   faces?: Record<string, string>;
 }) {
   const [detail, setDetail] = useState(initial);
@@ -98,8 +103,59 @@ export function MatchReport({
     last.current = now;
   }, [match.home.score, match.away.score]);
 
+  /*
+   * Positions from the richer source where it has the match, worked out from
+   * the formation where it does not.
+   *
+   * The two agree on shape - both were checked against the same 4-2-3-1 - but
+   * only one of them gives coordinates, ratings and photographs, so it leads
+   * whenever it answers.
+   */
+  const pitchSide = (
+    side: "home" | "away",
+  ): PitchPlayer[] | null => {
+    const t = fm?.[side];
+    if (t) {
+      return t.starters.map((p) => ({
+        name: p.name,
+        jersey: p.jersey,
+        x: p.x,
+        y: p.y,
+        rating: p.rating,
+        image: p.image,
+        goals: p.goals,
+        assists: p.assists,
+        offAt: p.offAt,
+      }));
+    }
+    const l = detail.lineups?.[side];
+    const laid = l ? spots(l) : null;
+    if (!laid) return null;
+    const off = subMinutes(detail.events);
+    return laid.map((p) => ({
+      name: p.name,
+      jersey: p.jersey,
+      x: p.x,
+      y: p.y,
+      rating: null,
+      image: faces[p.name] ?? null,
+      goals: p.goals,
+      assists: p.assists,
+      offAt: p.subbedOut && off[p.name] ? Number(off[p.name].replace(/\D+/g, "")) : null,
+    }));
+  };
+  const meta = (side: "home" | "away") => {
+    const t = fm?.[side];
+    return {
+      formation: t?.formation ?? detail.lineups?.[side]?.formation ?? null,
+      rating: t?.rating ?? null,
+      coach: t?.coach ?? null,
+    };
+  };
+  const hasPitch = Boolean(pitchSide("home") && pitchSide("away"));
+
   const tabs = [
-    detail.lineups && { id: "lineup" as const, label: "라인업" },
+    (hasPitch || fm) && { id: "lineup" as const, label: "라인업" },
     detail.events.length > 0 && { id: "events" as const, label: "경기 기록" },
     detail.stats.length > 0 && { id: "stats" as const, label: "통계" },
   ].filter((t): t is { id: TabId; label: string } => Boolean(t));
@@ -220,23 +276,21 @@ export function MatchReport({
             ))}
           </nav>
 
-          {current === "lineup" && detail.lineups && (
+          {current === "lineup" && (
             <section className="pt-4">
               <Pitch
-                home={detail.lineups.home}
-                away={detail.lineups.away}
+                home={pitchSide("home")}
+                away={pitchSide("away")}
                 homeSide={match.home}
                 awaySide={match.away}
-                faces={faces}
-                minutes={subMinutes(detail.events)}
+                homeMeta={meta("home")}
+                awayMeta={meta("away")}
               />
               <Lineups
-                home={detail.lineups.home}
-                away={detail.lineups.away}
+                home={fm?.home ?? null}
+                away={fm?.away ?? null}
                 homeName={match.home.name}
                 awayName={match.away.name}
-                events={detail.events}
-                faces={faces}
               />
             </section>
           )}

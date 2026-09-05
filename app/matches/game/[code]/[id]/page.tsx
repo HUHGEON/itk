@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { facesFor } from "@/lib/faces";
+import { fotmobLineup } from "@/lib/fotmob";
 import { matchDetail, seoul, ymd } from "@/lib/matches";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchReport } from "@/components/matches/MatchReport";
@@ -52,6 +53,16 @@ export default async function Game({ params }: { params: Params }) {
    * once for everyone rather than repeated by every visitor. A failure costs
    * nothing: the pitch falls back to squad numbers.
    */
+  /*
+   * The richer source first.
+   *
+   * When it has the match it supplies ratings, photographs, exact positions,
+   * the manager and who was unavailable - everything the pitch draws. Only when
+   * it does not are portraits looked up one player at a time, which is the
+   * slower path and the one worth avoiding.
+   */
+  const fm = await fotmobLineup(detail.match);
+
   const squad = (side: "home" | "away") => {
     const l = detail.lineups?.[side];
     const club = detail.match[side].sourceName;
@@ -60,9 +71,10 @@ export default async function Game({ params }: { params: Params }) {
       club,
     }));
   };
-  const faces = detail.lineups
-    ? await facesFor([...squad("home"), ...squad("away")])
-    : {};
+  const faces =
+    !fm && detail.lineups
+      ? await facesFor([...squad("home"), ...squad("away")])
+      : {};
 
   return (
     <Shell
@@ -80,7 +92,7 @@ export default async function Game({ params }: { params: Params }) {
         </>
       }
     >
-      <MatchReport initial={detail} faces={faces} />
+      <MatchReport initial={detail} fm={fm} faces={faces} />
     </Shell>
   );
 }

@@ -1,22 +1,20 @@
-import type { Lineup, LineupPlayer, MatchEvent } from "@/lib/matches";
-import { role } from "@/lib/pitch";
+import type { FmTeam } from "@/lib/fotmob";
 
 /**
- * What happened to the bench.
+ * What happened to the bench, and who was not available at all.
  *
  * The eleven are not listed here. They are already on the pitch above, in their
  * positions, with their numbers and their faces - repeating them as a column of
  * text says nothing the diagram has not already said better. What the diagram
- * cannot show is who came off for whom, and who never got on, so that is what
- * is underneath it.
+ * cannot show is who came off for whom, who never got on, and who was missing.
  */
-function Face({ face }: { face?: string }) {
+function Face({ src, jersey }: { src: string | null; jersey?: string }) {
   return (
-    <span className="size-[26px] shrink-0 overflow-hidden rounded-full bg-surface-3">
-      {face && (
+    <span className="flex size-[26px] shrink-0 items-center justify-center overflow-hidden rounded-full bg-surface-3">
+      {src ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={face}
+          src={src}
           alt=""
           width={26}
           height={26}
@@ -24,69 +22,68 @@ function Face({ face }: { face?: string }) {
           decoding="async"
           className="size-full object-cover object-top"
         />
+      ) : (
+        <span className="tnum text-[10px] font-semibold text-muted">
+          {jersey}
+        </span>
       )}
     </span>
   );
 }
 
-/** One substitution: who came on, who came off, and when. */
-function Swap({
-  on,
-  off,
+function Rating({ r }: { r: number | null }) {
+  if (r == null) return null;
+  const tone =
+    r >= 7.5
+      ? "bg-emerald-500 text-black"
+      : r >= 6.5
+        ? "bg-amber-500 text-black"
+        : "bg-zinc-500 text-white";
+  return (
+    <span
+      className={`tnum shrink-0 rounded-[3px] px-1 text-[10px] font-bold ${tone}`}
+    >
+      {r.toFixed(1)}
+    </span>
+  );
+}
+
+function Row({
+  name,
+  jersey,
+  image,
+  rating,
+  note,
   minute,
-  faces,
 }: {
-  on: string;
-  off: string | null;
-  minute: string;
-  faces: Record<string, string>;
+  name: string;
+  jersey: string;
+  image: string | null;
+  rating: number | null;
+  note?: React.ReactNode;
+  minute?: number | null;
 }) {
   return (
     <li className="flex items-center gap-2 py-1.5">
-      <Face face={faces[on]} />
+      <Face src={image} jersey={jersey} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
-          <span className="shrink-0 text-[10px] text-emerald-400">▲</span>
-          <span className="truncate text-[12.5px] text-text">{on}</span>
+          <span className="tnum shrink-0 text-[10.5px] text-faint">{jersey}</span>
+          <span className="truncate text-[12.5px] text-text">{name}</span>
         </div>
-        {off && (
-          <div className="flex items-baseline gap-1.5">
-            <span className="shrink-0 text-[10px] text-red-400/80">▼</span>
-            <span className="truncate text-[11.5px] text-muted">{off}</span>
-          </div>
-        )}
+        {note && <div className="truncate text-[11px] text-muted">{note}</div>}
       </div>
-      <span className="tnum shrink-0 text-[11.5px] font-semibold text-faint">
-        {minute}
-      </span>
+      <Rating r={rating} />
+      {minute != null && (
+        <span className="tnum shrink-0 text-[11px] font-semibold text-faint">
+          {minute}&apos;
+        </span>
+      )}
     </li>
   );
 }
 
-function Benched({ p, face }: { p: LineupPlayer; face?: string }) {
-  return (
-    <li className="flex items-center gap-2 py-1">
-      <Face face={face} />
-      <span className="tnum w-5 shrink-0 text-right text-[11px] text-faint">
-        {p.jersey}
-      </span>
-      <span className="min-w-0 flex-1 truncate text-[12.5px] text-muted">
-        {p.name}
-      </span>
-      <span className="shrink-0 text-[10.5px] text-faint">
-        {role(p.position)}
-      </span>
-    </li>
-  );
-}
-
-function Side({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
+function Side({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
       <h4 className="truncate pb-1 text-[11.5px] font-semibold text-muted">
@@ -99,86 +96,119 @@ function Side({
   );
 }
 
+function Block({
+  title,
+  home,
+  away,
+  homeName,
+  awayName,
+}: {
+  title: string;
+  home: React.ReactNode[];
+  away: React.ReactNode[];
+  homeName: string;
+  awayName: string;
+}) {
+  if (home.length + away.length === 0) return null;
+  return (
+    <section className="pt-4">
+      <h3 className="pb-2 text-[12px] font-semibold text-muted">{title}</h3>
+      <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
+        <Side title={homeName}>{home}</Side>
+        <Side title={awayName}>{away}</Side>
+      </div>
+    </section>
+  );
+}
+
 export function Lineups({
   home,
   away,
   homeName,
   awayName,
-  events = [],
-  faces = {},
 }: {
-  home: Lineup | null;
-  away: Lineup | null;
+  home: FmTeam | null;
+  away: FmTeam | null;
   homeName: string;
   awayName: string;
-  /** Where the substitutions and their minutes come from. */
-  events?: MatchEvent[];
-  /** Portraits by player name, shared with the pitch. */
-  faces?: Record<string, string>;
 }) {
   if (!home && !away) return null;
 
-  const subs = (side: "home" | "away") =>
-    events.filter((e) => e.kind === "sub" && e.side === side && e.player);
+  /*
+   * A substitution is read from the player who came on.
+   *
+   * The source marks each player's own minute rather than pairing them, so the
+   * one going off is found by his minute - the two halves of a swap share it.
+   * Where a partner cannot be found the row still stands on its own, which is
+   * right for a straight injury replacement with no matching entry.
+   */
+  const swaps = (t: FmTeam | null) =>
+    (t?.subs ?? [])
+      .filter((p) => p.onAt != null)
+      .sort((a, b) => (a.onAt ?? 0) - (b.onAt ?? 0))
+      .map((on) => {
+        const off = t?.starters.find((s) => s.offAt === on.onAt);
+        return (
+          <Row
+            key={on.name + on.jersey}
+            name={on.name}
+            jersey={on.jersey}
+            image={on.image}
+            rating={on.rating}
+            minute={on.onAt}
+            note={off ? <>▼ {off.name}</> : null}
+          />
+        );
+      });
 
-  // Someone who never came on. A bench of nine where five were used leaves four
-  // worth listing; repeating the five would duplicate the section above.
-  const unused = (l: Lineup | null) =>
-    (l?.bench ?? []).filter((p) => !p.subbedIn);
+  const unused = (t: FmTeam | null) =>
+    (t?.subs ?? [])
+      .filter((p) => p.onAt == null)
+      .map((p) => (
+        <Row
+          key={p.name + p.jersey}
+          name={p.name}
+          jersey={p.jersey}
+          image={p.image}
+          rating={null}
+        />
+      ));
 
-  const anySub = subs("home").length + subs("away").length > 0;
-  const anyBench = unused(home).length + unused(away).length > 0;
-  if (!anySub && !anyBench) return null;
+  const out = (t: FmTeam | null) =>
+    (t?.unavailable ?? []).map((u) => (
+      <Row
+        key={u.name}
+        name={u.name}
+        jersey=""
+        image={null}
+        rating={null}
+        note={u.reason}
+      />
+    ));
 
   return (
     <div className="px-[var(--gutter)] pb-5">
-      {anySub && (
-        <section className="pt-4">
-          <h3 className="pb-2 text-[12px] font-semibold text-muted">교체</h3>
-          <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
-            <Side title={homeName}>
-              {subs("home").map((e) => (
-                <Swap
-                  key={e.id}
-                  on={e.player!}
-                  off={e.second}
-                  minute={e.minute}
-                  faces={faces}
-                />
-              ))}
-            </Side>
-            <Side title={awayName}>
-              {subs("away").map((e) => (
-                <Swap
-                  key={e.id}
-                  on={e.player!}
-                  off={e.second}
-                  minute={e.minute}
-                  faces={faces}
-                />
-              ))}
-            </Side>
-          </div>
-        </section>
-      )}
-
-      {anyBench && (
-        <section className="pt-5">
-          <h3 className="pb-2 text-[12px] font-semibold text-muted">벤치</h3>
-          <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
-            <Side title={homeName}>
-              {unused(home).map((p) => (
-                <Benched key={p.name + p.jersey} p={p} face={faces[p.name]} />
-              ))}
-            </Side>
-            <Side title={awayName}>
-              {unused(away).map((p) => (
-                <Benched key={p.name + p.jersey} p={p} face={faces[p.name]} />
-              ))}
-            </Side>
-          </div>
-        </section>
-      )}
+      <Block
+        title="교체"
+        home={swaps(home)}
+        away={swaps(away)}
+        homeName={homeName}
+        awayName={awayName}
+      />
+      <Block
+        title="벤치"
+        home={unused(home)}
+        away={unused(away)}
+        homeName={homeName}
+        awayName={awayName}
+      />
+      <Block
+        title="결장"
+        home={out(home)}
+        away={out(away)}
+        homeName={homeName}
+        awayName={awayName}
+      />
     </div>
   );
 }
