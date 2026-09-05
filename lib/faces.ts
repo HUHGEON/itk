@@ -69,6 +69,26 @@ function sameClub(a: string, b: string): boolean {
   return false;
 }
 
+/**
+ * Do these two strings name the same player?
+ *
+ * The two sources disagree about which of a player's names to lead with -
+ * Ipswich's winger is "Fatawu Issahaku" on one and "Abdul Fatawu" on the other,
+ * and requiring the whole string to match threw him away. Sharing one
+ * substantial name is enough here because the club has already been checked:
+ * the risk this guards against is a different player elsewhere, and two players
+ * at one club sharing a name is not a case that arises.
+ */
+function sameName(a: string, b: string): boolean {
+  const x = norm(a);
+  const y = norm(b);
+  if (x === y) return true;
+  const words = (s: string) => new Set(s.split(" ").filter((w) => w.length >= 4));
+  const wx = words(x);
+  for (const w of words(y)) if (wx.has(w)) return true;
+  return false;
+}
+
 interface SportsDbPlayer {
   strPlayer?: string;
   strTeam?: string;
@@ -85,38 +105,75 @@ interface SportsDbPlayer {
  * requirement rather than a hint: a photo whose club does not match is
  * discarded rather than shown.
  */
-export async function lookupFace(name: string, club: string): Promise<string | null> {
+async function search(term: string): Promise<SportsDbPlayer[]> {
   try {
     const res = await fetch(
-      `${API}/searchplayers.php?p=${encodeURIComponent(name)}`,
+      `${API}/searchplayers.php?p=${encodeURIComponent(term)}`,
       { signal: AbortSignal.timeout(6000) },
     );
-    if (!res.ok) return null;
+    if (!res.ok) return [];
     const json = (await res.json()) as { player?: SportsDbPlayer[] | null };
-    const found = json.player ?? [];
-    for (const p of found) {
-      if (!p.strTeam || !sameClub(p.strTeam, club)) continue;
-      if (norm(p.strPlayer ?? "") !== norm(name)) continue;
-      const portrait = p.strThumb ?? p.strCutout;
-      if (!portrait) continue;
-      /*
-       * `strThumb` first, and only then `strCutout`.
-       *
-       * The two are different pictures. A cut-out is a three-quarter body shot
-       * with the background removed, so getting a face out of it means cropping
-       * hard into a photograph that was never framed for it. `strThumb` is the
-       * portrait - head and shoulders, already framed the way this is drawn
-       * everywhere else - which is what was wanted all along. Measured on one
-       * eleven-a-side: twenty of the twenty-two starters had one.
-       *
-       * /preview is 200x200 at about 18kB, drawn at 44.
-       */
-      return `${portrait}/preview`;
-    }
-    return null;
+    return json.player ?? [];
   } catch {
-    return null;
+    return [];
   }
+}
+
+function pick(
+  found: SportsDbPlayer[],
+  name: string,
+  club: string,
+): string | null {
+  for (const p of found) {
+    if (!p.strTeam || !sameClub(p.strTeam, club)) continue;
+    if (!sameName(p.strPlayer ?? "", name)) continue;
+    const portrait = p.strThumb ?? p.strCutout;
+    if (!portrait) continue;
+    /*
+     * `strThumb` first, and only then `strCutout`.
+     *
+     * The two are different pictures. A cut-out is a three-quarter body shot
+     * with the background removed, so getting a face out of it means cropping
+     * hard into a photograph never framed for it. `strThumb` is the portrait -
+     * head and shoulders, facing the camera - which is what every board that
+     * shows faces uses. Measured on one match: twenty of twenty-two starters
+     * had one.
+     *
+     * /preview is 200x200 at about 18kB, drawn at 48.
+     */
+    return `${portrait}/preview`;
+  }
+  return null;
+}
+
+/**
+ * One player's portrait, or null.
+ *
+ * `club` is the club they are playing for in this match, and it is a
+ * requirement rather than a hint: a photo whose club does not match is
+ * discarded rather than shown.
+ *
+ * Two queries at most. The free search answers with a single result, so a full
+ * name that the other source words differently returns nothing useful - asking
+ * for "Fatawu Issahaku" found no one while "Fatawu" found him at Ipswich. The
+ * second query only runs when the first found nothing, which keeps the cost at
+ * one request for almost every player.
+ */
+export async function lookupFace(
+  name: string,
+  club: string,
+): Promise<string | null> {
+  const first = pick(await search(name), name, club);
+  if (first) return first;
+
+  // The most distinctive single word, which is usually the one the other
+  // source leads with.
+  const words = norm(name)
+    .split(" ")
+    .filter((w) => w.length >= 5)
+    .sort((a, b) => b.length - a.length);
+  if (words.length === 0) return null;
+  return pick(await search(words[0]), name, club);
 }
 
 /**
@@ -190,7 +247,7 @@ const cached = unstable_cache(
   // The key names the rendition as well as the lookup: changing which size is
   // returned has to invalidate what was already stored, and a week-long cache
   // otherwise keeps serving the old one.
-  ["player-face-portrait"],
+  ["player-face-portrait-3"],
   { revalidate: 604800, tags: ["player-face"] },
 );
 
