@@ -13,15 +13,23 @@ import { markGoal } from "@/lib/motion";
  * and the names run outward, and everything else - kick-off time, minute
  * played - is set quieter around that spine.
  *
- * Clubs the feed follows are links to their stories and carry full weight;
- * everyone else is present but recessive. There is nowhere useful to send
- * someone who taps Coventry City, and pretending otherwise would flatten the
- * one distinction this board is built on.
+ * Clubs the feed follows carry full weight; everyone else is present but
+ * recessive. That contrast is the one distinction this board is built on.
+ *
+ * The row as a whole is the link, and it goes to the match. Clubs are not links
+ * of their own here: a link inside a link is invalid, and of the two
+ * destinations the match is the one being pointed at. The club is a tap away
+ * from the report, and always in the rail.
  */
 
 function Side({ side, align }: { side: MatchSide; align: "home" | "away" }) {
-  const body = (
-    <>
+  const lane =
+    align === "home"
+      ? "flex-row-reverse justify-start text-right"
+      : "justify-start text-left";
+
+  return (
+    <span className={`flex min-w-0 items-center gap-2.5 ${lane}`}>
       {side.crest ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
@@ -44,24 +52,7 @@ function Side({ side, align }: { side: MatchSide; align: "home" | "away" }) {
       >
         {side.name}
       </span>
-    </>
-  );
-
-  const lane =
-    align === "home"
-      ? "flex-row-reverse justify-start text-right"
-      : "justify-start text-left";
-
-  return side.slug ? (
-    <Link
-      href={`/feed?team=${side.slug}`}
-      title={`${side.name} 소식 보기`}
-      className={`flex min-w-0 items-center gap-2.5 rounded-[4px] transition-colors hover:text-accent ${lane}`}
-    >
-      {body}
-    </Link>
-  ) : (
-    <span className={`flex min-w-0 items-center gap-2.5 ${lane}`}>{body}</span>
+    </span>
   );
 }
 
@@ -98,10 +89,12 @@ export function MatchRow({
   const time = seoul(match.kickoff).hm;
 
   return (
-    <article
+    <Link
+      href={`/matches/game/${match.code}/${match.id}`}
       data-match-row
+      title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
       className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[6px] px-2 py-3 transition-colors sm:gap-4 ${
-        live ? "bg-accent/[0.06]" : "hover:bg-surface-2/40"
+        live ? "bg-accent/[0.06] hover:bg-accent/[0.11]" : "hover:bg-surface-2/40"
       }`}
     >
       <Side side={match.home} align="home" />
@@ -142,6 +135,6 @@ export function MatchRow({
       </div>
 
       <Side side={match.away} align="away" />
-    </article>
+    </Link>
   );
 }

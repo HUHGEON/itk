@@ -78,6 +78,8 @@ export interface MatchSide {
 
 export interface Match {
   id: string;
+  /** Source competition code, so a row can link to its own detail page. */
+  code: string;
   competition: string;
   competitionShort: string;
   /** Kick-off, as a timestamp. */
@@ -264,6 +266,7 @@ export function toMatch(event: unknown, code: string): Match | null {
 
   return {
     id: e.id,
+    code,
     competition: meta?.ko ?? code,
     competitionShort: meta?.short ?? code,
     kickoff: new Date(e.date).getTime(),
@@ -447,4 +450,357 @@ export async function matchesForTeam(
     }),
   );
   return lists.flat().sort((a, b) => a.kickoff - b.kickoff);
+}
+
+/* -------------------------------------------------------------------------
+ * One match, in full.
+ *
+ * ESPN's summary endpoint carries what a match report needs: a timeline with
+ * named scorers, twenty-nine team statistics, and both lineups with formations
+ * and substitutions. Measured on a finished Premier League match before
+ * building on it - what is here is what came back, and what is not here did not
+ * exist. Notably there are no player ratings and no per-player statistics
+ * (`boxscore.players` is absent for football), so this page does not pretend to
+ * have them.
+ *
+ * The parser is split from the fetch so the browser can re-run it against the
+ * same endpoint while a match is in play, the same way the board polls.
+ * ----------------------------------------------------------------------- */
+
+export type EventKind = "goal" | "own" | "pen" | "miss" | "yellow" | "red" | "sub";
+
+export interface MatchEvent {
+  id: string;
+  kind: EventKind;
+  /** "24'", "45'+4'". */
+  minute: string;
+  /** Sorting key in seconds, since the minute string is not comparable. */
+  at: number;
+  side: "home" | "away" | null;
+  /** Scorer, booked player, or the player coming on. */
+  player: string | null;
+  /** Assist, or the player going off. */
+  second: string | null;
+}
+
+export interface StatPair {
+  label: string;
+  home: string;
+  away: string;
+  /** Share of the bar, home side. 0.5 when neither did anything. */
+  share: number;
+}
+
+export interface StatGroup {
+  title: string;
+  rows: StatPair[];
+}
+
+export interface LineupPlayer {
+  name: string;
+  jersey: string;
+  position: string;
+  subbedOut: boolean;
+  subbedIn: boolean;
+}
+
+export interface Lineup {
+  formation: string | null;
+  starters: LineupPlayer[];
+  bench: LineupPlayer[];
+}
+
+export interface MatchDetail {
+  match: Match;
+  venue: string | null;
+  events: MatchEvent[];
+  stats: StatGroup[];
+  lineups: { home: Lineup | null; away: Lineup | null } | null;
+}
+
+/** Minute string to seconds, so "45'+4'" sorts after "45'". */
+function minuteAt(display: string | undefined, value: number | undefined): number {
+  if (typeof value === "number") return value;
+  const m = /(\d+)'(?:\+(\d+))?/.exec(display ?? "");
+  if (!m) return 0;
+  return (Number(m[1]) + Number(m[2] ?? 0) / 100) * 60;
+}
+
+const EVENT_KIND: Record<string, EventKind> = {
+  Goal: "goal",
+  "Own Goal": "own",
+  "Penalty - Scored": "pen",
+  "Penalty - Missed": "miss",
+  "Penalty - Saved": "miss",
+  "Yellow Card": "yellow",
+  "Red Card": "red",
+  "Yellow Red Card": "red",
+  Substitution: "sub",
+};
+
+interface SummaryJson {
+  header?: {
+    competitions?: {
+      competitors?: { id?: string; homeAway?: string }[];
+    }[];
+  };
+  gameInfo?: { venue?: { fullName?: string } };
+  keyEvents?: {
+    id?: string;
+    type?: { text?: string };
+    clock?: { value?: number; displayValue?: string };
+    team?: { id?: string };
+    participants?: { athlete?: { displayName?: string } }[];
+  }[];
+  boxscore?: {
+    teams?: {
+      statistics?: { name?: string; displayValue?: string }[];
+    }[];
+  };
+  rosters?: {
+    formation?: string;
+    homeAway?: string;
+    roster?: {
+      jersey?: string;
+      starter?: boolean;
+      subbedIn?: boolean;
+      subbedOut?: boolean;
+      position?: { abbreviation?: string };
+      athlete?: { displayName?: string };
+    }[];
+  }[];
+}
+
+/** Reads a raw statistic. Missing means zero, which is what a blank row means. */
+function raw(
+  stats: { name?: string; displayValue?: string }[] | undefined,
+  name: string,
+): number {
+  const v = Number(stats?.find((s) => s.name === name)?.displayValue);
+  return Number.isFinite(v) ? v : 0;
+}
+
+/**
+ * A counted statistic, as a bar.
+ *
+ * The bar is the point: two numbers side by side are read as a comparison, and
+ * the share saves the reader doing the division. Nothing to nothing splits even
+ * rather than collapsing to one side.
+ */
+function pair(label: string, a: number, b: number, suffix = ""): StatPair {
+  const total = a + b;
+  return {
+    label,
+    home: `${a}${suffix}`,
+    away: `${b}${suffix}`,
+    share: total === 0 ? 0.5 : a / total,
+  };
+}
+
+/**
+ * A percentage worked out here rather than taken from the source.
+ *
+ * Measured: the source reports `passPct` as "0.9" for 556 of 626, which is 88.8
+ * per cent. Its own rounding is to one decimal of a fraction, so every rate it
+ * publishes lands on a multiple of ten when shown as a percentage. Dividing the
+ * two counts it also publishes gives the real figure.
+ */
+function rate(label: string, an: number, ad: number, bn: number, bd: number): StatPair {
+  const a = ad === 0 ? 0 : Math.round((an / ad) * 100);
+  const b = bd === 0 ? 0 : Math.round((bn / bd) * 100);
+  return { label, home: `${a}%`, away: `${b}%`, share: a + b === 0 ? 0.5 : a / (a + b) };
+}
+
+function buildStats(json: SummaryJson): StatGroup[] {
+  const t = json.boxscore?.teams;
+  if (!t || t.length < 2) return [];
+  const h = t[0].statistics;
+  const a = t[1].statistics;
+  const n = (k: string) => [raw(h, k), raw(a, k)] as const;
+
+  const [hPoss, aPoss] = n("possessionPct");
+  const [hPass, aPass] = n("accuratePasses");
+  const [hPassT, aPassT] = n("totalPasses");
+  const [hCross, aCross] = n("accurateCrosses");
+  const [hCrossT, aCrossT] = n("totalCrosses");
+  const [hLong, aLong] = n("accurateLongBalls");
+  const [hLongT, aLongT] = n("totalLongBalls");
+
+  const groups: StatGroup[] = [
+    {
+      title: "공격",
+      rows: [
+        {
+          label: "점유율",
+          home: `${hPoss}%`,
+          away: `${aPoss}%`,
+          share: hPoss + aPoss === 0 ? 0.5 : hPoss / (hPoss + aPoss),
+        },
+        pair("슈팅", ...n("totalShots")),
+        pair("유효 슈팅", ...n("shotsOnTarget")),
+        pair("코너킥", ...n("wonCorners")),
+        pair("오프사이드", ...n("offsides")),
+      ],
+    },
+    {
+      title: "패스",
+      rows: [
+        pair("패스 성공", hPass, aPass),
+        rate("패스 성공률", hPass, hPassT, aPass, aPassT),
+        pair("크로스 성공", hCross, aCross),
+        rate("크로스 성공률", hCross, hCrossT, aCross, aCrossT),
+        pair("롱볼 성공", hLong, aLong),
+        rate("롱볼 성공률", hLong, hLongT, aLong, aLongT),
+      ],
+    },
+    {
+      title: "수비",
+      rows: [
+        pair("태클", ...n("totalTackles")),
+        pair("인터셉트", ...n("interceptions")),
+        pair("클리어", ...n("effectiveClearance")),
+        pair("슈팅 차단", ...n("blockedShots")),
+        pair("선방", ...n("saves")),
+      ],
+    },
+    {
+      title: "규율",
+      rows: [
+        pair("파울", ...n("foulsCommitted")),
+        pair("경고", ...n("yellowCards")),
+        pair("퇴장", ...n("redCards")),
+      ],
+    },
+  ];
+
+  // A group whose every row is nil says nothing. Before kick-off that is all of
+  // them, and four empty bar charts is worse than no statistics section at all.
+  return groups.filter((g) =>
+    g.rows.some((r) => r.home !== "0" && r.home !== "0%" ? true : r.away !== "0" && r.away !== "0%"),
+  );
+}
+
+function buildLineup(r: SummaryJson["rosters"] extends (infer U)[] | undefined ? U : never): Lineup {
+  const all = (r?.roster ?? []).map((p) => ({
+    name: p.athlete?.displayName ?? "?",
+    jersey: p.jersey ?? "",
+    position: p.position?.abbreviation ?? "",
+    subbedOut: Boolean(p.subbedOut),
+    subbedIn: Boolean(p.subbedIn),
+  }));
+  return {
+    formation: r?.formation ?? null,
+    starters: all.filter((_, i) => (r?.roster ?? [])[i]?.starter),
+    bench: all.filter((_, i) => !(r?.roster ?? [])[i]?.starter),
+  };
+}
+
+/**
+ * Turns a summary response into a match report. Pure, so the browser can call
+ * it on each poll while the match is in play.
+ */
+export function toDetail(
+  summary: unknown,
+  match: Match,
+): MatchDetail {
+  const json = summary as SummaryJson;
+  const cs = json.header?.competitions?.[0]?.competitors ?? [];
+  const homeId = cs.find((c) => c.homeAway === "home")?.id;
+  const awayId = cs.find((c) => c.homeAway === "away")?.id;
+
+  const events: MatchEvent[] = [];
+  for (const [i, e] of (json.keyEvents ?? []).entries()) {
+    const kind = EVENT_KIND[e.type?.text ?? ""];
+    if (!kind) continue; // Kick-off, half time, delays: the clock says this already.
+    const who = e.participants ?? [];
+    events.push({
+      id: e.id ?? `e${i}`,
+      kind,
+      minute: e.clock?.displayValue ?? "",
+      at: minuteAt(e.clock?.displayValue, e.clock?.value),
+      side: e.team?.id === homeId ? "home" : e.team?.id === awayId ? "away" : null,
+      player: who[0]?.athlete?.displayName ?? null,
+      second: who[1]?.athlete?.displayName ?? null,
+    });
+  }
+  events.sort((x, y) => x.at - y.at);
+
+  const rosters = json.rosters ?? [];
+  const hr = rosters.find((r) => r.homeAway === "home") ?? rosters[0];
+  const ar = rosters.find((r) => r.homeAway === "away") ?? rosters[1];
+  // A named side only counts once it has an eleven. Before kick-off the source
+  // answers with the rosters key present and both sides empty, and a lineups
+  // object holding two nulls is still truthy - which let an empty report render
+  // as neither lineups nor the "nothing published yet" notice.
+  const named = (r: typeof hr) => {
+    if (!r) return null;
+    const l = buildLineup(r);
+    return l.starters.length > 0 ? l : null;
+  };
+  const home = named(hr);
+  const away = named(ar);
+
+  return {
+    match,
+    venue: json.gameInfo?.venue?.fullName ?? null,
+    events,
+    stats: buildStats(json),
+    lineups: home || away ? { home, away } : null,
+  };
+}
+
+/** The summary endpoint for one match. Open, keyless, same host as the board. */
+export function summaryUrl(code: string, id: string): string {
+  return `${ESPN}/${code}/summary?event=${id}`;
+}
+
+/**
+ * One match's report.
+ *
+ * Returns null when the match does not exist, which is what a bad URL should
+ * produce - a 404 rather than an empty page pretending the fixture is real.
+ */
+/**
+ * A summary response, whole. Split out from the fetch so the browser can run it
+ * on each poll while a match is in play.
+ */
+export function parseSummary(
+  json: unknown,
+  code: string,
+  id: string,
+): MatchDetail | null {
+  const header = (json as { header?: { competitions?: unknown[] } }).header;
+  const comp = header?.competitions?.[0];
+  if (!comp) return null;
+  // The header carries the id and the competition entry carries the date,
+  // status and competitors - the same shape `toMatch` already reads off a
+  // scoreboard event once the two are merged. Verified against a finished
+  // fixture: club names, scores, state and kick-off all resolve.
+  const match = toMatch({ ...(header as object), ...(comp as object) }, code);
+  if (!match) return null;
+  return toDetail(json, { ...match, id });
+}
+
+/**
+ * One match's report.
+ *
+ * Returns null when the match does not exist, which is what a bad URL should
+ * produce - a 404 rather than an empty page pretending the fixture is real.
+ */
+export async function matchDetail(
+  code: string,
+  id: string,
+  signal?: AbortSignal,
+): Promise<MatchDetail | null> {
+  try {
+    const res = await fetch(summaryUrl(code, id), {
+      signal,
+      // A match in play must not be served from a cache.
+      cache: "no-store",
+    });
+    if (!res.ok) return null;
+    return parseSummary(await res.json(), code, id);
+  } catch {
+    return null;
+  }
 }

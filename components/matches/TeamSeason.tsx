@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { seoul, type Match } from "@/lib/matches";
 import { dealIn } from "@/lib/motion";
@@ -109,9 +110,11 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
         : "bg-surface-3 text-muted";
 
   return (
-    <article
+    <Link
+      href={`/matches/game/${match.code}/${match.id}`}
       data-season-row
-      className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5"
+      title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
+      className="-mx-2 grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[6px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
     >
       <div className="tnum w-[52px] shrink-0 text-[11.5px] leading-tight text-faint">
         <div>
@@ -180,6 +183,6 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
           </span>
         )}
       </div>
-    </article>
+    </Link>
   );
 }
