@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useRef } from "react";
 import { seoul, type Match } from "@/lib/matches";
 import { dealIn } from "@/lib/motion";
+import { MEASURE } from "./Measure";
 
 /**
  * A club's results and fixtures, with the competition on every row.
@@ -35,7 +36,7 @@ export function TeamSeason({
   }, [slug]);
 
   return (
-    <div ref={root}>
+    <div ref={root} className={MEASURE}>
       {live.length > 0 && (
         <Block title="진행 중" rows={live} slug={slug} highlight />
       )}

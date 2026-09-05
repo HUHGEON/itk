@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef } from "react";
 import type { Match } from "@/lib/matches";
 import { MatchRow } from "./MatchRow";
+import { MEASURE } from "./Measure";
 import { useLiveMatches } from "./useLiveMatches";
 import { dealIn } from "@/lib/motion";
 
@@ -77,7 +78,7 @@ export function MatchBoard({
   }
 
   return (
-    <div ref={board}>
+    <div ref={board} className={MEASURE}>
       {live && (
         <p className="px-[calc(var(--gutter)+0.5rem)] pt-3 pb-1 text-[11.5px] text-muted">
           진행 중인 경기는 자동으로 갱신됩니다
@@ -94,7 +95,7 @@ export function MatchBoard({
 
       {!bare && (
         <p className="border-t border-border px-[calc(var(--gutter)+0.5rem)] py-6 text-[11.5px] text-faint">
-          구단 이름을 누르면 그 팀 기사로 갑니다.{" "}
+          경기를 누르면 기록과 선수 명단을 볼 수 있습니다.{" "}
           <Link
             href="/feed"
             className="text-muted underline-offset-4 hover:underline"

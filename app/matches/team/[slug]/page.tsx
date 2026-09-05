@@ -7,6 +7,7 @@ import { loadTeams } from "@/lib/registry";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { TeamSeason } from "@/components/matches/TeamSeason";
 import { TeamCrest } from "@/components/TeamCrest";
+import { MEASURE } from "@/components/matches/Measure";
 import { Shell } from "@/components/Shell";
 import { SearchBox } from "@/components/SearchBox";
 import { CollectButton } from "@/components/CollectButton";
@@ -72,7 +73,8 @@ export default async function Team({ params }: { params: Params }) {
         </>
       }
     >
-      <header className="flex items-center gap-3 border-b border-border px-[var(--gutter)] py-5">
+      <header className="border-b border-border">
+        <div className={`${MEASURE} flex items-center gap-3 px-[var(--gutter)] py-5`}>
         <TeamCrest team={t} size={36} />
         <div className="min-w-0">
           <h1 className="truncate text-[20px] font-bold tracking-tight text-text">
@@ -87,6 +89,7 @@ export default async function Team({ params }: { params: Params }) {
               이적 소식 보기
             </Link>
           </p>
+        </div>
         </div>
       </header>
 

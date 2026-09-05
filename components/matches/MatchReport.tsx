@@ -10,6 +10,7 @@ import {
   type MatchSide,
 } from "@/lib/matches";
 import { markGoal } from "@/lib/motion";
+import { MEASURE } from "./Measure";
 import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
@@ -81,15 +82,11 @@ export function MatchReport({ initial }: { initial: MatchDetail }) {
 
   return (
     /*
-     * A report is a document, so it gets a document's measure.
-     *
-     * The shell runs full width because a feed of headlines wants the room. A
-     * match report does not: measured at 1440px unconstrained, possession read
-     * "69.6%" and "30.4%" 580px apart, which is two facts rather than a
-     * comparison, and the timeline sat in the middle of two empty 400px
-     * gutters. Holding the report to 46rem puts both numbers in one glance.
+     * A report is a document, so it gets the section's measure. Measured at
+     * 1440px unconstrained, possession read "69.6%" and "30.4%" 580px apart,
+     * which is two facts rather than a comparison.
      */
-    <div className="mx-auto w-full max-w-[46rem]">
+    <div className={MEASURE}>
       <header className="border-b border-border px-[var(--gutter)] py-6">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
           <Link

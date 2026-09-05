@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { COMPETITIONS, matchesOn, seoul, seoulDay, ymd } from "@/lib/matches";
 import { MatchBoard } from "@/components/matches/MatchBoard";
+import { MEASURE } from "@/components/matches/Measure";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { Shell } from "@/components/Shell";
 import { SearchBox } from "@/components/SearchBox";
@@ -128,7 +129,7 @@ export default async function Matches({
           is on screen, and splitting them across the page would mean hunting
           for one after using the other. */}
       <div className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
-        <div className="flex items-center gap-1 px-[var(--gutter)] py-3">
+        <div className={`${MEASURE} flex items-center gap-1 px-[var(--gutter)] py-3`}>
           <Link
             href={href(shift(date, -1), !onlyTracked)}
             aria-label="이전 날"
@@ -174,7 +175,8 @@ export default async function Matches({
       </div>
 
       {picked && (
-        <div className="flex items-center gap-3 border-b border-border px-[var(--gutter)] py-3">
+        <div className="border-b border-border">
+          <div className={`${MEASURE} flex items-center gap-3 px-[var(--gutter)] py-3`}>
           <h1 className="text-[15px] font-bold tracking-tight text-text">
             {picked.ko}
           </h1>
@@ -186,6 +188,7 @@ export default async function Matches({
               순위표
             </Link>
           )}
+          </div>
         </div>
       )}
 

@@ -6,6 +6,7 @@ import { COMPETITIONS, tableFor, matchesOn, ymd } from "@/lib/matches";
 import { LeagueTable } from "@/components/matches/LeagueTable";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchBoard } from "@/components/matches/MatchBoard";
+import { MEASURE } from "@/components/matches/Measure";
 import { Shell } from "@/components/Shell";
 import { SearchBox } from "@/components/SearchBox";
 import { CollectButton } from "@/components/CollectButton";
@@ -72,7 +73,8 @@ export default async function League({ params }: { params: Params }) {
         </>
       }
     >
-      <header className="border-b border-border px-[var(--gutter)] py-5">
+      <header className="border-b border-border">
+        <div className={`${MEASURE} px-[var(--gutter)] py-5`}>
         <h1 className="text-[20px] font-bold tracking-tight text-text">
           {c.ko}
         </h1>
@@ -87,13 +89,16 @@ export default async function League({ params }: { params: Params }) {
             경기 일정
           </Link>
         </p>
+        </div>
       </header>
 
-      <LeagueTable rows={rows} />
+      <div className={MEASURE}>
+        <LeagueTable rows={rows} />
+      </div>
 
       {mine.length > 0 && (
         <section className="border-t border-border pt-1">
-          <h2 className="px-[var(--gutter)] pt-4 pb-1 text-[12px] font-semibold text-muted">
+          <h2 className={`${MEASURE} px-[var(--gutter)] pt-4 pb-1 text-[12px] font-semibold text-muted`}>
             오늘 경기
           </h2>
           <MatchBoard
@@ -105,7 +110,7 @@ export default async function League({ params }: { params: Params }) {
         </section>
       )}
 
-      <p className="px-[var(--gutter)] pb-8 text-[11.5px] text-faint">
+      <p className={`${MEASURE} px-[var(--gutter)] pb-8 text-[11.5px] text-faint`}>
         {ymd(today)} 기준
       </p>
     </Shell>
