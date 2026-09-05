@@ -16,22 +16,20 @@ import { kitColours, shortName, spots, type Spot } from "@/lib/pitch";
  * Photographs come from elsewhere and only when the club could be confirmed;
  * a player without one keeps his number in a disc of the club's colour.
  */
-/** A framed cut-out, as opposed to an ordinary photograph. */
-function cutout(url: string): boolean {
-  return url.includes("thesportsdb.com");
-}
-
 function Token({
   p,
   color,
   away,
   face,
+  minute,
 }: {
   p: Spot;
   color: string;
   away: boolean;
-  /** Cut-out photograph, when one could be confirmed for this player. */
+  /** Portrait, when one could be confirmed for this player. */
   face?: string;
+  /** Minute he came off, for the substitution marker. */
+  minute?: string;
 }) {
   const bg = `#${color}`;
   /*
@@ -45,7 +43,7 @@ function Token({
   const near = `${4 + p.y * 44}%`;
   const far = `${96 - p.y * 44}%`;
   const across = `${p.x * 100}%`;
-  const cut = face ? cutout(face) : false;
+
 
   return (
     <li
@@ -62,24 +60,21 @@ function Token({
       }
     >
       <span className="relative">
-        {face && cut ? (
-          /*
-           * A cut-out has no background, so it is not given one.
-           *
-           * These arrive as RGBA with the background already removed, and
-           * dropping them into a filled disc put the club's colour behind the
-           * player's head - which is the one thing that made them look pasted
-           * on rather than photographed. Standing free on the grass is what
-           * they were cut out for.
-           *
-           * The clip is a circle rather than a square: cropped tight to the
-           * head, a square edge cuts the neck off flat, while a circle reads as
-           * a portrait and its transparent corners let the grass through.
-           *
-           * The number chip carries the club's colour instead of the disc.
-           */
-          <span className="relative block size-10 overflow-hidden rounded-full sm:size-12">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
+        {/*
+         * A portrait in a circle, which is how every board that has faces
+         * draws them.
+         *
+         * The disc behind is neutral, not the club's colour: a photograph
+         * sitting on a red or blue fill reads as pasted on, and the two halves
+         * of the pitch already say which side a player is on. A player with no
+         * portrait keeps his number here instead.
+         */}
+        <span
+          className="flex size-10 items-center justify-center overflow-hidden rounded-full sm:size-12"
+          style={{ background: face ? "#3f3f46" : bg }}
+        >
+          {face ? (
+            // eslint-disable-next-line @next/next/no-img-element
             <img
               src={face}
               alt=""
@@ -87,54 +82,22 @@ function Token({
               height={48}
               loading="lazy"
               decoding="async"
-              className="absolute left-1/2 w-[250%] max-w-none -translate-x-1/2"
-              style={{ top: "-6%" }}
+              className="size-full object-cover object-top"
             />
-          </span>
-        ) : (
-          <span
-            className="relative flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
-            style={{ background: face ? "transparent" : bg }}
-          >
-            {face ? (
-              // An ordinary press photograph: a rectangle with no convention
-              // about where the head sits, so it is only masked and centred.
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={face}
-                alt=""
-                width={44}
-                height={44}
-                loading="lazy"
-                decoding="async"
-                className="size-full object-cover object-top"
-              />
-            ) : (
-              <span
-                className="tnum text-[13px] font-bold text-white sm:text-[15px]"
-                style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
-              >
-                {p.jersey || "-"}
-              </span>
-            )}
-          </span>
-        )}
-
-        {/* With no disc behind the face, the number is what carries the club's
-            colour, so it is always shown when there is a photograph. */}
-        {face && p.jersey && (
-          <span
-            className="tnum absolute -right-1 -bottom-0.5 rounded-full px-[4px] text-[9.5px] leading-[1.5] font-bold text-white ring-1 ring-black/40"
-            style={{ background: bg }}
-          >
-            {p.jersey}
-          </span>
-        )}
+          ) : (
+            <span
+              className="tnum text-[14px] font-bold text-white sm:text-[16px]"
+              style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
+            >
+              {p.jersey || "-"}
+            </span>
+          )}
+        </span>
 
         {p.goals > 0 && (
           <span
             title={`${p.goals}골`}
-            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black ring-1 ring-black/30"
+            className="absolute -right-1 -bottom-1 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black ring-1 ring-black/30"
           >
             ⚽{p.goals > 1 && <span className="tnum">{p.goals}</span>}
           </span>
@@ -142,23 +105,29 @@ function Token({
         {p.goals === 0 && p.assists > 0 && (
           <span
             title={`도움 ${p.assists}`}
-            className="tnum absolute -top-1 -left-1.5 rounded-full bg-sky-400 px-[3.5px] text-[9px] leading-[1.6] font-bold text-black ring-1 ring-black/30"
+            className="tnum absolute -right-1 -bottom-1 rounded-full bg-sky-400 px-[3.5px] text-[9px] leading-[1.6] font-bold text-black ring-1 ring-black/30"
           >
             A{p.assists > 1 ? p.assists : ""}
           </span>
         )}
         {p.subbedOut && (
           <span
-            title="교체 아웃"
-            className="absolute -top-1 -right-1.5 text-[10px] leading-none text-red-300"
+            title={minute ? `${minute} 교체 아웃` : "교체 아웃"}
+            className="tnum absolute -top-1 -left-1 rounded-full bg-zinc-800 px-[3px] text-[8.5px] leading-[1.6] font-bold text-red-300 ring-1 ring-black/40"
           >
-            ▼
+            ←{minute ?? ""}
           </span>
         )}
       </span>
 
-      <span className="max-w-[74px] truncate rounded-[3px] bg-black/50 px-1 text-[10px] leading-[1.4] font-medium text-white sm:max-w-[92px] sm:text-[11px]">
-        {shortName(p.name)}
+      {/* Number and surname on one line, the way a team sheet is read. */}
+      <span className="flex max-w-[86px] items-baseline gap-1 sm:max-w-[104px]">
+        <span className="tnum shrink-0 text-[10px] font-semibold text-white/60">
+          {p.jersey}
+        </span>
+        <span className="truncate text-[10.5px] leading-[1.4] font-medium text-white sm:text-[11.5px]">
+          {shortName(p.name)}
+        </span>
       </span>
     </li>
   );
@@ -180,6 +149,7 @@ export function Pitch({
   homeSide,
   awaySide,
   faces = {},
+  minutes = {},
 }: {
   home: Lineup | null;
   away: Lineup | null;
@@ -187,6 +157,8 @@ export function Pitch({
   awaySide: MatchSide;
   /** Photographs by player name. Absent names fall back to their number. */
   faces?: Record<string, string>;
+  /** Substitution minute by player name. */
+  minutes?: Record<string, string>;
 }) {
   const h = home ? spots(home) : null;
   const a = away ? spots(away) : null;
@@ -210,44 +182,52 @@ export function Pitch({
 
       <div
         className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[16/9]"
+        /*
+         * A dark, near-neutral ground rather than green grass.
+         *
+         * Twenty-two photographs on a bright pitch fight the faces for
+         * attention, and every board that shows portraits sits them on
+         * something quiet. The banding is kept, barely, so it still reads as a
+         * pitch rather than a panel.
+         */
         style={{
           background:
-            "repeating-linear-gradient(to bottom, #14532d 0 8.333%, #166534 8.333% 16.666%)",
+            "repeating-linear-gradient(to bottom, #1c1c20 0 8.333%, #202024 8.333% 16.666%)",
         }}
       >
         {/* Markings, drawn rather than imaged so they stay crisp at any size.
             The halfway line and the two boxes turn with the pitch. */}
         <span
           aria-hidden
-          className="absolute inset-2 rounded-[2px] border border-white/25"
+          className="absolute inset-2 rounded-[2px] border border-white/15"
         />
         <span
           aria-hidden
-          className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/25 sm:hidden"
+          className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/15 sm:hidden"
         />
         <span
           aria-hidden
-          className="absolute inset-y-2 left-1/2 hidden w-px -translate-x-1/2 bg-white/25 sm:block"
+          className="absolute inset-y-2 left-1/2 hidden w-px -translate-x-1/2 bg-white/15 sm:block"
         />
         <span
           aria-hidden
-          className="absolute top-1/2 left-1/2 size-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 sm:size-[22%]"
+          className="absolute top-1/2 left-1/2 size-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 sm:size-[22%]"
         />
         <span
           aria-hidden
-          className="absolute top-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-t-0 border-white/25 sm:hidden"
+          className="absolute top-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-t-0 border-white/15 sm:hidden"
         />
         <span
           aria-hidden
-          className="absolute bottom-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-b-0 border-white/25 sm:hidden"
+          className="absolute bottom-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-b-0 border-white/15 sm:hidden"
         />
         <span
           aria-hidden
-          className="absolute top-1/2 left-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-l-0 border-white/25 sm:block"
+          className="absolute top-1/2 left-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-l-0 border-white/15 sm:block"
         />
         <span
           aria-hidden
-          className="absolute top-1/2 right-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-r-0 border-white/25 sm:block"
+          className="absolute top-1/2 right-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-r-0 border-white/15 sm:block"
         />
 
         <ul className="absolute inset-0">
@@ -257,6 +237,7 @@ export function Pitch({
               p={p}
               color={kit.away}
               face={faces[p.name]}
+              minute={minutes[p.name]}
               away
             />
           ))}
@@ -266,6 +247,7 @@ export function Pitch({
               p={p}
               color={kit.home}
               face={faces[p.name]}
+              minute={minutes[p.name]}
               away={false}
             />
           ))}

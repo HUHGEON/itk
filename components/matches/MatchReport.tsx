@@ -29,6 +29,17 @@ import { Pitch } from "./Pitch";
  * patching those individually would be five chances to leave one stale.
  */
 const INTERVAL_MS = 5000;
+
+/** When each player was replaced, read off the timeline. */
+function subMinutes(events: MatchDetail["events"]): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const e of events) {
+    if (e.kind !== "sub") continue;
+    if (e.player) out[e.player] = e.minute;
+    if (e.second) out[e.second] = e.minute;
+  }
+  return out;
+}
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function MatchReport({
@@ -182,6 +193,7 @@ export function MatchReport({
             homeSide={match.home}
             awaySide={match.away}
             faces={faces}
+            minutes={subMinutes(detail.events)}
           />
           <Lineups
             home={detail.lineups.home}

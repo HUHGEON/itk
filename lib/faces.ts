@@ -72,6 +72,9 @@ function sameClub(a: string, b: string): boolean {
 interface SportsDbPlayer {
   strPlayer?: string;
   strTeam?: string;
+  /** Portrait: head and shoulders. */
+  strThumb?: string;
+  /** Three-quarter body with the background removed. */
   strCutout?: string;
 }
 
@@ -92,20 +95,23 @@ export async function lookupFace(name: string, club: string): Promise<string | n
     const json = (await res.json()) as { player?: SportsDbPlayer[] | null };
     const found = json.player ?? [];
     for (const p of found) {
-      if (!p.strCutout) continue;
       if (!p.strTeam || !sameClub(p.strTeam, club)) continue;
       if (norm(p.strPlayer ?? "") !== norm(name)) continue;
+      const portrait = p.strThumb ?? p.strCutout;
+      if (!portrait) continue;
       /*
-       * Measured on one cut-out: the original is 500x500 at 231kB, /preview
-       * and /small are 200x200 at 35kB, /medium 350x350 at 97kB, and /tiny
-       * 100x100 at 10kB.
+       * `strThumb` first, and only then `strCutout`.
        *
-       * These are three-quarter body shots, and only the head is wanted, which
-       * is about the top third - so the pixels that survive the crop are a
-       * third of what arrives. /tiny would leave a thirty pixel head to draw at
-       * forty-four. /preview is the smallest that still has a face in it.
+       * The two are different pictures. A cut-out is a three-quarter body shot
+       * with the background removed, so getting a face out of it means cropping
+       * hard into a photograph that was never framed for it. `strThumb` is the
+       * portrait - head and shoulders, already framed the way this is drawn
+       * everywhere else - which is what was wanted all along. Measured on one
+       * eleven-a-side: twenty of the twenty-two starters had one.
+       *
+       * /preview is 200x200 at about 18kB, drawn at 44.
        */
-      return `${p.strCutout}/preview`;
+      return `${portrait}/preview`;
     }
     return null;
   } catch {
@@ -184,7 +190,7 @@ const cached = unstable_cache(
   // The key names the rendition as well as the lookup: changing which size is
   // returned has to invalidate what was already stored, and a week-long cache
   // otherwise keeps serving the old one.
-  ["player-face-preview"],
+  ["player-face-portrait"],
   { revalidate: 604800, tags: ["player-face"] },
 );
 
