@@ -45,6 +45,7 @@ function Token({
   const near = `${4 + p.y * 44}%`;
   const far = `${96 - p.y * 44}%`;
   const across = `${p.x * 100}%`;
+  const cut = face ? cutout(face) : false;
 
   return (
     <li
@@ -61,51 +62,69 @@ function Token({
       }
     >
       <span className="relative">
-        <span
-          className="relative flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
-          style={{ background: bg }}
-        >
-          {face ? (
-            /*
-             * Cropped to the head.
-             *
-             * The cut-outs are three-quarter body shots framed the same way
-             * every time - looked at four of them and the head sits in the top
-             * third, roughly centred - so enlarging to two and a half times and
-             * lifting slightly puts the face in the circle and the shirt out of
-             * it. Photographs from elsewhere are ordinary press pictures with
-             * no such convention, so those are only centred, not enlarged.
-             */
-            // eslint-disable-next-line @next/next/no-img-element
+        {face && cut ? (
+          /*
+           * A cut-out has no background, so it is not given one.
+           *
+           * These arrive as RGBA with the background already removed, and
+           * dropping them into a filled disc put the club's colour behind the
+           * player's head - which is the one thing that made them look pasted
+           * on rather than photographed. Standing free on the grass is what
+           * they were cut out for.
+           *
+           * The clip is a circle rather than a square: cropped tight to the
+           * head, a square edge cuts the neck off flat, while a circle reads as
+           * a portrait and its transparent corners let the grass through.
+           *
+           * The number chip carries the club's colour instead of the disc.
+           */
+          <span className="relative block size-10 overflow-hidden rounded-full sm:size-12">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={face}
               alt=""
-              width={44}
-              height={44}
+              width={48}
+              height={48}
               loading="lazy"
               decoding="async"
-              className={
-                cutout(face)
-                  ? "absolute left-1/2 w-[250%] max-w-none -translate-x-1/2"
-                  : "size-full object-cover object-top"
-              }
-              style={cutout(face) ? { top: "-6%" } : undefined}
+              className="absolute left-1/2 w-[250%] max-w-none -translate-x-1/2"
+              style={{ top: "-6%" }}
             />
-          ) : (
-            <span
-              className="tnum text-[13px] font-bold text-white sm:text-[15px]"
-              style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
-            >
-              {p.jersey || "-"}
-            </span>
-          )}
-        </span>
+          </span>
+        ) : (
+          <span
+            className="relative flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
+            style={{ background: face ? "transparent" : bg }}
+          >
+            {face ? (
+              // An ordinary press photograph: a rectangle with no convention
+              // about where the head sits, so it is only masked and centred.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={face}
+                alt=""
+                width={44}
+                height={44}
+                loading="lazy"
+                decoding="async"
+                className="size-full object-cover object-top"
+              />
+            ) : (
+              <span
+                className="tnum text-[13px] font-bold text-white sm:text-[15px]"
+                style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
+              >
+                {p.jersey || "-"}
+              </span>
+            )}
+          </span>
+        )}
 
-        {/* The number rides outside the disc: laid over a photograph it sat on
-            the player's chin and the disc's own clipping cut it in half. */}
+        {/* With no disc behind the face, the number is what carries the club's
+            colour, so it is always shown when there is a photograph. */}
         {face && p.jersey && (
           <span
-            className="tnum absolute -right-1.5 -bottom-1 rounded-full px-[4px] text-[9.5px] leading-[1.5] font-bold text-white ring-1 ring-black/40"
+            className="tnum absolute -right-1 -bottom-0.5 rounded-full px-[4px] text-[9.5px] leading-[1.5] font-bold text-white ring-1 ring-black/40"
             style={{ background: bg }}
           >
             {p.jersey}
