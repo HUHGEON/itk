@@ -181,7 +181,10 @@ async function fromWikipedia(
 const cached = unstable_cache(
   async (name: string, club: string) =>
     (await lookupFace(name, club)) ?? (await fromWikipedia(name, club)),
-  ["player-face"],
+  // The key names the rendition as well as the lookup: changing which size is
+  // returned has to invalidate what was already stored, and a week-long cache
+  // otherwise keeps serving the old one.
+  ["player-face-preview"],
   { revalidate: 604800, tags: ["player-face"] },
 );
 
