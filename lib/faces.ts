@@ -96,13 +96,16 @@ export async function lookupFace(name: string, club: string): Promise<string | n
       if (!p.strTeam || !sameClub(p.strTeam, club)) continue;
       if (norm(p.strPlayer ?? "") !== norm(name)) continue;
       /*
-       * The smallest rendition. Measured on one cut-out: the original is
-       * 500x500 at 231kB, /preview and /small are 200x200 at 35kB, /medium
-       * 350x350 at 97kB, and /tiny 100x100 at 10kB. A token is drawn at 32
-       * pixels, so /tiny still has three times the pixels it needs and an
-       * eleven costs a tenth of a megabyte instead of two and a half.
+       * Measured on one cut-out: the original is 500x500 at 231kB, /preview
+       * and /small are 200x200 at 35kB, /medium 350x350 at 97kB, and /tiny
+       * 100x100 at 10kB.
+       *
+       * These are three-quarter body shots, and only the head is wanted, which
+       * is about the top third - so the pixels that survive the crop are a
+       * third of what arrives. /tiny would leave a thirty pixel head to draw at
+       * forty-four. /preview is the smallest that still has a face in it.
        */
-      return `${p.strCutout}/tiny`;
+      return `${p.strCutout}/preview`;
     }
     return null;
   } catch {

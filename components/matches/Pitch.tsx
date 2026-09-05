@@ -16,6 +16,11 @@ import { kitColours, shortName, spots, type Spot } from "@/lib/pitch";
  * Photographs come from elsewhere and only when the club could be confirmed;
  * a player without one keeps his number in a disc of the club's colour.
  */
+/** A framed cut-out, as opposed to an ordinary photograph. */
+function cutout(url: string): boolean {
+  return url.includes("thesportsdb.com");
+}
+
 function Token({
   p,
   color,
@@ -57,10 +62,20 @@ function Token({
     >
       <span className="relative">
         <span
-          className="flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
+          className="relative flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
           style={{ background: bg }}
         >
           {face ? (
+            /*
+             * Cropped to the head.
+             *
+             * The cut-outs are three-quarter body shots framed the same way
+             * every time - looked at four of them and the head sits in the top
+             * third, roughly centred - so enlarging to two and a half times and
+             * lifting slightly puts the face in the circle and the shirt out of
+             * it. Photographs from elsewhere are ordinary press pictures with
+             * no such convention, so those are only centred, not enlarged.
+             */
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={face}
@@ -69,7 +84,12 @@ function Token({
               height={44}
               loading="lazy"
               decoding="async"
-              className="size-full object-cover object-top"
+              className={
+                cutout(face)
+                  ? "absolute left-1/2 w-[250%] max-w-none -translate-x-1/2"
+                  : "size-full object-cover object-top"
+              }
+              style={cutout(face) ? { top: "-6%" } : undefined}
             />
           ) : (
             <span
