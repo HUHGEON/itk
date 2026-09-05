@@ -164,3 +164,27 @@ body {
     animation: none;
   }
 }
+
+/*
+ * A pitch that turns with the screen.
+ *
+ * On a phone the two halves stack, keeper at the bottom, the way a formation is
+ * drawn in a column. On anything wider the pitch lies down and the home side
+ * takes the left, which puts the two elevens in the same order as the scoreline
+ * above them - measured against the reference, home on the left and away on the
+ * right is what a reader expects when the header says "Ipswich 0 : 2 Liverpool".
+ *
+ * Each token carries both positions and the media query picks one, so the
+ * markup is written once.
+ */
+.pitch-token {
+  position: absolute;
+  left: var(--vx);
+  top: var(--vy);
+}
+@media (min-width: 640px) {
+  .pitch-token {
+    left: var(--hx);
+    top: var(--hy);
+  }
+}

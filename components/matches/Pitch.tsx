@@ -4,17 +4,17 @@ import { kitColours, shortName, spots, type Spot } from "@/lib/pitch";
 /**
  * Both elevens on a pitch.
  *
- * The home side defends the bottom edge and the away side the top, which is how
- * a formation is drawn everywhere and means the two shapes meet in the middle
- * the way they do in the match.
+ * The two halves face each other: on a phone the pitch stands up and the home
+ * side holds the bottom, on a wider screen it lies down and the home side holds
+ * the left, which is the order the scoreline above already put them in.
  *
- * There are no player photographs. Measured before building this: the source
- * publishes no headshot for a footballer at any endpoint - not on the athlete
- * record, not on the roster entry, and the usual headshot path 404s for every
- * player tried. What it does publish is a rendered shirt in the club's colours
- * carrying the squad number, and that number in the club's colour is what a
- * token is here. It is a quarter of a megabyte per player as an image, so the
- * colour and the number are drawn rather than fetched.
+ * There are no player ratings here. The reference computes its own and does not
+ * publish them; nothing in the free data carries a rating for a footballer.
+ * What the source does carry per player is goals and assists, so those are the
+ * marks on a token - a fact rather than a judgement.
+ *
+ * Photographs come from elsewhere and only when the club could be confirmed;
+ * a player without one keeps his number in a disc of the club's colour.
  */
 function Token({
   p,
@@ -33,23 +33,28 @@ function Token({
    * Held clear of the touchlines.
    *
    * A token is centred on its point, so a goalkeeper on his own goal line lost
-   * half of himself off the edge of the pitch. The band is inset four per cent
-   * at the back and stops short of halfway, which also keeps the two strikers
-   * from landing on each other in the centre circle.
+   * half of himself off the edge. The band is inset four per cent at the back
+   * and stops short of halfway, which also keeps the two strikers from landing
+   * on each other in the centre circle.
    */
-  const top = away ? 4 + p.y * 44 : 96 - p.y * 44;
+  const near = `${4 + p.y * 44}%`;
+  const far = `${96 - p.y * 44}%`;
+  const across = `${p.x * 100}%`;
+
   return (
     <li
-      className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-      style={{ left: `${p.x * 100}%`, top: `${top}%` }}
+      className="pitch-token flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
+      style={
+        {
+          // Standing: away at the top, home at the bottom.
+          "--vx": across,
+          "--vy": away ? near : far,
+          // Lying down: home on the left, away on the right.
+          "--hx": away ? far : near,
+          "--hy": across,
+        } as React.CSSProperties
+      }
     >
-      {/*
-       * The number rides outside the disc, not on top of it.
-       *
-       * Laid over a photograph it sat on the player's chin and the disc's own
-       * clipping cut it in half. Outside, it reads at a glance and the face
-       * keeps the whole circle.
-       */}
       <span className="relative">
         <span
           className="flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
@@ -75,6 +80,9 @@ function Token({
             </span>
           )}
         </span>
+
+        {/* The number rides outside the disc: laid over a photograph it sat on
+            the player's chin and the disc's own clipping cut it in half. */}
         {face && p.jersey && (
           <span
             className="tnum absolute -right-1.5 -bottom-1 rounded-full px-[4px] text-[9.5px] leading-[1.5] font-bold text-white ring-1 ring-black/40"
@@ -83,19 +91,47 @@ function Token({
             {p.jersey}
           </span>
         )}
+
+        {p.goals > 0 && (
+          <span
+            title={`${p.goals}골`}
+            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black ring-1 ring-black/30"
+          >
+            ⚽{p.goals > 1 && <span className="tnum">{p.goals}</span>}
+          </span>
+        )}
+        {p.goals === 0 && p.assists > 0 && (
+          <span
+            title={`도움 ${p.assists}`}
+            className="tnum absolute -top-1 -left-1.5 rounded-full bg-sky-400 px-[3.5px] text-[9px] leading-[1.6] font-bold text-black ring-1 ring-black/30"
+          >
+            A{p.assists > 1 ? p.assists : ""}
+          </span>
+        )}
+        {p.subbedOut && (
+          <span
+            title="교체 아웃"
+            className="absolute -top-1 -right-1.5 text-[10px] leading-none text-red-300"
+          >
+            ▼
+          </span>
+        )}
       </span>
+
       <span className="max-w-[74px] truncate rounded-[3px] bg-black/50 px-1 text-[10px] leading-[1.4] font-medium text-white sm:max-w-[92px] sm:text-[11px]">
         {shortName(p.name)}
       </span>
-      {p.subbedOut && (
-        <span
-          title="교체 아웃"
-          className="absolute -top-1 -right-1 text-[9px] text-red-300"
-        >
-          ▼
-        </span>
-      )}
     </li>
+  );
+}
+
+/** One club's name and shape, as a label beside the pitch. */
+function Badge({ side, formation }: { side: MatchSide; formation?: string | null }) {
+  return (
+    <span className="flex items-center gap-1.5 text-muted">
+      <span className="truncate">{side.name}</span>
+      {formation && <span className="tnum text-faint">{formation}</span>}
+    </span>
   );
 }
 
@@ -122,44 +158,57 @@ export function Pitch({
 
   return (
     <div className="px-[var(--gutter)] pb-4">
-      <div className="flex items-center justify-between pb-2 text-[11.5px]">
-        <span className="flex items-center gap-1.5 text-muted">
-          {awaySide.name}
-          <span className="tnum text-faint">{away?.formation}</span>
-        </span>
-        <span className="flex items-center gap-1.5 text-muted">
-          <span className="tnum text-faint">{home?.formation}</span>
-          {homeSide.name}
-        </span>
+      {/* Standing, the away side is at the top; lying down, the home side is on
+          the left. The labels follow the pitch rather than contradicting it. */}
+      <div className="flex items-center justify-between pb-2 text-[11.5px] sm:hidden">
+        <Badge side={awaySide} formation={away?.formation} />
+        <Badge side={homeSide} formation={home?.formation} />
+      </div>
+      <div className="hidden items-center justify-between pb-2 text-[11.5px] sm:flex">
+        <Badge side={homeSide} formation={home?.formation} />
+        <Badge side={awaySide} formation={away?.formation} />
       </div>
 
       <div
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[4/3]"
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[16/9]"
         style={{
           background:
             "repeating-linear-gradient(to bottom, #14532d 0 8.333%, #166534 8.333% 16.666%)",
         }}
       >
-        {/* Markings. Drawn rather than imaged so they stay crisp at any size. */}
+        {/* Markings, drawn rather than imaged so they stay crisp at any size.
+            The halfway line and the two boxes turn with the pitch. */}
         <span
           aria-hidden
           className="absolute inset-2 rounded-[2px] border border-white/25"
         />
         <span
           aria-hidden
-          className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/25"
+          className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/25 sm:hidden"
         />
         <span
           aria-hidden
-          className="absolute top-1/2 left-1/2 size-[18%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25"
+          className="absolute inset-y-2 left-1/2 hidden w-px -translate-x-1/2 bg-white/25 sm:block"
         />
         <span
           aria-hidden
-          className="absolute top-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-t-0 border-white/25"
+          className="absolute top-1/2 left-1/2 size-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/25 sm:size-[22%]"
         />
         <span
           aria-hidden
-          className="absolute bottom-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-b-0 border-white/25"
+          className="absolute top-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-t-0 border-white/25 sm:hidden"
+        />
+        <span
+          aria-hidden
+          className="absolute bottom-2 left-1/2 h-[13%] w-[44%] -translate-x-1/2 border border-b-0 border-white/25 sm:hidden"
+        />
+        <span
+          aria-hidden
+          className="absolute top-1/2 left-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-l-0 border-white/25 sm:block"
+        />
+        <span
+          aria-hidden
+          className="absolute top-1/2 right-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-r-0 border-white/25 sm:block"
         />
 
         <ul className="absolute inset-0">

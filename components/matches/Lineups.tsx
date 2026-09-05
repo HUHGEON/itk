@@ -1,4 +1,4 @@
-import type { Lineup, LineupPlayer } from "@/lib/matches";
+import type { Lineup, LineupPlayer, MatchEvent } from "@/lib/matches";
 
 /**
  * Both teams' selections.
@@ -11,7 +11,7 @@ import type { Lineup, LineupPlayer } from "@/lib/matches";
  * the timeline: a name with an arrow beside it answers "did he play" without
  * making anyone cross-reference two sections.
  */
-function Player({ p }: { p: LineupPlayer }) {
+function Player({ p, minute }: { p: LineupPlayer; minute?: string }) {
   return (
     <li className="flex items-baseline gap-2 py-[3px]">
       <span className="tnum w-5 shrink-0 text-right text-[11px] text-faint">
@@ -24,14 +24,33 @@ function Player({ p }: { p: LineupPlayer }) {
       >
         {p.name}
       </span>
+      {p.goals > 0 && (
+        <span title={`${p.goals}골`} className="shrink-0 text-[10px]">
+          ⚽{p.goals > 1 ? p.goals : ""}
+        </span>
+      )}
+      {p.assists > 0 && (
+        <span
+          title={`도움 ${p.assists}`}
+          className="tnum shrink-0 text-[9.5px] font-bold text-sky-400"
+        >
+          A{p.assists > 1 ? p.assists : ""}
+        </span>
+      )}
       {p.subbedOut && (
-        <span title="교체 아웃" className="shrink-0 text-[10px] text-red-400/80">
-          ▼
+        <span
+          title={minute ? `${minute} 교체 아웃` : "교체 아웃"}
+          className="tnum shrink-0 text-[10px] text-red-400/80"
+        >
+          ▼{minute ?? ""}
         </span>
       )}
       {p.subbedIn && (
-        <span title="교체 인" className="shrink-0 text-[10px] text-emerald-400/80">
-          ▲
+        <span
+          title={minute ? `${minute} 교체 인` : "교체 인"}
+          className="tnum shrink-0 text-[10px] text-emerald-400/80"
+        >
+          ▲{minute ?? ""}
         </span>
       )}
       {/* The source labels every bench player "SUB", which the heading above
@@ -45,7 +64,15 @@ function Player({ p }: { p: LineupPlayer }) {
   );
 }
 
-function Column({ name, lineup }: { name: string; lineup: Lineup }) {
+function Column({
+  name,
+  lineup,
+  minutes,
+}: {
+  name: string;
+  lineup: Lineup;
+  minutes: Record<string, string>;
+}) {
   return (
     <div className="min-w-0">
       <h3 className="flex items-baseline justify-between gap-2 pb-2">
@@ -60,7 +87,7 @@ function Column({ name, lineup }: { name: string; lineup: Lineup }) {
       </h3>
       <ul className="border-t border-border/60 pt-1.5">
         {lineup.starters.map((p) => (
-          <Player key={p.name + p.jersey} p={p} />
+          <Player key={p.name + p.jersey} p={p} minute={minutes[p.name]} />
         ))}
       </ul>
       {lineup.bench.length > 0 && (
@@ -68,7 +95,7 @@ function Column({ name, lineup }: { name: string; lineup: Lineup }) {
           <h4 className="pt-3 pb-1 text-[11px] font-medium text-faint">교체 명단</h4>
           <ul className="border-t border-border/60 pt-1.5">
             {lineup.bench.map((p) => (
-              <Player key={p.name + p.jersey} p={p} />
+              <Player key={p.name + p.jersey} p={p} minute={minutes[p.name]} />
             ))}
           </ul>
         </>
@@ -82,21 +109,36 @@ export function Lineups({
   away,
   homeName,
   awayName,
+  events = [],
   bare = false,
 }: {
   home: Lineup | null;
   away: Lineup | null;
   homeName: string;
   awayName: string;
+  /** Used to put the minute on each substitution. */
+  events?: MatchEvent[];
   /** The pitch above already carries the heading and the section rule. */
   bare?: boolean;
 }) {
   if (!home && !away) return null;
 
+  /*
+   * When each substitution happened, taken from the timeline rather than
+   * carried separately: the roster says a player was replaced but not when,
+   * and the timeline already has both names against a minute.
+   */
+  const minutes: Record<string, string> = {};
+  for (const e of events) {
+    if (e.kind !== "sub") continue;
+    if (e.player) minutes[e.player] = e.minute;
+    if (e.second) minutes[e.second] = e.minute;
+  }
+
   const inner = (
     <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-      {home && <Column name={homeName} lineup={home} />}
-      {away && <Column name={awayName} lineup={away} />}
+      {home && <Column name={homeName} lineup={home} minutes={minutes} />}
+      {away && <Column name={awayName} lineup={away} minutes={minutes} />}
     </div>
   );
 

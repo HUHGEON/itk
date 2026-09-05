@@ -113,6 +113,20 @@ export function MatchReport({
               <span>{detail.venue}</span>
             </>
           )}
+          {detail.attendance && (
+            <>
+              <span aria-hidden>·</span>
+              <span className="tnum">
+                관중 {detail.attendance.toLocaleString("ko-KR")}
+              </span>
+            </>
+          )}
+          {detail.referee && (
+            <>
+              <span aria-hidden>·</span>
+              <span>주심 {detail.referee}</span>
+            </>
+          )}
         </p>
 
         <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
@@ -174,6 +188,7 @@ export function MatchReport({
             away={detail.lineups.away}
             homeName={match.home.name}
             awayName={match.away.name}
+            events={detail.events}
             bare
           />
         </section>

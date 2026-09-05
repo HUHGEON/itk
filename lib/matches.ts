@@ -544,6 +544,10 @@ export interface LineupPlayer {
   position: string;
   subbedOut: boolean;
   subbedIn: boolean;
+  /** Goals scored in this match. */
+  goals: number;
+  /** Assists given in this match. */
+  assists: number;
 }
 
 export interface Lineup {
@@ -555,6 +559,10 @@ export interface Lineup {
 export interface MatchDetail {
   match: Match;
   venue: string | null;
+  /** Crowd, when the source published one. Zero means it did not. */
+  attendance: number | null;
+  /** The referee's name. */
+  referee: string | null;
   events: MatchEvent[];
   stats: StatGroup[];
   lineups: { home: Lineup | null; away: Lineup | null } | null;
@@ -586,7 +594,11 @@ interface SummaryJson {
       competitors?: { id?: string; homeAway?: string }[];
     }[];
   };
-  gameInfo?: { venue?: { fullName?: string } };
+  gameInfo?: {
+    venue?: { fullName?: string };
+    attendance?: number;
+    officials?: { displayName?: string; position?: { name?: string } }[];
+  };
   keyEvents?: {
     id?: string;
     type?: { text?: string };
@@ -609,6 +621,7 @@ interface SummaryJson {
       subbedOut?: boolean;
       position?: { abbreviation?: string };
       athlete?: { displayName?: string };
+      stats?: { name?: string; displayValue?: string }[];
     }[];
   }[];
 }
@@ -723,12 +736,23 @@ function buildStats(json: SummaryJson): StatGroup[] {
 }
 
 function buildLineup(r: SummaryJson["rosters"] extends (infer U)[] | undefined ? U : never): Lineup {
+  /*
+   * Per-player numbers do exist, on the roster entry.
+   *
+   * `boxscore.players` is absent for football, which is what made this look
+   * impossible at first. The roster entry carries fourteen figures per player
+   * instead - goals, assists, shots, saves, fouls, cards - and goals and
+   * assists are the two that belong on a lineup. Verified against a finished
+   * match: Isak two goals, Gakpo two assists, which is the scoreline.
+   */
   const all = (r?.roster ?? []).map((p) => ({
     name: p.athlete?.displayName ?? "?",
     jersey: p.jersey ?? "",
     position: p.position?.abbreviation ?? "",
     subbedOut: Boolean(p.subbedOut),
     subbedIn: Boolean(p.subbedIn),
+    goals: raw(p.stats, "totalGoals"),
+    assists: raw(p.stats, "goalAssists"),
   }));
   return {
     formation: r?.formation ?? null,
@@ -785,6 +809,11 @@ export function toDetail(
   return {
     match,
     venue: json.gameInfo?.venue?.fullName ?? null,
+    attendance: json.gameInfo?.attendance || null,
+    referee:
+      json.gameInfo?.officials?.find((o) =>
+        (o.position?.name ?? "").toLowerCase().includes("referee"),
+      )?.displayName ?? null,
     events,
     stats: buildStats(json),
     lineups: home || away ? { home, away } : null,
