@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
 import { matchesOn, ymd } from "@/lib/matches";
-import { loadTeams } from "@/lib/registry";
 import { MatchBoard } from "@/components/matches/MatchBoard";
+import { MatchRail } from "@/components/matches/MatchRail";
 import { Shell } from "@/components/Shell";
 import { SearchBox } from "@/components/SearchBox";
 import { CollectButton } from "@/components/CollectButton";
@@ -74,7 +74,7 @@ export default async function Matches({
   const today = new Date();
   const onlyTracked = sp.all !== "1";
 
-  const [matches, teams] = await Promise.all([matchesOn(date), loadTeams()]);
+  const matches = await matchesOn(date);
   const trackedCount = matches.filter((m) => m.tracked).length;
 
   const href = (d: Date, all: boolean) => {
@@ -86,7 +86,7 @@ export default async function Matches({
 
   return (
     <Shell
-      rail={<MatchRail teams={teams.length} />}
+      rail={<MatchRail />}
       actions={
         <>
           <Suspense fallback={null}>
@@ -174,13 +174,3 @@ function Scope({
   );
 }
 
-function MatchRail({ teams }: { teams: number }) {
-  return (
-    <div className="px-[var(--gutter)] py-4">
-      <p className="text-[12px] leading-relaxed text-muted">
-        보고 있는 {teams}개 구단의 리그·컵·유럽 대항전 경기입니다. 진행 중인
-        경기는 화면을 열어두면 저절로 갱신됩니다.
-      </p>
-    </div>
-  );
-}

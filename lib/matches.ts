@@ -248,3 +248,133 @@ export async function matchesOn(
   );
   return lists.flat().sort((a, b) => a.kickoff - b.kickoff);
 }
+
+
+/* ------------------------------------------------------------------ *
+ * League tables
+ * ------------------------------------------------------------------ */
+
+export interface TableRow {
+  rank: number;
+  name: string;
+  slug: string | null;
+  crest: string | null;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  for: number;
+  against: number;
+  diff: number;
+  points: number;
+}
+
+/** Pulls a named stat out of the source's flat list. */
+function stat(
+  stats: { name?: string; value?: number; displayValue?: string }[] | undefined,
+  name: string,
+): number {
+  const s = stats?.find((x) => x.name === name);
+  if (!s) return 0;
+  if (typeof s.value === "number") return s.value;
+  const n = Number(s.displayValue);
+  return Number.isFinite(n) ? n : 0;
+}
+
+/**
+ * A competition's table.
+ *
+ * Returns [] for anything that does not have one - a knockout cup has no
+ * standings, and asking for them is not an error worth surfacing. The European
+ * competitions do have one: the league phase is a single 36 team table.
+ */
+export async function tableFor(
+  code: string,
+  signal?: AbortSignal,
+): Promise<TableRow[]> {
+  try {
+    const res = await fetch(
+      `https://site.api.espn.com/apis/v2/sports/soccer/${code}/standings`,
+      { signal, next: { revalidate: 300 } },
+    );
+    if (!res.ok) return [];
+    const json = (await res.json()) as {
+      children?: {
+        standings?: {
+          entries?: {
+            team?: { displayName?: string; logo?: string };
+            stats?: { name?: string; value?: number; displayValue?: string }[];
+          }[];
+        };
+      }[];
+    };
+
+    const rows: TableRow[] = [];
+    for (const child of json.children ?? []) {
+      for (const e of child.standings?.entries ?? []) {
+        const raw = e.team?.displayName ?? "?";
+        const known = resolve(raw);
+        rows.push({
+          rank: stat(e.stats, "rank"),
+          name: known?.ko ?? raw,
+          slug: known?.slug ?? null,
+          crest: known?.crest ?? e.team?.logo ?? null,
+          played: stat(e.stats, "gamesPlayed"),
+          won: stat(e.stats, "wins"),
+          drawn: stat(e.stats, "ties"),
+          lost: stat(e.stats, "losses"),
+          for: stat(e.stats, "pointsFor"),
+          against: stat(e.stats, "pointsAgainst"),
+          diff: stat(e.stats, "pointDifferential"),
+          points: stat(e.stats, "points"),
+        });
+      }
+    }
+    return rows.sort((a, b) => a.rank - b.rank);
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Every match a club plays in a window, across all competitions.
+ *
+ * Asked per competition rather than per club because that is the only shape
+ * the source offers, then filtered here. A 90 day window either side covers a
+ * club's recent form and everything that has been scheduled.
+ */
+export async function matchesForTeam(
+  slug: string,
+  opts: { back?: number; forward?: number } = {},
+  signal?: AbortSignal,
+): Promise<Match[]> {
+  const back = opts.back ?? 45;
+  const forward = opts.forward ?? 45;
+  const from = new Date();
+  from.setDate(from.getDate() - back);
+  const to = new Date();
+  to.setDate(to.getDate() + forward);
+  const span = `${ymd(from)}-${ymd(to)}`;
+
+  const lists = await Promise.all(
+    COMPETITIONS.map(async (c) => {
+      try {
+        const res = await fetch(
+          `${ESPN}/${c.code}/scoreboard?dates=${span}`,
+          { signal, next: { revalidate: 120 } },
+        );
+        if (!res.ok) return [];
+        const json = (await res.json()) as { events?: unknown[] };
+        return (json.events ?? [])
+          .map((e) => toMatch(e, c.code))
+          .filter(
+            (m): m is Match =>
+              m !== null && (m.home.slug === slug || m.away.slug === slug),
+          );
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return lists.flat().sort((a, b) => a.kickoff - b.kickoff);
+}

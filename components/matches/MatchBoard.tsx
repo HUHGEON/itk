@@ -23,10 +23,13 @@ export function MatchBoard({
   date,
   initial,
   onlyTracked,
+  bare = false,
 }: {
   date: Date;
   initial: Match[];
   onlyTracked: boolean;
+  /** Drop the competition headings and the footer: the page already said. */
+  bare?: boolean;
 }) {
   const { matches, live } = useLiveMatches(date, initial);
   const board = useRef<HTMLDivElement>(null);
@@ -89,40 +92,57 @@ export function MatchBoard({
   return (
     <div ref={board}>
       {live && (
-        <p className="mx-auto max-w-[34rem] px-[var(--gutter)] pb-2 text-[11.5px] text-muted">
+        <p className="px-[calc(var(--gutter)+0.5rem)] pb-1 text-[11.5px] text-muted">
           진행 중인 경기는 자동으로 갱신됩니다
         </p>
       )}
 
+      {/*
+        Two columns once there is room for them.
+
+        A match row wants to be narrow - the eye reads it from the scoreline
+        outward, and stretched across a wide screen the two clubs end up at
+        opposite edges. But holding every row to that width left two thirds of
+        a desktop window empty. Columns keep the row narrow and use the space,
+        and a Saturday of forty fixtures stops being a single long scroll.
+      */}
+      <div
+        className={`grid items-start gap-x-6 px-[var(--gutter)] ${
+          bare ? "" : "lg:grid-cols-2"
+        }`}
+      >
       {groups.map((g) => (
-        <section key={g.competition} className="border-b border-border last:border-b-0">
-          <h2 className="mx-auto flex max-w-[34rem] items-center gap-2 px-[calc(var(--gutter)+0.5rem)] pt-5 pb-2 text-[12px] font-semibold text-muted">
-            {g.competition}
-            {g.live && (
-              <span className="live-badge rounded-[3px] bg-accent px-1.5 py-[1px] text-[10px] font-bold text-accent-ink">
-                LIVE
-              </span>
-            )}
-          </h2>
-          {/* Narrow, and deliberately so. A fixture is read from the middle
-              out: the eye lands on the scoreline and picks up the two clubs
-              beside it. Left to fill 1440px the two names end up at opposite
-              edges of the screen with nothing between them, and reading one
-              row becomes a journey. */}
-          <div className="mx-auto max-w-[34rem] divide-y divide-border/60 px-[var(--gutter)] pb-2">
+        <section
+          key={g.competition}
+          className="border-b border-border last:border-b-0 lg:border-b-0"
+        >
+          {!bare && (
+            <h2 className="flex items-center gap-2 px-2 pt-5 pb-2 text-[12px] font-semibold text-muted">
+              {g.competition}
+              {g.live && (
+                <span className="live-badge rounded-[3px] bg-accent px-1.5 py-[1px] text-[10px] font-bold text-accent-ink">
+                  LIVE
+                </span>
+              )}
+            </h2>
+          )}
+          <div className="divide-y divide-border/60 pb-2">
             {g.list.map((m) => (
               <MatchRow key={m.id} match={m} />
             ))}
           </div>
         </section>
       ))}
+      </div>
 
-      <p className="mx-auto max-w-[34rem] px-[var(--gutter)] py-6 text-[11.5px] text-faint">
-        구단 이름을 누르면 그 팀 기사로 갑니다.{" "}
-        <Link href="/feed" className="text-muted underline-offset-4 hover:underline">
-          전체 소식 보기
-        </Link>
-      </p>
+      {!bare && (
+        <p className="border-t border-border px-[calc(var(--gutter)+0.5rem)] py-6 text-[11.5px] text-faint">
+          구단 이름을 누르면 그 팀 기사로 갑니다.{" "}
+          <Link href="/feed" className="text-muted underline-offset-4 hover:underline">
+            전체 소식 보기
+          </Link>
+        </p>
+      )}
     </div>
   );
 }
