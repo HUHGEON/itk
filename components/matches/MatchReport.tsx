@@ -302,9 +302,20 @@ export function MatchReport({
       )}
 
       {tabs.length === 0 && (
+        /*
+         * "About an hour" is measured, not assumed.
+         *
+         * Three matches were watched from three hours out at two minute
+         * intervals: the lineups appeared 81, 53 and 36 minutes before their
+         * kick-offs. So an hour is the middle of it and the spread is wide
+         * enough that a firmer number would be wrong more often than right.
+         * An earlier version of this line said "한 시간 전" with nothing behind
+         * it, and a later one said "킥오프와 함께" because nothing had been
+         * measured yet.
+         */
         <p className="px-[var(--gutter)] py-16 text-center text-[13.5px] text-muted">
-          아직 공개된 기록이 없습니다. 킥오프와 함께 기록과 선수 명단이
-          채워집니다.
+          아직 공개된 기록이 없습니다. 선수 명단은 보통 킥오프 1시간 전후에
+          나옵니다.
         </p>
       )}
     </div>
