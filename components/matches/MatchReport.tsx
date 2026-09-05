@@ -159,8 +159,8 @@ export function MatchReport({ initial }: { initial: MatchDetail }) {
         detail.stats.length === 0 &&
         !detail.lineups && (
           <p className="px-[var(--gutter)] py-16 text-center text-[13.5px] text-muted">
-            아직 공개된 기록이 없습니다. 선수 명단은 보통 킥오프 한 시간 전에
-            나옵니다.
+            아직 공개된 기록이 없습니다. 킥오프와 함께 기록과 선수 명단이
+            채워집니다.
           </p>
         )}
     </div>
