@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { MatchSide } from "@/lib/matches";
 
 /**
@@ -13,6 +14,8 @@ import type { MatchSide } from "@/lib/matches";
  * guess is worth having, and worth replacing when the real thing turns up.
  */
 export interface PitchPlayer {
+  /** Non-zero when the player has a page to open. */
+  id: number;
   name: string;
   jersey: string;
   /** 0-1 across the pitch, 0-1 from this team's own goal line to halfway. */
@@ -50,27 +53,24 @@ function Token({ p, tint }: { p: PitchPlayer; tint: string }) {
    * Held clear of the touchlines.
    *
    * A token is centred on its point, so a goalkeeper on his own goal line lost
-   * half of himself off the edge. The band is inset four per cent at the back
-   * and stops short of halfway, which also keeps the two strikers from landing
-   * on each other in the centre circle.
+   * half of himself off the edge. The band is inset at the back and stops just
+   * short of halfway, which keeps the two strikers from landing on each other
+   * in the centre circle.
    */
-  const near = `${4 + p.y * 44}%`;
-  const far = `${96 - p.y * 44}%`;
-  const across = `${p.x * 100}%`;
+  const near = `${3 + p.y * 46}%`;
+  const far = `${97 - p.y * 46}%`;
+  /*
+   * Pushed out towards the touchlines.
+   *
+   * The source lays a back four between 0.13 and 0.87, which leaves a seventh
+   * of the width empty at each edge and the eleven looking huddled. Stretching
+   * about the centre line opens the shape up without changing who stands where.
+   */
+  const across = `${(0.5 + (p.x - 0.5) * 1.18) * 100}%`;
   const away = tint === "away";
 
-  return (
-    <li
-      className="pitch-token flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
-      style={
-        {
-          "--vx": across,
-          "--vy": away ? near : far,
-          "--hx": away ? far : near,
-          "--hy": across,
-        } as React.CSSProperties
-      }
-    >
+  const body = (
+    <>
       <span className="relative">
         <span className="flex size-10 items-center justify-center overflow-hidden rounded-full bg-zinc-700 sm:size-12">
           {p.image ? (
@@ -133,6 +133,31 @@ function Token({ p, tint }: { p: PitchPlayer; tint: string }) {
           {short(p.name)}
         </span>
       </span>
+    </>
+  );
+
+  const place = {
+    "--vx": across,
+    "--vy": away ? near : far,
+    "--hx": away ? far : near,
+    "--hy": across,
+  } as React.CSSProperties;
+
+  return (
+    <li className="pitch-token -translate-x-1/2 -translate-y-1/2" style={place}>
+      {/* A player is only a link when there is a page behind him, which means
+          the richer source had the match. */}
+      {p.id ? (
+        <Link
+          href={`/matches/player/${p.id}`}
+          title={`${p.name} 기록 보기`}
+          className="flex flex-col items-center gap-1 rounded-[6px] transition-opacity hover:opacity-80"
+        >
+          {body}
+        </Link>
+      ) : (
+        <span className="flex flex-col items-center gap-1">{body}</span>
+      )}
     </li>
   );
 }
@@ -197,7 +222,7 @@ export function Pitch({
       </div>
 
       <div
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[16/9]"
+        className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[3/2]"
         /*
          * A dark, near-neutral ground rather than green grass.
          *

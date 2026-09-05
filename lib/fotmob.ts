@@ -25,6 +25,8 @@ import type { Match } from "@/lib/matches";
 const API = "https://www.fotmob.com/api/data";
 
 export interface FmPlayer {
+  /** This source's own id, which is what a player page is addressed by. */
+  id: number;
   name: string;
   jersey: string;
   rating: number | null;
@@ -93,6 +95,7 @@ function player(p: RawPlayer): FmPlayer {
   const at = (type: string) =>
     subs.find((s) => s.type === type)?.time ?? null;
   return {
+    id: p.id ?? 0,
     name: p.name ?? "?",
     jersey: p.shirtNumber == null ? "" : String(p.shirtNumber),
     rating: typeof perf.rating === "number" ? perf.rating : null,
@@ -212,4 +215,197 @@ export async function fotmobLineup(match: Match): Promise<FmLineup | null> {
   );
   if (!id) return null;
   return fotmobDetail(id);
+}
+
+/* -------------------------------------------------------------------------
+ * One player.
+ * ----------------------------------------------------------------------- */
+
+export interface FmSeasonStat {
+  label: string;
+  value: string;
+}
+
+export interface FmRecentMatch {
+  date: number;
+  competition: string | null;
+  /** The opponent, from this player's point of view. */
+  opponent: string;
+  home: boolean;
+  score: string;
+  rating: number | null;
+  minutes: number | null;
+  goals: number;
+  assists: number;
+  /** Win, draw or loss for the player's side. */
+  outcome: "승" | "무" | "패" | null;
+}
+
+export interface FmPlayerPage {
+  id: number;
+  name: string;
+  image: string;
+  team: string | null;
+  teamId: number | null;
+  position: string | null;
+  /** Height, age, foot, country, value, contract - whatever was published. */
+  facts: { label: string; value: string }[];
+  league: string | null;
+  season: string | null;
+  stats: FmSeasonStat[];
+  recent: FmRecentMatch[];
+  injury: string | null;
+}
+
+const FACT_KO: Record<string, string> = {
+  Height: "신장",
+  Shirt: "등번호",
+  Age: "나이",
+  "Preferred foot": "주발",
+  Country: "국적",
+  "Market value": "시장 가치",
+  "Contract end": "계약 만료",
+};
+
+const STAT_KO: Record<string, string> = {
+  Goals: "골",
+  Assists: "도움",
+  Started: "선발",
+  Matches: "출전",
+  "Minutes played": "출전 시간",
+  Rating: "평균 평점",
+  "Yellow cards": "경고",
+  "Red cards": "퇴장",
+  "Clean sheets": "무실점",
+  "Goals conceded": "실점",
+  Saves: "선방",
+};
+
+const FOOT_KO: Record<string, string> = {
+  Right: "오른발",
+  Left: "왼발",
+  Both: "양발",
+};
+
+interface RawFact {
+  title?: string;
+  value?: { fallback?: unknown; numberValue?: number; key?: string };
+}
+
+/** Turns one of the source's fact objects into a line of text. */
+function fact(f: RawFact): { label: string; value: string } | null {
+  const title = f.title ?? "";
+  const raw = f.value?.fallback;
+  let value: string;
+  if (typeof raw === "string") value = FOOT_KO[raw] ?? raw;
+  else if (typeof raw === "number") value = String(raw);
+  else if (raw && typeof raw === "object" && "utcTime" in raw) {
+    value = String((raw as { utcTime: string }).utcTime).slice(0, 10);
+  } else if (typeof f.value?.numberValue === "number") {
+    value = String(f.value.numberValue);
+  } else return null;
+  if (title === "Height") value = `${value.replace(/\s*cm$/, "")}cm`;
+  if (title === "Age") value = `${value.replace(/[^\d]/g, "")}세`;
+  return { label: FACT_KO[title] ?? title, value };
+}
+
+/**
+ * A player's card: who he is, this season's numbers, and his last few matches.
+ *
+ * Everything is optional because the source fills in what it has - a player at
+ * a smaller club may carry no market value and no contract date, and the page
+ * simply shows fewer lines rather than empty ones.
+ */
+export async function fotmobPlayer(id: number): Promise<FmPlayerPage | null> {
+  try {
+    const res = await fetch(`${API}/playerData?id=${id}`, {
+      signal: AbortSignal.timeout(9000),
+      next: { revalidate: 3600 },
+    });
+    if (!res.ok) return null;
+    const j = (await res.json()) as {
+      id?: number;
+      name?: string;
+      primaryTeam?: { teamName?: string; teamId?: number };
+      positionDescription?: { primaryPosition?: { label?: string } };
+      playerInformation?: RawFact[];
+      injuryInformation?: { expectedReturn?: string; type?: string } | null;
+      mainLeague?: {
+        leagueName?: string;
+        season?: string;
+        stats?: { title?: string; value?: unknown }[];
+      };
+      recentMatches?: {
+        matchDate?: { utcTime?: string };
+        leagueName?: string;
+        opponentTeamName?: string;
+        isHomeTeam?: boolean;
+        homeScore?: number;
+        awayScore?: number;
+        ratingProps?: { rating?: string };
+        minutesPlayed?: number;
+        goals?: number;
+        assists?: number;
+        playedInMatch?: boolean;
+      }[];
+    };
+    if (!j.name) return null;
+
+    return {
+      id,
+      name: j.name,
+      image: `https://images.fotmob.com/image_resources/playerimages/${id}.png`,
+      team: j.primaryTeam?.teamName ?? null,
+      teamId: j.primaryTeam?.teamId ?? null,
+      position: j.positionDescription?.primaryPosition?.label ?? null,
+      facts: (j.playerInformation ?? [])
+        .map(fact)
+        .filter((f): f is { label: string; value: string } => f !== null),
+      league: j.mainLeague?.leagueName ?? null,
+      season: j.mainLeague?.season ?? null,
+      stats: (j.mainLeague?.stats ?? [])
+        .filter((s) => s.value !== null && s.value !== undefined)
+        .map((s) => ({
+          label: STAT_KO[s.title ?? ""] ?? s.title ?? "",
+          value: String(s.value),
+        })),
+      /*
+       * The last few matches, from this player's side of them.
+       *
+       * The source gives the opponent rather than the two teams and a flag for
+       * which end the player was on, so the result has to be worked out here -
+       * a 0:2 is a win or a defeat depending on that flag, and getting it
+       * backwards would put a defeat badge on a hat-trick.
+       */
+      recent: (j.recentMatches ?? [])
+        .filter((m) => m.playedInMatch !== false)
+        .slice(0, 10)
+        .map((m) => {
+          const home = m.isHomeTeam !== false;
+          const us = home ? (m.homeScore ?? 0) : (m.awayScore ?? 0);
+          const them = home ? (m.awayScore ?? 0) : (m.homeScore ?? 0);
+          const rating = Number(m.ratingProps?.rating);
+          return {
+            date: Date.parse(m.matchDate?.utcTime ?? "") || 0,
+            competition: m.leagueName ?? null,
+            opponent: m.opponentTeamName ?? "?",
+            home,
+            score: `${us} : ${them}`,
+            rating: Number.isFinite(rating) ? rating : null,
+            minutes: m.minutesPlayed ?? null,
+            goals: m.goals ?? 0,
+            assists: m.assists ?? 0,
+            outcome: (us > them ? "승" : us === them ? "무" : "패") as
+              | "승"
+              | "무"
+              | "패",
+          };
+        }),
+      injury: j.injuryInformation?.expectedReturn
+        ? `복귀 예정 ${j.injuryInformation.expectedReturn}`
+        : null,
+    };
+  } catch {
+    return null;
+  }
 }

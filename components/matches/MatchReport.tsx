@@ -117,6 +117,7 @@ export function MatchReport({
     const t = fm?.[side];
     if (t) {
       return t.starters.map((p) => ({
+        id: p.id,
         name: p.name,
         jersey: p.jersey,
         x: p.x,
@@ -133,6 +134,7 @@ export function MatchReport({
     if (!laid) return null;
     const off = subMinutes(detail.events);
     return laid.map((p) => ({
+      id: 0,
       name: p.name,
       jersey: p.jersey,
       x: p.x,

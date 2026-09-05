@@ -1,3 +1,4 @@
+import Link from "next/link";
 import type { FmTeam } from "@/lib/fotmob";
 
 /**
@@ -49,6 +50,7 @@ function Rating({ r }: { r: number | null }) {
 }
 
 function Row({
+  id,
   name,
   jersey,
   image,
@@ -56,6 +58,7 @@ function Row({
   note,
   minute,
 }: {
+  id?: number;
   name: string;
   jersey: string;
   image: string | null;
@@ -63,8 +66,8 @@ function Row({
   note?: React.ReactNode;
   minute?: number | null;
 }) {
-  return (
-    <li className="flex items-center gap-2 py-1.5">
+  const inner = (
+    <>
       <Face src={image} jersey={jersey} />
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline gap-1.5">
@@ -78,6 +81,22 @@ function Row({
         <span className="tnum shrink-0 text-[11px] font-semibold text-faint">
           {minute}&apos;
         </span>
+      )}
+    </>
+  );
+
+  return (
+    <li>
+      {id ? (
+        <Link
+          href={`/matches/player/${id}`}
+          title={`${name} 기록 보기`}
+          className="-mx-2 flex items-center gap-2 rounded-[6px] px-2 py-1.5 transition-colors hover:bg-surface-2/50"
+        >
+          {inner}
+        </Link>
+      ) : (
+        <span className="flex items-center gap-2 py-1.5">{inner}</span>
       )}
     </li>
   );
@@ -151,6 +170,7 @@ export function Lineups({
         return (
           <Row
             key={on.name + on.jersey}
+            id={on.id}
             name={on.name}
             jersey={on.jersey}
             image={on.image}
@@ -167,6 +187,7 @@ export function Lineups({
       .map((p) => (
         <Row
           key={p.name + p.jersey}
+          id={p.id}
           name={p.name}
           jersey={p.jersey}
           image={p.image}
