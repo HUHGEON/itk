@@ -14,6 +14,7 @@ import { MEASURE } from "./Measure";
 import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
+import { Pitch } from "./Pitch";
 
 /**
  * One match, kept current.
@@ -141,16 +142,37 @@ export function MatchReport({ initial }: { initial: MatchDetail }) {
         </div>
       </header>
 
+      {/*
+        The lineups lead.
+        
+        Who is playing is the first question asked of a match report, before
+        the first kick and after the last, and it is the one thing here that
+        cannot be inferred from the scoreline. The pitch answers it at a
+        glance; the lists under it carry the numbers and the bench.
+      */}
+      {detail.lineups && (
+        <section className="border-b border-border pt-5">
+          <h2 className="px-[var(--gutter)] pb-3 text-[12px] font-semibold text-muted">
+            선수 명단
+          </h2>
+          <Pitch
+            home={detail.lineups.home}
+            away={detail.lineups.away}
+            homeSide={match.home}
+            awaySide={match.away}
+          />
+          <Lineups
+            home={detail.lineups.home}
+            away={detail.lineups.away}
+            homeName={match.home.name}
+            awayName={match.away.name}
+            bare
+          />
+        </section>
+      )}
+
       <Timeline events={detail.events} />
       <StatBars groups={detail.stats} />
-      {detail.lineups && (
-        <Lineups
-          home={detail.lineups.home}
-          away={detail.lineups.away}
-          homeName={match.home.name}
-          awayName={match.away.name}
-        />
-      )}
 
       {detail.events.length === 0 &&
         detail.stats.length === 0 &&

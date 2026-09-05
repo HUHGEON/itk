@@ -74,6 +74,10 @@ export interface MatchSide {
   slug: string | null;
   crest: string | null;
   score: number | null;
+  /** Kit colour as six hex digits, no hash. Drives the pitch tokens. */
+  color: string | null;
+  /** Change colour, used when both clubs' first colours are too alike. */
+  color2: string | null;
 }
 
 export interface Match {
@@ -224,7 +228,18 @@ function resolve(name: string): RegistryTeam | null {
 interface EspnCompetitor {
   homeAway?: string;
   score?: string;
-  team?: { displayName?: string; shortDisplayName?: string; logo?: string };
+  team?: {
+    displayName?: string;
+    shortDisplayName?: string;
+    logo?: string;
+    color?: string;
+    alternateColor?: string;
+  };
+}
+
+/** Six hex digits or nothing. */
+function hex(v: string | undefined): string | null {
+  return /^[0-9a-fA-F]{6}$/.test(v ?? "") ? (v as string) : null;
 }
 
 function side(c: EspnCompetitor | undefined): MatchSide {
@@ -236,6 +251,8 @@ function side(c: EspnCompetitor | undefined): MatchSide {
     slug: known?.slug ?? null,
     crest: known?.crest ?? c?.team?.logo ?? null,
     score: Number.isFinite(n) ? n : null,
+    color: hex(c?.team?.color),
+    color2: hex(c?.team?.alternateColor),
   };
 }
 
@@ -315,11 +332,33 @@ export async function matchesOn(
   date: Date,
   signal?: AbortSignal,
 ): Promise<Match[]> {
-  const day = ymd(date);
+  /*
+   * A Korean day, not a UTC one.
+   *
+   * The source files a match under its own UTC date, and Korea is nine hours
+   * ahead, so a Korean day runs from 15:00 the previous UTC day to 14:59 of
+   * this one. Asking for a single UTC date therefore answers with the wrong
+   * set at both ends.
+   *
+   * Measured on 6 September before the fix: nineteen matches came back and
+   * nine of them were actually Korean the 7th - Arsenal against Chelsea, a
+   * Monday 00:30 kick-off, sat under Sunday. The Korean small hours of the
+   * 6th were meanwhile filed under the 5th and could not be found at all.
+   *
+   * So both UTC days are fetched and the result is filtered to the Korean
+   * calendar day. The extra request per competition is the whole cost, and
+   * fetchOne already takes a range.
+   */
+  const want = ymd(date);
+  const before = ymd(new Date(date.getTime() - 24 * 3600_000));
+  const span = `${before}-${want}`;
   const lists = await Promise.all(
-    COMPETITIONS.map((c) => fetchOne(c.code, day, signal)),
+    COMPETITIONS.map((c) => fetchOne(c.code, span, signal)),
   );
-  return lists.flat().sort((a, b) => a.kickoff - b.kickoff);
+  return lists
+    .flat()
+    .filter((m) => seoul(m.kickoff).ymd === want)
+    .sort((a, b) => a.kickoff - b.kickoff);
 }
 
 

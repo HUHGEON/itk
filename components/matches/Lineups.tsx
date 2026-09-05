@@ -82,21 +82,29 @@ export function Lineups({
   away,
   homeName,
   awayName,
+  bare = false,
 }: {
   home: Lineup | null;
   away: Lineup | null;
   homeName: string;
   awayName: string;
+  /** The pitch above already carries the heading and the section rule. */
+  bare?: boolean;
 }) {
   if (!home && !away) return null;
 
+  const inner = (
+    <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
+      {home && <Column name={homeName} lineup={home} />}
+      {away && <Column name={awayName} lineup={away} />}
+    </div>
+  );
+
+  if (bare) return <div className="px-[var(--gutter)] pb-5">{inner}</div>;
   return (
     <section className="border-b border-border px-[var(--gutter)] py-5 last:border-b-0">
       <h2 className="pb-3 text-[12px] font-semibold text-muted">선수 명단</h2>
-      <div className="grid gap-x-10 gap-y-6 sm:grid-cols-2">
-        {home && <Column name={homeName} lineup={home} />}
-        {away && <Column name={awayName} lineup={away} />}
-      </div>
+      {inner}
     </section>
   );
 }

@@ -56,7 +56,16 @@ const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
  * "today" turns over at midnight in Korea rather than at whatever hour the
  * server happens to think midnight is.
  */
-function label(d: Date, today: Date): string {
+/**
+ * The day being shown, as a date and as a bearing.
+ *
+ * "내일" alone was not enough. A day here runs from Korean midnight to Korean
+ * midnight, so the small hours belong to the day they are dated - Arsenal
+ * against Chelsea at 00:30 is Monday, and a page headed only "내일" gave a
+ * reader no way to see that. The date is the fact and the relative word is the
+ * convenience, so both are shown, date first.
+ */
+function label(d: Date, today: Date): { date: string; near: string | null } {
   const a = seoul(d);
   const b = seoul(today);
   const days = Math.round(
@@ -64,10 +73,10 @@ function label(d: Date, today: Date): string {
       Date.UTC(b.year, b.month - 1, b.day)) /
       86_400_000,
   );
-  if (days === 0) return "오늘";
-  if (days === 1) return "내일";
-  if (days === -1) return "어제";
-  return `${a.month}월 ${a.day}일 (${WEEKDAY[a.weekday]})`;
+  return {
+    date: `${a.month}월 ${a.day}일 (${WEEKDAY[a.weekday]})`,
+    near: days === 0 ? "오늘" : days === 1 ? "내일" : days === -1 ? "어제" : null,
+  };
 }
 
 export default async function Matches({
@@ -137,8 +146,15 @@ export default async function Matches({
           >
             ‹
           </Link>
-          <span className="min-w-[112px] px-2 text-center text-[14px] font-semibold text-text">
-            {label(date, today)}
+          <span className="flex min-w-[148px] items-baseline justify-center gap-1.5 px-2 text-center">
+            <span className="text-[14px] font-semibold text-text">
+              {label(date, today).date}
+            </span>
+            {label(date, today).near && (
+              <span className="text-[12px] text-faint">
+                {label(date, today).near}
+              </span>
+            )}
           </span>
           <Link
             href={href(shift(date, 1), !onlyTracked)}
