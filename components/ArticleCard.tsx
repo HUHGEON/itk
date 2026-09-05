@@ -97,7 +97,7 @@ export function ArticleCard({
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full py-3 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors ${
+        className={`block w-full py-3.5 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors ${
           expandable
             ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
             : "cursor-default"
@@ -169,7 +169,7 @@ export function ArticleCard({
           )}
 
           <time
-            className="tnum ml-auto shrink-0 text-faint"
+            className="tnum ml-auto shrink-0 text-muted"
             dateTime={new Date(row.publishedAt).toISOString()}
           >
             {timeAgo(row.publishedAt, now)}
@@ -182,7 +182,11 @@ export function ArticleCard({
               body copy, and the reading-measure argument does not apply. */}
           <div className="min-w-0 flex-1">
             <h3
-              className={`text-[15.5px] leading-[1.38] font-semibold text-text sm:text-[16.5px] ${
+              // Bigger than the metadata by enough to be the thing you read
+              // first. At 16.5 against a 12.5 byline the two were close enough
+              // that the eye had to choose, which is what made a column of
+              // these feel flat.
+              className={`text-[16px] leading-[1.4] font-semibold text-text sm:text-[17.5px] ${
                 open ? "" : "line-clamp-3"
               }`}
             >
@@ -196,7 +200,7 @@ export function ArticleCard({
                 readers only glance at; opening the article restores it. */}
             {translated && (
               <p
-                className={`mt-0.5 text-[12.5px] leading-snug text-muted ${
+                className={`mt-1 text-[12px] leading-snug text-faint ${
                   open ? "" : "line-clamp-1"
                 }`}
               >
