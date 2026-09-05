@@ -20,6 +20,30 @@ import { Logo, LogoFluid } from "./Logo";
  * panels hold state (a subscription list keyed on a browser token) that a
  * second copy would fork.
  */
+function RailTab({
+  href,
+  on,
+  children,
+}: {
+  href: string;
+  on: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <Link
+      href={href}
+      aria-current={on ? "page" : undefined}
+      className={`flex-1 border-b-2 py-2.5 text-center text-[13px] transition-colors ${
+        on
+          ? "border-accent font-semibold text-text"
+          : "border-transparent text-muted hover:text-text"
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
 export function Shell({
   rail,
   actions,
@@ -87,6 +111,23 @@ export function Shell({
           </button>
         </div>
 
+        {/*
+          The two halves of the site, directly under the mark.
+
+          These used to be a pair of small links at the very bottom of the rail,
+          below every filter and panel, which is a place people reach by
+          accident rather than on purpose - the match pages were shipped and
+          nobody could find them. Top of the rail, full width, reading as tabs.
+        */}
+        <nav className="flex shrink-0 border-b border-border">
+          <RailTab href="/feed" on={!pathname.startsWith("/matches")}>
+            이적 소식
+          </RailTab>
+          <RailTab href="/matches" on={pathname.startsWith("/matches")}>
+            경기 일정
+          </RailTab>
+        </nav>
+
         {/* Search and collect belong with the controls, not floating over the
             stories they act on. */}
         {/* Stacked: the rail is ~13rem at its narrowest and a search field
@@ -102,13 +143,7 @@ export function Shell({
             than in the header: someone who opens this daily is here for the
             stories, and a nav item above them would sell the site to someone
             already using it. */}
-        <div className="mt-auto flex items-center gap-4 border-t border-border px-[var(--gutter)] py-3">
-          <Link
-            href="/matches"
-            className="text-[11.5px] text-muted transition-colors hover:text-text"
-          >
-            경기 일정
-          </Link>
+        <div className="mt-auto border-t border-border px-[var(--gutter)] py-3">
           <Link
             href="/"
             className="text-[11.5px] text-faint transition-colors hover:text-muted"
@@ -139,15 +174,7 @@ export function Shell({
           </Link>
         </div>
 
-        {/*
-          Capped, because a headline is read line by line.
-
-          Measured at 1440px: a single headline ran 1,112px, which is past the
-          width where the eye reliably finds the start of the next line. The
-          cap is generous - two-line headlines still fit on two lines - and on
-          anything narrower than the cap nothing changes at all.
-        */}
-        <main className="mx-auto min-w-0 max-w-[68rem]">{children}</main>
+        <main className="min-w-0">{children}</main>
       </div>
     </div>
   );

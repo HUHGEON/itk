@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { COMPETITIONS, matchesOn, ymd } from "@/lib/matches";
+import { COMPETITIONS, matchesOn, seoul, seoulDay, ymd } from "@/lib/matches";
 import { MatchBoard } from "@/components/matches/MatchBoard";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { Shell } from "@/components/Shell";
@@ -26,13 +26,13 @@ export const dynamic = "force-dynamic";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
-/** A date from the URL, or today. `?d=20260913`. */
+/** A date from the URL, read as a Korean calendar day. `?d=20260913`. */
 function parseDay(raw: string | string[] | undefined): Date {
   const s = Array.isArray(raw) ? raw[0] : raw;
   if (s && /^\d{8}$/.test(s)) {
-    const d = new Date(
+    const d = seoulDay(
       Number(s.slice(0, 4)),
-      Number(s.slice(4, 6)) - 1,
+      Number(s.slice(4, 6)),
       Number(s.slice(6, 8)),
     );
     if (!Number.isNaN(d.getTime())) return d;
@@ -40,28 +40,33 @@ function parseDay(raw: string | string[] | undefined): Date {
   return new Date();
 }
 
+/** Moves by whole Korean days, not by 24 hour blocks from an arbitrary clock. */
 function shift(d: Date, days: number): Date {
-  const next = new Date(d);
-  next.setDate(next.getDate() + days);
-  return next;
+  const t = seoul(d);
+  return seoulDay(t.year, t.month, t.day + days);
 }
 
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
+/**
+ * Names a day relative to today, in Seoul.
+ *
+ * Both dates are reduced to their Korean calendar day before subtracting, so
+ * "today" turns over at midnight in Korea rather than at whatever hour the
+ * server happens to think midnight is.
+ */
 function label(d: Date, today: Date): string {
+  const a = seoul(d);
+  const b = seoul(today);
   const days = Math.round(
-    (new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime() -
-      new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        today.getDate(),
-      ).getTime()) /
+    (Date.UTC(a.year, a.month - 1, a.day) -
+      Date.UTC(b.year, b.month - 1, b.day)) /
       86_400_000,
   );
   if (days === 0) return "오늘";
   if (days === 1) return "내일";
   if (days === -1) return "어제";
-  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEKDAY[d.getDay()]})`;
+  return `${a.month}월 ${a.day}일 (${WEEKDAY[a.weekday]})`;
 }
 
 export default async function Matches({

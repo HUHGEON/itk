@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Match } from "@/lib/matches";
+import { seoul, type Match } from "@/lib/matches";
 import { dealIn } from "@/lib/motion";
 
 /**
@@ -93,7 +93,7 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
   const home = match.home.slug === slug;
   const us = home ? match.home : match.away;
   const them = home ? match.away : match.home;
-  const d = new Date(match.kickoff);
+  const d = seoul(match.kickoff);
   const live = match.state === "in";
   const done = match.state === "post";
 
@@ -115,9 +115,9 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
     >
       <div className="tnum w-[52px] shrink-0 text-[11.5px] leading-tight text-faint">
         <div>
-          {d.getMonth() + 1}.{d.getDate()}
+          {d.month}.{d.day}
         </div>
-        <div className="text-[10.5px]">({WEEKDAY[d.getDay()]})</div>
+        <div className="text-[10.5px]">({WEEKDAY[d.weekday]})</div>
       </div>
 
       <div className="flex min-w-0 items-center gap-2.5">
@@ -176,8 +176,7 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
           </>
         ) : (
           <span className="tnum text-[13px] font-medium text-muted">
-            {String(d.getHours()).padStart(2, "0")}:
-            {String(d.getMinutes()).padStart(2, "0")}
+            {d.hm}
           </span>
         )}
       </div>

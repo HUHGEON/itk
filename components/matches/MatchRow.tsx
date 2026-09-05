@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef } from "react";
-import type { Match, MatchSide } from "@/lib/matches";
+import { seoul, type Match, type MatchSide } from "@/lib/matches";
 import { markGoal } from "@/lib/motion";
 
 /**
@@ -95,10 +95,7 @@ export function MatchRow({
     last.current = now;
   }, [live, match.home.score, match.away.score]);
 
-  const kickoff = new Date(match.kickoff);
-  const time = `${String(kickoff.getHours()).padStart(2, "0")}:${String(
-    kickoff.getMinutes(),
-  ).padStart(2, "0")}`;
+  const time = seoul(match.kickoff).hm;
 
   return (
     <article

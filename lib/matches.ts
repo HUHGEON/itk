@@ -93,13 +93,83 @@ export interface Match {
 
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
-/** Local YYYYMMDD, which is the only date format the endpoint accepts. */
+/**
+ * Everything on these pages is Korean time, wherever the code is running.
+ *
+ * The site is read from Korea and rendered on servers set to UTC, which are
+ * nine hours apart. Left to the runtime's own idea of local time, a 20:30
+ * kick-off rendered as 11:30 in production and correctly at home, and worse,
+ * "today" changed over at 09:00 KST instead of midnight - so for nine hours
+ * every morning the fixture list was showing the previous day.
+ *
+ * Fixing it per call site would mean remembering every time. These helpers are
+ * the only way dates are read here.
+ */
+const KST = "Asia/Seoul";
+
+const KST_PARTS = new Intl.DateTimeFormat("en-GB", {
+  timeZone: KST,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+  hour: "2-digit",
+  minute: "2-digit",
+  weekday: "short",
+  hour12: false,
+});
+
+export interface SeoulTime {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  /** 0 = Sunday, matching Date.getDay. */
+  weekday: number;
+  /** YYYYMMDD */
+  ymd: string;
+  /** HH:MM */
+  hm: string;
+}
+
+const DAY_INDEX: Record<string, number> = {
+  Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6,
+};
+
+/** Reads a moment as it appears on a clock in Seoul. */
+export function seoul(input: Date | number): SeoulTime {
+  const parts = KST_PARTS.formatToParts(
+    typeof input === "number" ? new Date(input) : input,
+  );
+  const get = (t: string) => parts.find((p) => p.type === t)?.value ?? "";
+  const year = Number(get("year"));
+  const month = Number(get("month"));
+  const day = Number(get("day"));
+  // Midnight comes back as "24" from some runtimes.
+  const hour = Number(get("hour")) % 24;
+  const minute = Number(get("minute"));
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    weekday: DAY_INDEX[get("weekday")] ?? 0,
+    ymd: `${year}${pad(month)}${pad(day)}`,
+    hm: `${pad(hour)}:${pad(minute)}`,
+  };
+}
+
+/** YYYYMMDD in Seoul, which is the format the endpoint accepts. */
 export function ymd(d: Date): string {
-  return [
-    d.getFullYear(),
-    String(d.getMonth() + 1).padStart(2, "0"),
-    String(d.getDate()).padStart(2, "0"),
-  ].join("");
+  return seoul(d).ymd;
+}
+
+/** Midnight in Seoul on a given YYYYMMDD, as a real instant. */
+export function seoulDay(y: number, m: number, d: number): Date {
+  // KST has no daylight saving, so a fixed offset is exact.
+  return new Date(Date.UTC(y, m - 1, d, 0, 0) - 9 * 3600_000);
 }
 
 /**
