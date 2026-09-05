@@ -98,6 +98,12 @@ export default async function About() {
           >
             피드
           </Link>
+          <Link
+            href="/matches"
+            className="text-[12px] text-muted transition-colors hover:text-text"
+          >
+            경기 일정
+          </Link>
         </div>
       </footer>
     </div>

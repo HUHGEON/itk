@@ -102,7 +102,13 @@ export function Shell({
             than in the header: someone who opens this daily is here for the
             stories, and a nav item above them would sell the site to someone
             already using it. */}
-        <div className="mt-auto border-t border-border px-[var(--gutter)] py-3">
+        <div className="mt-auto flex items-center gap-4 border-t border-border px-[var(--gutter)] py-3">
+          <Link
+            href="/matches"
+            className="text-[11.5px] text-muted transition-colors hover:text-text"
+          >
+            경기 일정
+          </Link>
           <Link
             href="/"
             className="text-[11.5px] text-faint transition-colors hover:text-muted"

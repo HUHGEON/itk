@@ -142,3 +142,25 @@ body {
     transition-duration: 0.01ms !important;
   }
 }
+
+/**
+ * The one thing on the page that is allowed to move on its own.
+ *
+ * A live badge is a state, not an event, so it breathes rather than flashes:
+ * slow, low-amplitude, and never demanding a look. Everything else on this
+ * board animates in response to something happening.
+ */
+@keyframes live-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.58; }
+}
+
+.live-badge {
+  animation: live-breathe 2.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .live-badge {
+    animation: none;
+  }
+}

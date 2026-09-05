@@ -7,7 +7,7 @@ import {
   type DependencyList,
   type RefObject,
 } from "react";
-import { animate } from "animejs";
+import { animate, stagger } from "animejs";
 
 /**
  * The two rules every animation in the app follows.
@@ -139,6 +139,49 @@ export function rollNumber(el: HTMLElement, from: number, to: number) {
     onComplete: () => {
       el.textContent = String(to);
     },
+  });
+}
+
+/**
+ * Marks a scoreline that just changed.
+ *
+ * A live board updates itself, which means the one moment that matters most -
+ * a goal - can happen while the reader is looking somewhere else on the page.
+ * The number lifts, brightens and settles, so the change is caught in
+ * peripheral vision rather than having to be noticed.
+ *
+ * Deliberately short and deliberately not a loop: it says "this just happened",
+ * not "look here forever".
+ */
+export function markGoal(el: HTMLElement) {
+  if (reducedMotion()) return;
+  animate(el, {
+    keyframes: [
+      { scale: 1, filter: "brightness(1)" },
+      { scale: 1.28, filter: "brightness(1.9)" },
+      { scale: 1, filter: "brightness(1)" },
+    ],
+    duration: 900,
+    ease: "outElastic(1, .6)",
+  });
+}
+
+/**
+ * Brings a list in, one row after another.
+ *
+ * The rows arrive in the order they are read, which makes a long fixture list
+ * resolve as a sequence rather than appearing all at once as a wall. Kept to a
+ * short cascade: past about a dozen rows a stagger stops reading as sequence
+ * and starts reading as lag.
+ */
+export function dealIn(rows: HTMLElement[]) {
+  if (reducedMotion() || rows.length === 0) return;
+  animate(rows, {
+    opacity: [0, 1],
+    y: [10, 0],
+    duration: 420,
+    ease: "outQuad",
+    delay: stagger(38, { start: 0 }),
   });
 }
 
