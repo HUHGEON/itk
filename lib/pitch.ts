@@ -30,7 +30,11 @@ function depth(pos: string): number {
   if (/^(CM|[LR]M|M)/.test(p)) return 30;
   if (p.startsWith("AM") || p.startsWith("CAM") || /^[LR]W/.test(p)) return 40;
   if (p.startsWith("CF")) return 45;
-  if (/^(F|S|ST)/.test(p)) return 50;
+  // "SUB" is what the source calls a bench place, and it must not be read as a
+  // striker - an earlier `^(F|S|ST)` swallowed it and labelled every substitute
+  // a forward.
+  if (p === "SUB" || p === "") return -1;
+  if (/^(F|ST|SS)/.test(p) || p === "S") return 50;
   return 30;
 }
 
@@ -131,4 +135,21 @@ export function kitColours(
     if (c && dist(h, c) >= TOO_CLOSE) return { home: h, away: c };
   }
   return { home: h, away: away.color ?? "334155" };
+}
+
+/**
+ * A position code as the word a reader uses.
+ *
+ * "CD-R" and "AM-L" are precise and belong on the pitch where the position is
+ * visible anyway. In a list of substitutes the only useful distinction is what
+ * kind of player came on, so the codes collapse to the four words a team sheet
+ * is read in.
+ */
+export function role(pos: string): string {
+  const d = depth(pos);
+  if (d < 0) return "";
+  if (d === 0) return "골키퍼";
+  if (d <= 10) return "수비수";
+  if (d <= 30) return "미드필더";
+  return "공격수";
 }

@@ -30,6 +30,8 @@ import { Pitch } from "./Pitch";
  */
 const INTERVAL_MS = 5000;
 
+type TabId = "lineup" | "events" | "stats";
+
 /** When each player was replaced, read off the timeline. */
 function subMinutes(events: MatchDetail["events"]): Record<string, string> {
   const out: Record<string, string> = {};
@@ -95,6 +97,18 @@ export function MatchReport({
     if (last.current !== now && score.current) markGoal(score.current);
     last.current = now;
   }, [match.home.score, match.away.score]);
+
+  const tabs = [
+    detail.lineups && { id: "lineup" as const, label: "라인업" },
+    detail.events.length > 0 && { id: "events" as const, label: "경기 기록" },
+    detail.stats.length > 0 && { id: "stats" as const, label: "통계" },
+  ].filter((t): t is { id: TabId; label: string } => Boolean(t));
+
+  // The chosen tab, or the first one that exists. Holding the choice rather
+  // than forcing it means a live match that gains a statistics tab mid-way does
+  // not yank the reader off the one they were looking at.
+  const [tab, setTab] = useState<TabId | null>(null);
+  const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id;
 
   const d = seoul(match.kickoff);
   const done = match.state === "post";
@@ -175,49 +189,68 @@ export function MatchReport({
       </header>
 
       {/*
-        The lineups lead.
+        Three views of one match, behind three tabs.
         
-        Who is playing is the first question asked of a match report, before
-        the first kick and after the last, and it is the one thing here that
-        cannot be inferred from the scoreline. The pitch answers it at a
-        glance; the lists under it carry the numbers and the bench.
+        A report is not read straight through. Someone opens it wanting one of
+        three things - who is playing, what happened, how it went - and stacking
+        all three down a page makes two of them a scroll away from whichever one
+        was wanted. The lineup leads because it is the question asked most, and
+        the one thing here that cannot be worked out from the scoreline.
+        
+        Only tabs with something behind them are offered, so a fixture that has
+        not kicked off shows one tab rather than three, two of them empty.
       */}
-      {detail.lineups && (
-        <section className="border-b border-border pt-5">
-          <h2 className="px-[var(--gutter)] pb-3 text-[12px] font-semibold text-muted">
-            선수 명단
-          </h2>
-          <Pitch
-            home={detail.lineups.home}
-            away={detail.lineups.away}
-            homeSide={match.home}
-            awaySide={match.away}
-            faces={faces}
-            minutes={subMinutes(detail.events)}
-          />
-          <Lineups
-            home={detail.lineups.home}
-            away={detail.lineups.away}
-            homeName={match.home.name}
-            awayName={match.away.name}
-            events={detail.events}
-            faces={faces}
-            bare
-          />
-        </section>
+      {tabs.length > 0 && (
+        <>
+          <nav className="flex gap-1 border-b border-border px-[var(--gutter)]">
+            {tabs.map((t) => (
+              <button
+                key={t.id}
+                type="button"
+                onClick={() => setTab(t.id)}
+                aria-current={t.id === current ? "page" : undefined}
+                className={`-mb-px border-b-2 px-3 py-2.5 text-[13px] transition-colors ${
+                  t.id === current
+                    ? "border-accent font-semibold text-text"
+                    : "border-transparent text-muted hover:text-text"
+                }`}
+              >
+                {t.label}
+              </button>
+            ))}
+          </nav>
+
+          {current === "lineup" && detail.lineups && (
+            <section className="pt-4">
+              <Pitch
+                home={detail.lineups.home}
+                away={detail.lineups.away}
+                homeSide={match.home}
+                awaySide={match.away}
+                faces={faces}
+                minutes={subMinutes(detail.events)}
+              />
+              <Lineups
+                home={detail.lineups.home}
+                away={detail.lineups.away}
+                homeName={match.home.name}
+                awayName={match.away.name}
+                events={detail.events}
+                faces={faces}
+              />
+            </section>
+          )}
+          {current === "events" && <Timeline events={detail.events} />}
+          {current === "stats" && <StatBars groups={detail.stats} />}
+        </>
       )}
 
-      <Timeline events={detail.events} />
-      <StatBars groups={detail.stats} />
-
-      {detail.events.length === 0 &&
-        detail.stats.length === 0 &&
-        !detail.lineups && (
-          <p className="px-[var(--gutter)] py-16 text-center text-[13.5px] text-muted">
-            아직 공개된 기록이 없습니다. 킥오프와 함께 기록과 선수 명단이
-            채워집니다.
-          </p>
-        )}
+      {tabs.length === 0 && (
+        <p className="px-[var(--gutter)] py-16 text-center text-[13.5px] text-muted">
+          아직 공개된 기록이 없습니다. 킥오프와 함께 기록과 선수 명단이
+          채워집니다.
+        </p>
+      )}
     </div>
   );
 }
