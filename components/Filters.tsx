@@ -297,11 +297,17 @@ export function Filters({
           ))}
         </ScrollRail>
 
-        {/* Clubs of the open league — plus any picks made in another league, so
-            a selection never disappears when the tab changes. */}
-        {((openGroup?.members.length ?? 0) > 0 || selected.length > 0) && (
+        {/* Clubs of the open league, or every club when no league is open.
+            
+            This row used to appear only after a league tab was chosen, which
+            meant someone landing on 전체 had no way of knowing the feed could be
+            filtered by club at all - measured: zero club controls on the page
+            in its default state. Showing all seventeen up front makes the
+            feature findable, and picking a league still narrows the row to that
+            league's clubs. */}
+        {(teams.length > 0 || selected.length > 0) && (
           <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
-            {(openGroup?.members ?? selected).map((t) => {
+            {(openGroup?.members ?? teams).map((t) => {
               const on = selectedTeams.includes(t.slug);
               const act = activity[t.slug];
               return (

@@ -133,7 +133,15 @@ export function Shell({
           </Link>
         </div>
 
-        <main className="min-w-0">{children}</main>
+        {/*
+          Capped, because a headline is read line by line.
+
+          Measured at 1440px: a single headline ran 1,112px, which is past the
+          width where the eye reliably finds the start of the next line. The
+          cap is generous - two-line headlines still fit on two lines - and on
+          anything narrower than the cap nothing changes at all.
+        */}
+        <main className="mx-auto min-w-0 max-w-[68rem]">{children}</main>
       </div>
     </div>
   );
