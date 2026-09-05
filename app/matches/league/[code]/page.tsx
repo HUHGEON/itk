@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { COMPETITIONS, tableFor, matchesOn, ymd } from "@/lib/matches";
@@ -59,7 +60,7 @@ export default async function League({ params }: { params: Params }) {
 
   return (
     <Shell
-      rail={<MatchRail active={code} />}
+      rail={<MatchRail active={code} day={ymd(today)} />}
       actions={
         <>
           <Suspense fallback={null}>
@@ -75,10 +76,16 @@ export default async function League({ params }: { params: Params }) {
         <h1 className="text-[20px] font-bold tracking-tight text-text">
           {c.ko}
         </h1>
-        <p className="mt-1 text-[12.5px] text-muted">
-          {rows.length > 0
-            ? `${rows.length}개 구단 · 순위는 5분마다 갱신됩니다`
-            : "순위 정보"}
+        <p className="mt-1 flex items-center gap-3 text-[12.5px] text-muted">
+          <span>
+            {rows.length > 0 ? `${rows.length}개 구단` : "순위 정보"}
+          </span>
+          <Link
+            href={`/matches?comp=${code}`}
+            className="rounded-[4px] border border-border px-2.5 py-1 text-[12px] transition-colors hover:border-border-strong hover:text-text"
+          >
+            경기 일정
+          </Link>
         </p>
       </header>
 

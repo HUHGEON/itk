@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { matchesOn, ymd } from "@/lib/matches";
+import { COMPETITIONS, matchesOn, ymd } from "@/lib/matches";
 import { MatchBoard } from "@/components/matches/MatchBoard";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { Shell } from "@/components/Shell";
@@ -74,19 +74,42 @@ export default async function Matches({
   const today = new Date();
   const onlyTracked = sp.all !== "1";
 
-  const matches = await matchesOn(date);
+  const all = await matchesOn(date);
+
+  /**
+   * The competition picked in the rail, if any.
+   *
+   * Filtering here rather than in the board keeps the counts on the scope
+   * buttons honest: they describe what this competition has on this date, not
+   * what the whole day holds.
+   */
+  const comp = Array.isArray(sp.comp) ? sp.comp[0] : sp.comp;
+  const picked = COMPETITIONS.find((c) => c.code === comp);
+  const matches = picked
+    ? all.filter((m) => m.competition === picked.ko)
+    : all;
   const trackedCount = matches.filter((m) => m.tracked).length;
 
-  const href = (d: Date, all: boolean) => {
+  // Feeds the rail, so it can show what is on and hide what is not.
+  const counts: Record<string, number> = {};
+  for (const m of all) counts[m.competition] = (counts[m.competition] ?? 0) + 1;
+  const ranked =
+    picked &&
+    (picked.kind === "league" ||
+      picked.code === "uefa.champions" ||
+      picked.code === "uefa.europa");
+
+  const href = (d: Date, showAll: boolean) => {
     const p = new URLSearchParams();
     if (ymd(d) !== ymd(today)) p.set("d", ymd(d));
-    if (all) p.set("all", "1");
+    if (comp) p.set("comp", comp);
+    if (showAll) p.set("all", "1");
     return p.toString() ? `/matches?${p}` : "/matches";
   };
 
   return (
     <Shell
-      rail={<MatchRail />}
+      rail={<MatchRail active={picked?.code} day={ymd(date)} counts={counts} />}
       actions={
         <>
           <Suspense fallback={null}>
@@ -145,7 +168,28 @@ export default async function Matches({
         </div>
       </div>
 
-      <MatchBoard date={date} initial={matches} onlyTracked={onlyTracked} />
+      {picked && (
+        <div className="flex items-center gap-3 border-b border-border px-[var(--gutter)] py-3">
+          <h1 className="text-[15px] font-bold tracking-tight text-text">
+            {picked.ko}
+          </h1>
+          {ranked && (
+            <Link
+              href={`/matches/league/${picked.code}`}
+              className="rounded-[4px] border border-border px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
+            >
+              순위표
+            </Link>
+          )}
+        </div>
+      )}
+
+      <MatchBoard
+        date={date}
+        initial={matches}
+        onlyTracked={onlyTracked}
+        bare={Boolean(picked)}
+      />
     </Shell>
   );
 }

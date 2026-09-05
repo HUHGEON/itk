@@ -65,7 +65,14 @@ function Side({ side, align }: { side: MatchSide; align: "home" | "away" }) {
   );
 }
 
-export function MatchRow({ match }: { match: Match }) {
+export function MatchRow({
+  match,
+  showCompetition = false,
+}: {
+  match: Match;
+  /** On a mixed list the competition has to ride along on the row. */
+  showCompetition?: boolean;
+}) {
   const live = match.state === "in";
   const done = match.state === "post";
   const score = useRef<HTMLSpanElement>(null);
@@ -103,6 +110,11 @@ export function MatchRow({ match }: { match: Match }) {
       <Side side={match.home} align="home" />
 
       <div className="flex min-w-[72px] flex-col items-center gap-0.5">
+        {showCompetition && (
+          <span className="text-[10px] leading-none text-faint">
+            {match.competitionShort}
+          </span>
+        )}
         {match.state === "pre" ? (
           <span className="tnum text-[14.5px] font-semibold text-muted">
             {time}
