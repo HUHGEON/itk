@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { MatchSide } from "@/lib/matches";
 
 /**
@@ -48,7 +47,15 @@ function ratingTone(r: number): string {
   return "bg-zinc-500 text-white";
 }
 
-function Token({ p, tint }: { p: PitchPlayer; tint: string }) {
+function Token({
+  p,
+  tint,
+  onOpen,
+}: {
+  p: PitchPlayer;
+  tint: string;
+  onOpen?: (id: number) => void;
+}) {
   /*
    * Held clear of the touchlines.
    *
@@ -110,9 +117,9 @@ function Token({ p, tint }: { p: PitchPlayer; tint: string }) {
         {p.goals === 0 && p.assists > 0 && (
           <span
             title={`도움 ${p.assists}`}
-            className="tnum absolute -top-1 -left-1.5 rounded-full bg-sky-400 px-[3.5px] text-[9px] leading-[1.6] font-bold text-black"
+            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black"
           >
-            A{p.assists > 1 ? p.assists : ""}
+            👟{p.assists > 1 && <span className="tnum">{p.assists}</span>}
           </span>
         )}
         {p.offAt != null && (
@@ -147,14 +154,15 @@ function Token({ p, tint }: { p: PitchPlayer; tint: string }) {
     <li className="pitch-token -translate-x-1/2 -translate-y-1/2" style={place}>
       {/* A player is only a link when there is a page behind him, which means
           the richer source had the match. */}
-      {p.id ? (
-        <Link
-          href={`/matches/player/${p.id}`}
+      {p.id && onOpen ? (
+        <button
+          type="button"
+          onClick={() => onOpen(p.id)}
           title={`${p.name} 기록 보기`}
           className="flex flex-col items-center gap-1 rounded-[6px] transition-opacity hover:opacity-80"
         >
           {body}
-        </Link>
+        </button>
       ) : (
         <span className="flex flex-col items-center gap-1">{body}</span>
       )}
@@ -198,6 +206,7 @@ export function Pitch({
   awaySide,
   homeMeta,
   awayMeta,
+  onOpen,
 }: {
   home: PitchPlayer[] | null;
   away: PitchPlayer[] | null;
@@ -205,6 +214,8 @@ export function Pitch({
   awaySide: MatchSide;
   homeMeta: { formation: string | null; rating: number | null; coach: string | null };
   awayMeta: { formation: string | null; rating: number | null; coach: string | null };
+  /** Opens the panel for one player. */
+  onOpen?: (id: number) => void;
 }) {
   // Only a pitch both shapes can be read onto. One side missing leaves half a
   // diagram, which says less than the lists below it.
@@ -221,8 +232,19 @@ export function Pitch({
         <Badge side={awaySide} {...awayMeta} />
       </div>
 
+      {/*
+       * The markings are clipped; the players are not.
+       *
+       * Measured with the pitch at 796 by 531: the four widest players -
+       * O'Shea, Davis, Araujo, Kerkez - had three pixels of their name shaved
+       * off by the container's own rounded clip, and on a phone, where that
+       * axis is the narrow one, a wide name lost far more. Cutting only the
+       * background layer lets a token at the touchline sit slightly proud of
+       * the pitch, which is what it does on a real team sheet anyway.
+       */}
+      <div className="relative aspect-[3/4] w-full sm:aspect-[3/2]">
       <div
-        className="relative aspect-[3/4] w-full overflow-hidden rounded-[8px] border border-border sm:aspect-[3/2]"
+        className="absolute inset-0 overflow-hidden rounded-[8px] border border-border"
         /*
          * A dark, near-neutral ground rather than green grass.
          *
@@ -245,12 +267,14 @@ export function Pitch({
         <span aria-hidden className="absolute top-1/2 left-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-l-0 border-white/15 sm:block" />
         <span aria-hidden className="absolute top-1/2 right-2 hidden h-[52%] w-[14%] -translate-y-1/2 border border-r-0 border-white/15 sm:block" />
 
+      </div>
+
         <ul className="absolute inset-0">
           {away.map((p) => (
-            <Token key={`a${p.name}${p.jersey}`} p={p} tint="away" />
+            <Token key={`a${p.name}${p.jersey}`} p={p} tint="away" onOpen={onOpen} />
           ))}
           {home.map((p) => (
-            <Token key={`h${p.name}${p.jersey}`} p={p} tint="home" />
+            <Token key={`h${p.name}${p.jersey}`} p={p} tint="home" onOpen={onOpen} />
           ))}
         </ul>
       </div>

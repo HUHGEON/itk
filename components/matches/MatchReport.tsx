@@ -17,6 +17,7 @@ import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
 import { Pitch, type PitchPlayer } from "./Pitch";
+import { PlayerCard } from "./PlayerCard";
 
 /**
  * One match, kept current.
@@ -166,6 +167,7 @@ export function MatchReport({
   // than forcing it means a live match that gains a statistics tab mid-way does
   // not yank the reader off the one they were looking at.
   const [tab, setTab] = useState<TabId | null>(null);
+  const [openPlayer, setOpenPlayer] = useState<number | null>(null);
   const current = tabs.some((t) => t.id === tab) ? tab : tabs[0]?.id;
 
   const d = seoul(match.kickoff);
@@ -287,12 +289,14 @@ export function MatchReport({
                 awaySide={match.away}
                 homeMeta={meta("home")}
                 awayMeta={meta("away")}
+                onOpen={setOpenPlayer}
               />
               <Lineups
                 home={fm?.home ?? null}
                 away={fm?.away ?? null}
                 homeName={match.home.name}
                 awayName={match.away.name}
+                onOpen={setOpenPlayer}
               />
             </section>
           )}
@@ -318,6 +322,7 @@ export function MatchReport({
           나옵니다.
         </p>
       )}
+      <PlayerCard id={openPlayer} onClose={() => setOpenPlayer(null)} />
     </div>
   );
 }

@@ -1,4 +1,3 @@
-import Link from "next/link";
 import type { FmTeam } from "@/lib/fotmob";
 
 /**
@@ -51,6 +50,7 @@ function Rating({ r }: { r: number | null }) {
 
 function Row({
   id,
+  onOpen,
   name,
   jersey,
   image,
@@ -59,6 +59,7 @@ function Row({
   minute,
 }: {
   id?: number;
+  onOpen?: (id: number) => void;
   name: string;
   jersey: string;
   image: string | null;
@@ -87,14 +88,15 @@ function Row({
 
   return (
     <li>
-      {id ? (
-        <Link
-          href={`/matches/player/${id}`}
+      {id && onOpen ? (
+        <button
+          type="button"
+          onClick={() => onOpen(id)}
           title={`${name} 기록 보기`}
-          className="-mx-2 flex items-center gap-2 rounded-[6px] px-2 py-1.5 transition-colors hover:bg-surface-2/50"
+          className="-mx-2 flex w-[calc(100%+1rem)] items-center gap-2 rounded-[6px] px-2 py-1.5 text-left transition-colors hover:bg-surface-2/50"
         >
           {inner}
-        </Link>
+        </button>
       ) : (
         <span className="flex items-center gap-2 py-1.5">{inner}</span>
       )}
@@ -145,11 +147,14 @@ export function Lineups({
   away,
   homeName,
   awayName,
+  onOpen,
 }: {
   home: FmTeam | null;
   away: FmTeam | null;
   homeName: string;
   awayName: string;
+  /** Opens the panel for one player. */
+  onOpen?: (id: number) => void;
 }) {
   if (!home && !away) return null;
 
@@ -171,6 +176,7 @@ export function Lineups({
           <Row
             key={on.name + on.jersey}
             id={on.id}
+            onOpen={onOpen}
             name={on.name}
             jersey={on.jersey}
             image={on.image}
@@ -188,6 +194,7 @@ export function Lineups({
         <Row
           key={p.name + p.jersey}
           id={p.id}
+          onOpen={onOpen}
           name={p.name}
           jersey={p.jersey}
           image={p.image}
