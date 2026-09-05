@@ -20,10 +20,13 @@ function Token({
   p,
   color,
   away,
+  face,
 }: {
   p: Spot;
   color: string;
   away: boolean;
+  /** Cut-out photograph, when one could be confirmed for this player. */
+  face?: string;
 }) {
   const bg = `#${color}`;
   /*
@@ -40,13 +43,48 @@ function Token({
       className="absolute flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1"
       style={{ left: `${p.x * 100}%`, top: `${top}%` }}
     >
-      <span
-        className="tnum flex size-7 items-center justify-center rounded-full text-[11.5px] font-bold text-white ring-1 ring-black/30 sm:size-8 sm:text-[12.5px]"
-        style={{ background: bg, textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
-      >
-        {p.jersey || "-"}
+      {/*
+       * The number rides outside the disc, not on top of it.
+       *
+       * Laid over a photograph it sat on the player's chin and the disc's own
+       * clipping cut it in half. Outside, it reads at a glance and the face
+       * keeps the whole circle.
+       */}
+      <span className="relative">
+        <span
+          className="flex size-9 items-center justify-center overflow-hidden rounded-full ring-2 ring-black/25 sm:size-11"
+          style={{ background: bg }}
+        >
+          {face ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={face}
+              alt=""
+              width={44}
+              height={44}
+              loading="lazy"
+              decoding="async"
+              className="size-full object-cover object-top"
+            />
+          ) : (
+            <span
+              className="tnum text-[13px] font-bold text-white sm:text-[15px]"
+              style={{ textShadow: "0 1px 2px rgba(0,0,0,.55)" }}
+            >
+              {p.jersey || "-"}
+            </span>
+          )}
+        </span>
+        {face && p.jersey && (
+          <span
+            className="tnum absolute -right-1.5 -bottom-1 rounded-full px-[4px] text-[9.5px] leading-[1.5] font-bold text-white ring-1 ring-black/40"
+            style={{ background: bg }}
+          >
+            {p.jersey}
+          </span>
+        )}
       </span>
-      <span className="max-w-[68px] truncate rounded-[3px] bg-black/45 px-1 text-[10px] leading-[1.35] font-medium text-white sm:max-w-[86px] sm:text-[10.5px]">
+      <span className="max-w-[74px] truncate rounded-[3px] bg-black/50 px-1 text-[10px] leading-[1.4] font-medium text-white sm:max-w-[92px] sm:text-[11px]">
         {shortName(p.name)}
       </span>
       {p.subbedOut && (
@@ -66,11 +104,14 @@ export function Pitch({
   away,
   homeSide,
   awaySide,
+  faces = {},
 }: {
   home: Lineup | null;
   away: Lineup | null;
   homeSide: MatchSide;
   awaySide: MatchSide;
+  /** Photographs by player name. Absent names fall back to their number. */
+  faces?: Record<string, string>;
 }) {
   const h = home ? spots(home) : null;
   const a = away ? spots(away) : null;
@@ -123,13 +164,20 @@ export function Pitch({
 
         <ul className="absolute inset-0">
           {a.map((p) => (
-            <Token key={`a${p.name}${p.jersey}`} p={p} color={kit.away} away />
+            <Token
+              key={`a${p.name}${p.jersey}`}
+              p={p}
+              color={kit.away}
+              face={faces[p.name]}
+              away
+            />
           ))}
           {h.map((p) => (
             <Token
               key={`h${p.name}${p.jersey}`}
               p={p}
               color={kit.home}
+              face={faces[p.name]}
               away={false}
             />
           ))}

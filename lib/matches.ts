@@ -70,6 +70,8 @@ const BY_CODE = new Map(COMPETITIONS.map((c) => [c.code as string, c]));
 export interface MatchSide {
   /** Korean name when the club is one we track, the source's own name otherwise. */
   name: string;
+  /** The source's own name, always. Needed to ask other services about the club. */
+  sourceName: string;
   /** Registry slug, only for tracked clubs. Drives the crest and the filter. */
   slug: string | null;
   crest: string | null;
@@ -248,6 +250,7 @@ function side(c: EspnCompetitor | undefined): MatchSide {
   const n = c?.score == null ? null : Number(c.score);
   return {
     name: known?.ko ?? raw,
+    sourceName: raw,
     slug: known?.slug ?? null,
     crest: known?.crest ?? c?.team?.logo ?? null,
     score: Number.isFinite(n) ? n : null,

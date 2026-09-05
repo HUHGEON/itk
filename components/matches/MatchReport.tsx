@@ -31,7 +31,14 @@ import { Pitch } from "./Pitch";
 const INTERVAL_MS = 5000;
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
-export function MatchReport({ initial }: { initial: MatchDetail }) {
+export function MatchReport({
+  initial,
+  faces = {},
+}: {
+  initial: MatchDetail;
+  /** Player photographs, resolved once on the server. */
+  faces?: Record<string, string>;
+}) {
   const [detail, setDetail] = useState(initial);
   const { match } = detail;
   const live = match.state === "in";
@@ -160,6 +167,7 @@ export function MatchReport({ initial }: { initial: MatchDetail }) {
             away={detail.lineups.away}
             homeSide={match.home}
             awaySide={match.away}
+            faces={faces}
           />
           <Lineups
             home={detail.lineups.home}

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { facesFor } from "@/lib/faces";
 import { matchDetail, seoul, ymd } from "@/lib/matches";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchReport } from "@/components/matches/MatchReport";
@@ -43,6 +44,27 @@ export default async function Game({ params }: { params: Params }) {
   const detail = await matchDetail(code, id);
   if (!detail) notFound();
 
+  /*
+   * Photographs are resolved here, not in the browser.
+   *
+   * They are one lookup per player against a third party, and the answer for a
+   * given player never changes, so doing it on the server means it is cached
+   * once for everyone rather than repeated by every visitor. A failure costs
+   * nothing: the pitch falls back to squad numbers.
+   */
+  const faces = detail.lineups
+    ? await facesFor([
+        ...(detail.lineups.home?.starters ?? []).map((p) => ({
+          name: p.name,
+          club: detail.match.home.sourceName,
+        })),
+        ...(detail.lineups.away?.starters ?? []).map((p) => ({
+          name: p.name,
+          club: detail.match.away.sourceName,
+        })),
+      ])
+    : {};
+
   return (
     <Shell
       rail={
@@ -59,7 +81,7 @@ export default async function Game({ params }: { params: Params }) {
         </>
       }
     >
-      <MatchReport initial={detail} />
+      <MatchReport initial={detail} faces={faces} />
     </Shell>
   );
 }
