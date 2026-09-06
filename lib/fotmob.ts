@@ -1,5 +1,5 @@
 import { unstable_cache } from "next/cache";
-import { sameClub } from "@/lib/names";
+import { clubScore } from "@/lib/names";
 import type { Match } from "@/lib/matches";
 
 /**
@@ -206,18 +206,45 @@ export async function findId(match: Match): Promise<number | null> {
         }[];
       }[];
     };
+
+    /*
+     * The best of the fixtures kicking off at the same minute.
+     *
+     * Both sides have to agree at least a little, and the winner has to beat
+     * the runner-up outright - a tie means two candidates look equally like
+     * this match and picking either would be a guess. That is what stops a
+     * women's fixture, which carries the same club names, from being taken for
+     * the men's one at the same hour.
+     */
+    let best: { id: number; score: number } | null = null;
+    let runnerUp = -Infinity;
+
     for (const league of json.leagues ?? []) {
       for (const m of league.matches ?? []) {
         const t = Date.parse(m.status?.utcTime ?? "");
-        if (!Number.isFinite(t) || Math.abs(t - match.kickoff) > 30 * 60_000) {
+        if (!Number.isFinite(t) || Math.abs(t - match.kickoff) > 20 * 60_000) {
           continue;
         }
-        if (!sameClub(m.home?.name ?? "", match.home.sourceName)) continue;
-        if (!sameClub(m.away?.name ?? "", match.away.sourceName)) continue;
-        return m.id ?? null;
+        const home = m.home?.name ?? "";
+        const away = m.away?.name ?? "";
+        // A women's or youth side shares its club's name and nothing else.
+        if (/\((?:W|Y)\)|\bWFC\b|\bU\d{2}\b/i.test(`${home} ${away}`)) {
+          continue;
+        }
+        const h = clubScore(home, match.home.sourceName);
+        const a = clubScore(away, match.away.sourceName);
+        if (h === 0 || a === 0) continue;
+        const score = h + a;
+        if (!best || score > best.score) {
+          if (best) runnerUp = best.score;
+          best = { id: m.id ?? 0, score };
+        } else if (score > runnerUp) {
+          runnerUp = score;
+        }
       }
     }
-    return null;
+    if (!best || best.score < 2 || best.score <= runnerUp) return null;
+    return best.id || null;
   } catch {
     return null;
   }
@@ -255,7 +282,7 @@ const cachedId = unstable_cache(
   // The key carries the matching rules' version: a lookup that failed under
   // the old club-name comparison was cached as "no such match" for a day, so
   // fixing the comparison changed nothing until the stored nulls expired.
-  ["fotmob-match-id-v2"],
+  ["fotmob-match-id-v3"],
   { revalidate: 86400 },
 );
 
