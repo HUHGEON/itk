@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { COMPETITIONS, matchesOn, seoul, seoulDay, ymd } from "@/lib/matches";
 import { MatchBoard } from "@/components/matches/MatchBoard";
+import { MyTeams } from "@/components/matches/MyTeams";
 import { MEASURE } from "@/components/matches/Measure";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { Shell } from "@/components/Shell";
@@ -189,6 +190,10 @@ export default async function Matches({
           </div>
         </div>
       </div>
+
+      {/* Followed clubs sit above the day, because "when do my lot play" is
+          not a question a chronological list answers. */}
+      <MyTeams />
 
       {picked && (
         <div className="border-b border-border">

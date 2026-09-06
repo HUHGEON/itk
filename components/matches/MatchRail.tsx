@@ -2,6 +2,7 @@ import Link from "next/link";
 import { COMPETITIONS } from "@/lib/matches";
 import { loadTeams } from "@/lib/registry";
 import { TeamCrest } from "@/components/TeamCrest";
+import { FavouriteStar } from "./FavouriteStar";
 
 /**
  * The way around the match pages.
@@ -82,6 +83,7 @@ export function MatchRail({
             key={t.slug}
             href={`/matches/team/${t.slug}`}
             on={active === t.slug}
+            after={<FavouriteStar slug={t.slug} name={t.ko} />}
           >
             <span className="flex items-center gap-2">
               <TeamCrest team={t} size={16} />
@@ -121,22 +123,36 @@ function Row({
   href,
   on,
   children,
+  after,
 }: {
   href: string;
   on: boolean;
   children: React.ReactNode;
+  /** Sits at the end of the row and does not navigate. */
+  after?: React.ReactNode;
 }) {
-  return (
+  const inner = (
     <Link
       href={href}
       aria-current={on ? "page" : undefined}
-      className={`flex items-center px-[var(--gutter)] py-[7px] text-[12.5px] transition-colors ${
-        on
-          ? "border-l-2 border-accent bg-accent/[0.07] pl-[calc(var(--gutter)-2px)] font-medium text-accent"
-          : "text-muted hover:bg-surface-2/50 hover:text-text"
+      className={`flex min-w-0 flex-1 items-center transition-colors ${
+        on ? "font-medium text-accent" : "text-muted group-hover:text-text"
       }`}
     >
       {children}
     </Link>
+  );
+
+  return (
+    <div
+      className={`group flex items-center px-[var(--gutter)] py-[7px] text-[12.5px] transition-colors ${
+        on
+          ? "border-l-2 border-accent bg-accent/[0.07] pl-[calc(var(--gutter)-2px)]"
+          : "hover:bg-surface-2/50"
+      }`}
+    >
+      {inner}
+      {after}
+    </div>
   );
 }

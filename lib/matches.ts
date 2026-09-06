@@ -885,3 +885,62 @@ export async function matchDetail(
     return null;
   }
 }
+
+
+/**
+ * The next match for each of a set of clubs.
+ *
+ * Written for the strip of favourite clubs that sits above the fixture list, so
+ * it answers for all of them at once: the same span of every competition
+ * covers every club, and asking per club would repeat the same twenty-three
+ * requests for each one.
+ *
+ * The window runs from a few hours back to a fortnight forward. Back, because a
+ * match kicked off ninety minutes ago is the one being watched and is what
+ * belongs at the top; forward only two weeks, because a cup tie further out
+ * than that is not yet drawn and a league fixture that far away is not news.
+ */
+export async function nextForClubs(
+  slugs: string[],
+  signal?: AbortSignal,
+): Promise<Record<string, Match>> {
+  if (slugs.length === 0) return {};
+  const wanted = new Set(slugs);
+  const from = new Date(Date.now() - 4 * 3600_000);
+  const to = new Date(Date.now() + 14 * 86_400_000);
+  const span = `${ymd(from)}-${ymd(to)}`;
+
+  const lists = await Promise.all(
+    COMPETITIONS.map(async (c) => {
+      try {
+        const res = await fetch(`${ESPN}/${c.code}/scoreboard?dates=${span}`, {
+          signal,
+          cache: "no-store",
+        });
+        if (!res.ok) return [];
+        const json = (await res.json()) as { events?: unknown[] };
+        return (json.events ?? [])
+          .map((e) => toMatch(e, c.code))
+          .filter((m): m is Match => m !== null);
+      } catch {
+        return [];
+      }
+    }),
+  );
+
+  const cutoff = Date.now() - 3 * 3600_000;
+  const out: Record<string, Match> = {};
+  for (const m of lists.flat().sort((a, b) => a.kickoff - b.kickoff)) {
+    // A match that finished hours ago is history, not "next".
+    if (m.state === "post" && m.kickoff < cutoff) continue;
+    for (const side of [m.home, m.away]) {
+      if (!side.slug || !wanted.has(side.slug)) continue;
+      // In play always wins; otherwise the earliest still to come.
+      const held = out[side.slug];
+      if (!held || (m.state === "in" && held.state !== "in")) {
+        out[side.slug] = m;
+      }
+    }
+  }
+  return out;
+}
