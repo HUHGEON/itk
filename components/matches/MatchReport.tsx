@@ -49,7 +49,7 @@ const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 export function MatchReport({
   initial,
-  fm = null,
+  fm: initialFm = null,
   faces = {},
 }: {
   initial: MatchDetail;
@@ -59,6 +59,7 @@ export function MatchReport({
   faces?: Record<string, string>;
 }) {
   const [detail, setDetail] = useState(initial);
+  const [fm, setFm] = useState(initialFm);
   const { match } = detail;
   const live = match.state === "in";
   const score = useRef<HTMLDivElement>(null);
@@ -69,16 +70,38 @@ export function MatchReport({
     const ac = new AbortController();
 
     const refresh = async () => {
+      /*
+       * Both halves of the page, together.
+       *
+       * The scoreline comes from the open endpoint the browser can call
+       * directly; the ratings, timeline and statistics come through this
+       * project's own route because that source sends no CORS headers.
+       * Refreshing only the first left a live report frozen at whatever it
+       * looked like when the page loaded - the score ticking over a timeline
+       * that never gained the goal that caused it.
+       */
       try {
         const res = await fetch(summaryUrl(match.code, match.id), {
           signal: ac.signal,
           cache: "no-store",
         });
-        if (!res.ok) return;
-        const next = parseSummary(await res.json(), match.code, match.id);
-        if (next && !ac.signal.aborted) setDetail(next);
+        if (res.ok) {
+          const next = parseSummary(await res.json(), match.code, match.id);
+          if (next && !ac.signal.aborted) setDetail(next);
+        }
       } catch {
         // The previous report is still on screen and still nearly right.
+      }
+      if (!initialFm?.id) return;
+      try {
+        const res = await fetch(`/api/report/${initialFm.id}`, {
+          signal: ac.signal,
+        });
+        if (!res.ok) return;
+        const next = (await res.json()) as FmReport;
+        if (!ac.signal.aborted) setFm(next);
+      } catch {
+        // Same: the last good report stays.
       }
     };
 
@@ -94,7 +117,7 @@ export function MatchReport({
       clearInterval(timer);
       document.removeEventListener("visibilitychange", onVisible);
     };
-  }, [live, match.code, match.id]);
+  }, [live, match.code, match.id, initialFm?.id]);
 
   // The flash marks a goal, so it fires on the scoreline changing and not on
   // every poll that returns the same two numbers.

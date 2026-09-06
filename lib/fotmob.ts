@@ -100,6 +100,8 @@ export interface FmStatGroup {
 }
 
 export interface FmReport {
+  /** This source's match id, so the browser can poll the same match. */
+  id: number;
   lineup: FmLineup | null;
   events: FmEvent[];
   stats: FmStatGroup[];
@@ -674,18 +676,19 @@ function buildEvents(json: unknown): FmEvent[] {
   return out;
 }
 
-/** The whole report from this source: lineups, timeline and statistics. */
-export async function fotmobReport(match: Match): Promise<FmReport | null> {
-  const id = await cachedId(
-    match.kickoff,
-    match.home.sourceName,
-    match.away.sourceName,
-  );
-  if (!id) return null;
+/**
+ * The whole report for one of this source's matches.
+ *
+ * Cached for ten seconds, which is what the source itself does while a match is
+ * in play - measured on a live fixture, `max-age=10`, and the clock had moved a
+ * minute on the next read. A finished match comes back with `max-age=3600`, so
+ * asking again costs nothing there either.
+ */
+export async function fotmobReportById(id: number): Promise<FmReport | null> {
   try {
     const res = await fetch(`${API}/matchDetails?matchId=${id}`, {
       signal: AbortSignal.timeout(9000),
-      next: { revalidate: 120 },
+      next: { revalidate: 10 },
     });
     if (!res.ok) return null;
     const json = await res.json();
@@ -694,6 +697,7 @@ export async function fotmobReport(match: Match): Promise<FmReport | null> {
     const home = team(lu?.homeTeam);
     const away = team(lu?.awayTeam);
     return {
+      id,
       lineup: home && away ? { home, away } : null,
       events: buildEvents(json),
       stats: buildStats(json),
@@ -701,4 +705,15 @@ export async function fotmobReport(match: Match): Promise<FmReport | null> {
   } catch {
     return null;
   }
+}
+
+/** The same, found from one of our matches. */
+export async function fotmobReport(match: Match): Promise<FmReport | null> {
+  const id = await cachedId(
+    match.kickoff,
+    match.home.sourceName,
+    match.away.sourceName,
+  );
+  if (!id) return null;
+  return fotmobReportById(id);
 }
