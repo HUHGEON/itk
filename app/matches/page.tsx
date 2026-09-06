@@ -195,8 +195,16 @@ export default async function Matches({
           </div>
 
           <div className="flex items-center justify-center gap-1 sm:justify-end">
+            {/*
+              "주요 구단", not "보고 있는 구단".
+              
+              This is the fixed set of clubs the site collects news for, and it
+              sat beside "내 팀", which is the set a reader picks for themselves.
+              Two labels both meaning "the clubs being watched" left no way to
+              tell which was which.
+            */}
             <Scope href={href(date, false)} on={onlyTracked}>
-              보고 있는 구단
+              주요 구단
               {trackedCount > 0 && (
                 <span className="ml-1 opacity-70">{trackedCount}</span>
               )}

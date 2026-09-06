@@ -65,7 +65,7 @@ export function MatchBoard({
       <div className="px-[var(--gutter)] py-16 text-center">
         <p className="text-[14px] text-muted">
           {onlyTracked
-            ? "이 날은 보고 있는 구단의 경기가 없습니다"
+            ? "이 날은 주요 구단의 경기가 없습니다"
             : "이 날은 경기가 없습니다"}
         </p>
         {onlyTracked && matches.length > 0 && (
