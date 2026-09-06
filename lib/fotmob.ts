@@ -252,7 +252,10 @@ const cachedId = unstable_cache(
       home: { sourceName: homeName },
       away: { sourceName: awayName },
     } as Match),
-  ["fotmob-match-id"],
+  // The key carries the matching rules' version: a lookup that failed under
+  // the old club-name comparison was cached as "no such match" for a day, so
+  // fixing the comparison changed nothing until the stored nulls expired.
+  ["fotmob-match-id-v2"],
   { revalidate: 86400 },
 );
 
