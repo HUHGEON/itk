@@ -147,9 +147,17 @@ export default async function Matches({
           controls rather than one heading with its options.
         */}
         <div
-          className={`${MEASURE} grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-[var(--gutter)] py-3`}
+          className={`${MEASURE} flex flex-col items-center gap-2 px-[var(--gutter)] py-3 sm:grid sm:grid-cols-[1fr_auto_1fr]`}
         >
-          <span />
+          {/*
+            Two rows on a phone.
+            
+            Measured at 390px: the date and its arrows want 209px and the two
+            scope buttons 174px, which is 383 in a 375px column - so the bar
+            pushed the whole page sideways. Stacking them keeps both centred and
+            keeps the page still.
+          */}
+          <span className="hidden sm:block" />
 
           <div className="flex items-center justify-center gap-1">
             <Link
@@ -186,7 +194,7 @@ export default async function Matches({
             )}
           </div>
 
-          <div className="flex items-center justify-end gap-1">
+          <div className="flex items-center justify-center gap-1 sm:justify-end">
             <Scope href={href(date, false)} on={onlyTracked}>
               보고 있는 구단
               {trackedCount > 0 && (
