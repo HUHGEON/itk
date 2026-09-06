@@ -96,7 +96,7 @@ export function Modal({
         <div
           ref={card}
           onClick={(e) => e.stopPropagation()}
-          className="w-full max-w-md rounded-t-xl border border-border bg-surface text-text shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] sm:rounded-xl"
+          className="w-full max-w-md rounded-t-[10px] border border-border bg-surface text-text shadow-[0_24px_60px_-12px_rgba(0,0,0,0.8)] sm:rounded-[10px]"
         >
           <div className="flex items-center justify-between border-b border-border px-4 py-3.5">
             <h2 className="text-[14px] font-semibold tracking-tight">

@@ -80,7 +80,7 @@ export function PlayerCard({
         aria-modal="true"
         aria-label="선수 정보"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[14px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[10px]"
+        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[10px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[10px]"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-sm">
           <span className="truncate text-[13px] font-semibold text-muted">
