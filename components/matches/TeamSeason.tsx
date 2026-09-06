@@ -117,11 +117,14 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
       title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
       className="-mx-2 grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[6px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
     >
-      <div className="tnum w-[52px] shrink-0 text-[11.5px] leading-tight text-faint">
+      {/* Date, weekday and hour. A result without a time reads as something
+          that happened on a day rather than at a moment. */}
+      <div className="tnum w-[62px] shrink-0 text-[11.5px] leading-tight text-faint">
         <div>
           {d.month}.{d.day}
+          <span className="ml-1 text-[10.5px]">({WEEKDAY[d.weekday]})</span>
         </div>
-        <div className="text-[10.5px]">({WEEKDAY[d.weekday]})</div>
+        <div className="text-[10.5px]">{d.hm}</div>
       </div>
 
       <div className="flex min-w-0 items-center gap-2.5">

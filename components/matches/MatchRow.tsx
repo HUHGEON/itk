@@ -129,8 +129,19 @@ export function MatchRow({
             {match.clock}
           </span>
         )}
+        {/*
+          A finished match keeps its kick-off time.
+          
+          The scoreline took the slot the time used to hold, so "종료" was all
+          that was left and a day of results read as a list of matches that had
+          happened at no particular hour. The day is already in the header
+          above, so the hour is the only part missing.
+        */}
         {done && (
-          <span className="text-[10.5px] font-medium text-faint">종료</span>
+          <span className="flex items-baseline gap-1 text-[10.5px] leading-none font-medium">
+            <span className="tnum text-muted">{time}</span>
+            <span className="text-faint">종료</span>
+          </span>
         )}
       </div>
 

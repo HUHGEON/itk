@@ -79,8 +79,11 @@ function Card({ slug, match }: { slug: string; match: Match }) {
             {match.clock ?? "LIVE"}
           </span>
         ) : (
-          <span className="tnum shrink-0 text-muted">
-            {done ? "종료" : whenLabel(match.kickoff)}
+          /* The strip is not tied to a date, so a finished match says when it
+             was, in the same words an upcoming one uses. */
+          <span className="tnum flex shrink-0 items-baseline gap-1">
+            <span className="text-muted">{whenLabel(match.kickoff)}</span>
+            {done && <span className="text-faint">종료</span>}
           </span>
         )}
       </div>
