@@ -110,20 +110,36 @@ export interface FmReport {
 }
 
 /**
- * The source numbers positions; a card only needs which quarter of the pitch.
- * Eleven is the goalkeeper, the twenties are midfield, the thirties attack.
+ * Which quarter of the pitch a player belongs to.
+ *
+ * Two fields carry a position and only one of them is always there: a starter
+ * has `positionId`, which is where he lined up, but a substitute has no such
+ * field at all - measured, every one of them came back null, which is why the
+ * cards showed no position under the name. `usualPlayingPositionId` is on both,
+ * and it is the plain four-way split: 0 keeper, 1 defence, 2 midfield, 3
+ * attack. Checked against the source's own labels for the same match:
+ * Grealish 3 and shown as a forward, Hackney 2 a midfielder, Maitland-Niles 1
+ * a defender, Travers 0 a keeper.
  */
-function positionOf(id: number | undefined): string {
-  if (!id) return "";
-  if (id < 20) return id === 11 ? "G" : "D";
-  if (id < 30) return "M";
-  return "F";
+function positionOf(usual: number | undefined): string {
+  switch (usual) {
+    case 0:
+      return "G";
+    case 1:
+      return "D";
+    case 2:
+      return "M";
+    case 3:
+      return "F";
+    default:
+      return "";
+  }
 }
 
 interface RawPlayer {
   id?: number;
   name?: string;
-  positionId?: number;
+  usualPlayingPositionId?: number;
   shirtNumber?: number;
   verticalLayout?: { x?: number; y?: number };
   performance?: {
@@ -161,7 +177,7 @@ function player(p: RawPlayer): FmPlayer {
   return {
     id: p.id ?? 0,
     name: p.name ?? "?",
-    position: positionOf(p.positionId),
+    position: positionOf(p.usualPlayingPositionId),
     jersey: p.shirtNumber == null ? "" : String(p.shirtNumber),
     rating: typeof perf.rating === "number" ? perf.rating : null,
     image: `https://images.fotmob.com/image_resources/playerimages/${p.id}.png`,
