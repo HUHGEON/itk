@@ -3,6 +3,7 @@ import { COMPETITIONS } from "@/lib/matches";
 import { loadTeams } from "@/lib/registry";
 import { TeamCrest } from "@/components/TeamCrest";
 import { FavouriteStar } from "./FavouriteStar";
+import { MyTeamsRail } from "./MyTeamsRail";
 
 /**
  * The way around the match pages.
@@ -45,6 +46,10 @@ export function MatchRail({
 
   return (
     <div className="flex flex-col">
+      {/* Followed clubs first, because they are the reason someone opened the
+          rail at all. Renders nothing until there are some. */}
+      <MyTeamsRail teams={teams} active={active} />
+
       <Section title="대회">
         <Row href={day ? `/matches?d=${day}` : "/matches"} on={!active}>
           전체 경기
