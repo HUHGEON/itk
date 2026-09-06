@@ -163,7 +163,7 @@ export function ArticleList({
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-accent hover:bg-surface-2"
+            className="rounded-[10px] border border-border px-4 py-2 text-[13px] font-medium text-accent hover:bg-surface-2"
           >
             불러오지 못했습니다 · 다시 시도
           </button>
@@ -173,7 +173,7 @@ export function ArticleList({
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="rounded-lg border border-border px-4 py-2 text-[13px] font-medium text-muted hover:text-text"
+            className="rounded-[10px] border border-border px-4 py-2 text-[13px] font-medium text-muted hover:text-text"
           >
             더 보기
           </button>

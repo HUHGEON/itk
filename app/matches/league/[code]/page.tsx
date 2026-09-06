@@ -84,6 +84,7 @@ export default async function League({ params }: { params: Params }) {
           </span>
           <Link
             href={`/matches?comp=${code}`}
+            data-press
             className="rounded-[4px] border border-border px-2.5 py-1 text-[12px] transition-colors hover:border-border-strong hover:text-text"
           >
             경기 일정

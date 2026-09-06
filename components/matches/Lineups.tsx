@@ -41,7 +41,7 @@ function Rating({ r }: { r: number | null }) {
         : "bg-zinc-600 text-white";
   return (
     <span
-      className={`tnum shrink-0 rounded-[3px] px-1 text-[10px] font-bold ${tone}`}
+      className={`tnum shrink-0 rounded-[4px] px-1 text-[10px] font-bold ${tone}`}
     >
       {r.toFixed(1)}
     </span>

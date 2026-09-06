@@ -233,38 +233,36 @@ export function MatchReport({
           {match.home.name} {match.state === "pre" ? "대" : `${match.home.score ?? 0} 대 ${match.away.score ?? 0}`}{" "}
           {match.away.name} · {match.competition}
         </h1>
-        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
+        {/*
+          Two lines, not five things joined by dots.
+          
+          Competition and kick-off are what the page is; the ground, the crowd
+          and the referee are footnotes to it. Strung together on one line with
+          four separators they read as equal weight, and the separator itself
+          becomes the loudest character in the row.
+        */}
+        <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
           <Link
             href={`/matches?comp=${match.code}`}
             className="font-medium text-muted underline-offset-4 hover:text-text hover:underline"
           >
             {match.competition}
           </Link>
-          <span aria-hidden>·</span>
-          <span className="tnum">
+          <span className="tnum text-faint">
             {d.month}월 {d.day}일 ({WEEKDAY[d.weekday]}) {d.hm}
           </span>
-          {detail.venue && (
-            <>
-              <span aria-hidden>·</span>
-              <span>{detail.venue}</span>
-            </>
-          )}
-          {detail.attendance && (
-            <>
-              <span aria-hidden>·</span>
+        </p>
+        {(detail.venue || detail.attendance || detail.referee) && (
+          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-faint">
+            {detail.venue && <span>{detail.venue}</span>}
+            {detail.attendance ? (
               <span className="tnum">
                 관중 {detail.attendance.toLocaleString("ko-KR")}
               </span>
-            </>
-          )}
-          {detail.referee && (
-            <>
-              <span aria-hidden>·</span>
-              <span>주심 {detail.referee}</span>
-            </>
-          )}
-        </p>
+            ) : null}
+            {detail.referee && <span>주심 {detail.referee}</span>}
+          </p>
+        )}
 
         <div className="mt-4 grid grid-cols-[1fr_auto_1fr] items-center gap-3 sm:gap-6">
           <Club side={match.home} align="home" />
@@ -287,7 +285,7 @@ export function MatchReport({
               </div>
             )}
             {live && (
-              <span className="live-badge rounded-[3px] bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-ink">
+              <span className="live-badge rounded-[4px] bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-ink">
                 {match.clock ?? "LIVE"}
               </span>
             )}

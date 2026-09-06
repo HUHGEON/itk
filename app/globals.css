@@ -19,6 +19,20 @@
   --surface-2: #1c1a18;
   --surface-3: #262320;
   --border: #322d28;
+
+  /*
+   * One radius scale, three steps and a pill.
+   *
+   * The site had grown seven: 2, 3, 4, 5, 6, 8 and 14 pixels, which is not a
+   * system but an accident - a 3px chip beside a 5px chip reads as a mistake
+   * rather than a distinction. The rule now is what an element is, not how big
+   * it happens to be.
+   *
+   *   4px  chips, badges, small controls
+   *   6px  rows, buttons, inputs
+   *   10px cards, panels, the player sheet
+   *   full avatars, dots, crests
+   */
   --border-strong: #4a433c;
 
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
@@ -202,5 +216,33 @@ body {
   .pitch-token {
     left: calc(2.2rem + (100% - 4.4rem) * var(--hx));
     top: calc(2.9rem + (100% - 5.8rem) * var(--hy));
+  }
+}
+
+/*
+ * A control that answers when it is pressed.
+ *
+ * Every button and control on the site changed colour on hover and did nothing
+ * at all on the press itself, so on a touch screen - where there is no hover -
+ * a tap had no acknowledgement until the page changed. A single pixel of travel
+ * is enough to read as a physical push.
+ *
+ * Rows in a list are deliberately left out: a whole fixture row sinking under
+ * the finger reads as the page glitching, not as a button. Controls opt in.
+ *
+ * Gated on reduced motion, like everything else that moves.
+ */
+@media (prefers-reduced-motion: no-preference) {
+  button:not(:disabled):active,
+  [data-press]:active {
+    transform: translateY(1px);
+  }
+  button:not(:disabled),
+  [data-press] {
+    transition:
+      transform 90ms cubic-bezier(0.16, 1, 0.3, 1),
+      color 150ms,
+      background-color 150ms,
+      border-color 150ms;
   }
 }

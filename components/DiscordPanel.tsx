@@ -304,7 +304,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 {subs.map((s) => (
                   <li
                     key={s.id}
-                    className="rounded-[5px] border border-border bg-surface-2 p-2.5"
+                    className="rounded-[4px] border border-border bg-surface-2 p-2.5"
                   >
                     <div className="flex items-center gap-1.5">
                       {/* No part of the webhook here — it lives on the edit screen. */}
@@ -372,7 +372,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                   placeholder="비밀번호"
                   autoComplete="current-password"
                   autoFocus
-                  className="w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                  className="w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
                 />
                 {error && <p className="text-[11px] text-red-400">{error}</p>}
                 <button
@@ -380,7 +380,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                   onClick={unlock}
                   disabled={pending || loading || !auth}
                   style={{ background: "var(--ribbon)" }}
-                  className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="w-full rounded-[4px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {loading ? "확인 중…" : "확인"}
                 </button>
@@ -414,7 +414,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                       type="button"
                       onClick={() => setReveal(true)}
                       title="누르면 전체 주소가 보입니다"
-                      className="mt-1 w-full truncate rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-left font-mono text-[11px] text-muted"
+                      className="mt-1 w-full truncate rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-left font-mono text-[11px] text-muted"
                     >
                       {loading ? "불러오는 중…" : maskWebhook(url)}
                     </button>
@@ -424,7 +424,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                       onChange={(e) => setUrl(e.target.value)}
                       placeholder="https://discord.com/api/webhooks/…"
                       autoFocus={!editing}
-                      className="mt-1 w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                      className="mt-1 w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
                     />
                   )}
                   <p className="mt-1 text-[10px] leading-snug text-muted">
@@ -440,7 +440,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                     value={label}
                     onChange={(e) => setLabel(e.target.value)}
                     placeholder="예: 첼시방"
-                    className="mt-1 w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                    className="mt-1 w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
                   />
                 </div>
 
@@ -459,7 +459,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                       </button>
                     )}
                   </div>
-                  <div className="mt-1 max-h-56 space-y-2.5 overflow-y-auto rounded-[5px] border border-border bg-surface-2 p-2">
+                  <div className="mt-1 max-h-56 space-y-2.5 overflow-y-auto rounded-[4px] border border-border bg-surface-2 p-2">
                     {byLeague.map(({ league, members }) => {
                       const slugs = members.map((m) => m.slug);
                       const allOn = slugs.every((sl) => picked.includes(sl));
@@ -553,7 +553,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                       editing && hasPass ? "변경하려면 새 비밀번호" : "4자 이상"
                     }
                     autoComplete="new-password"
-                    className="mt-1 w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                    className="mt-1 w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
                   />
                   <p className="mt-1 text-[10px] leading-snug text-muted">
                     {editing
@@ -571,7 +571,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                   onClick={submit}
                   disabled={pending || loading || !url || picked.length === 0}
                   style={{ background: "var(--ribbon)" }}
-                  className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                  className="w-full rounded-[4px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
                 >
                   {pending ? "저장 중…" : editing ? "수정" : "등록"}
                 </button>
@@ -605,7 +605,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 placeholder="비밀번호"
                 autoComplete="current-password"
                 autoFocus
-                className="w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                className="w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
               />
               {removeErr && (
                 <p className="text-[11px] text-red-400">{removeErr}</p>
@@ -614,7 +614,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 type="button"
                 onClick={confirmRemove}
                 disabled={pending || !removeAuth}
-                className="w-full rounded-[5px] bg-red-400 px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="w-full rounded-[4px] bg-red-400 px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {pending ? "삭제 중…" : "삭제"}
               </button>
@@ -644,7 +644,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 placeholder="비밀번호"
                 autoComplete="current-password"
                 autoFocus
-                className="w-full rounded-[5px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
+                className="w-full rounded-[4px] border border-border bg-surface-2 px-2.5 py-2 text-[12px] outline-none placeholder:text-faint focus:border-border-strong"
               />
               {claimMsg && (
                 <p className="text-[11px] text-red-400">{claimMsg}</p>
@@ -654,7 +654,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                 onClick={claim}
                 disabled={pending || claimPass.length < 4}
                 style={{ background: "var(--ribbon)" }}
-                className="w-full rounded-[5px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
+                className="w-full rounded-[4px] px-3 py-2.5 text-[12px] font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:opacity-40"
               >
                 {pending ? "확인 중…" : "불러오기"}
               </button>
@@ -681,14 +681,14 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           type="button"
           onClick={() => setListOpen(true)}
           disabled={!subs || subs.length === 0}
-          className="flex-1 rounded-[5px] border border-border bg-surface-2 px-3 py-1.5 text-[12px] font-medium text-text transition-colors hover:border-border-strong disabled:opacity-40"
+          className="flex-1 rounded-[4px] border border-border bg-surface-2 px-3 py-1.5 text-[12px] font-medium text-text transition-colors hover:border-border-strong disabled:opacity-40"
         >
           목록 보기
         </button>
         <button
           type="button"
           onClick={() => setClaimOpen(true)}
-          className="rounded-[5px] border border-border px-3 py-1.5 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
+          className="rounded-[4px] border border-border px-3 py-1.5 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
         >
           불러오기
         </button>

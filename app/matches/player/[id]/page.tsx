@@ -203,14 +203,14 @@ function Recent({ m }: { m: FmRecentMatch }) {
         )}
         <span className="tnum text-[13.5px] font-bold text-text">{m.score}</span>
         <span
-          className={`rounded-[3px] px-1.5 py-[1px] text-[10.5px] font-bold ${badge}`}
+          className={`rounded-[4px] px-1.5 py-[1px] text-[10.5px] font-bold ${badge}`}
         >
           {m.outcome}
         </span>
         {/* A rating of zero is the source saying it has none, not a nought. */}
         {m.rating != null && m.rating > 0 ? (
           <span
-            className={`tnum w-[30px] rounded-[3px] text-center text-[11px] font-bold ${tone(m.rating)}`}
+            className={`tnum w-[30px] rounded-[4px] text-center text-[11px] font-bold ${tone(m.rating)}`}
           >
             {m.rating.toFixed(1)}
           </span>

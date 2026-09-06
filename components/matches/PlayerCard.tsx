@@ -80,7 +80,7 @@ export function PlayerCard({
         aria-modal="true"
         aria-label="선수 정보"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[14px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[14px]"
+        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[14px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[10px]"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-sm">
           <span className="truncate text-[13px] font-semibold text-muted">
@@ -244,13 +244,13 @@ function Recent({ m }: { m: FmRecentMatch }) {
       <span className="flex shrink-0 items-center gap-1.5">
         <span className="tnum text-[12.5px] font-bold text-text">{m.score}</span>
         <span
-          className={`rounded-[3px] px-1 py-[1px] text-[10px] font-bold ${badge}`}
+          className={`rounded-[4px] px-1 py-[1px] text-[10px] font-bold ${badge}`}
         >
           {m.outcome}
         </span>
         {m.rating != null && m.rating > 0 ? (
           <span
-            className={`tnum w-[28px] rounded-[3px] text-center text-[10.5px] font-bold ${tone(m.rating)}`}
+            className={`tnum w-[28px] rounded-[4px] text-center text-[10.5px] font-bold ${tone(m.rating)}`}
           >
             {m.rating.toFixed(1)}
           </span>

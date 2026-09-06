@@ -226,7 +226,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
             >
               <span
                 aria-hidden
-                className="size-2 shrink-0 rounded-[2px] transition-transform duration-150 group-hover:scale-125"
+                className="size-2 shrink-0 rounded-[4px] transition-transform duration-150 group-hover:scale-125"
                 style={{ backgroundColor: tierColor(s.tier) }}
               />
               <span className="flex-1 text-muted transition-colors group-hover:text-text">
@@ -242,7 +242,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
           <li className="flex items-center gap-2 text-[12px]">
             <span
               aria-hidden
-              className="size-2 shrink-0 rounded-[2px]"
+              className="size-2 shrink-0 rounded-[4px]"
               style={{ backgroundColor: "var(--official)" }}
             />
             {/* Outside the bar as well as outside the ladder — the bar is

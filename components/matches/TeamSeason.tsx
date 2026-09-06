@@ -75,7 +75,7 @@ function Block({
       <h2 className="flex items-center gap-2 px-[var(--gutter)] pt-5 pb-2 text-[12px] font-semibold text-muted">
         {title}
         {highlight && (
-          <span className="live-badge rounded-[3px] bg-accent px-1.5 py-[1px] text-[10px] font-bold text-accent-ink">
+          <span className="live-badge rounded-[4px] bg-accent px-1.5 py-[1px] text-[10px] font-bold text-accent-ink">
             LIVE
           </span>
         )}
@@ -167,7 +167,7 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
             </span>
             {outcome && (
               <span
-                className={`rounded-[3px] px-1.5 py-[1px] text-[10.5px] font-bold ${outcomeTone}`}
+                className={`rounded-[4px] px-1.5 py-[1px] text-[10.5px] font-bold ${outcomeTone}`}
               >
                 {outcome}
               </span>

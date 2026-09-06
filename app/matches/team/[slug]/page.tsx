@@ -84,6 +84,7 @@ export default async function Team({ params }: { params: Params }) {
             <Record played={played} slug={slug} /> ·{" "}
             <Link
               href={`/feed?team=${t.slug}`}
+              data-press
               className="underline-offset-4 hover:text-text hover:underline"
             >
               이적 소식 보기

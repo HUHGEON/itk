@@ -64,7 +64,7 @@ export function LandingHeader() {
           </Link>
           <Link
             href="/feed"
-            className="rounded-md px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-text"
+            className="rounded-[6px] px-3 py-1.5 text-[13px] font-medium text-muted transition-colors hover:text-text"
           >
             오늘의 이적 소식
           </Link>

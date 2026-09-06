@@ -89,7 +89,7 @@ export function ArticleCard({
       // opened" — it read as a hover state.
       className={`group relative transition-colors ${
         open
-          ? "z-10 my-1 rounded-lg border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
+          ? "z-10 my-1 rounded-[10px] border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
           : "border-b border-border last:border-b-0"
       }`}
     >
@@ -234,7 +234,7 @@ export function ArticleCard({
                 src={row.imageUrl!}
                 alt=""
                 onError={() => setImageOk(false)}
-                className="h-40 w-full shrink-0 rounded-md bg-surface-3 object-cover sm:h-[124px] sm:w-[196px]"
+                className="h-40 w-full shrink-0 rounded-[6px] bg-surface-3 object-cover sm:h-[124px] sm:w-[196px]"
               />
             )}
 

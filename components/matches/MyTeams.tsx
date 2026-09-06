@@ -66,7 +66,7 @@ function Card({ slug, match }: { slug: string; match: Match }) {
     <Link
       href={`/matches/game/${match.code}/${match.id}`}
       title={`${match.home.name} 대 ${match.away.name}`}
-      className={`flex shrink-0 snap-start flex-col gap-1 rounded-[8px] border px-3 py-2 transition-colors ${
+      className={`flex shrink-0 snap-start flex-col gap-1 rounded-[10px] border px-3 py-2 transition-colors ${
         live
           ? "border-accent/40 bg-accent/[0.07] hover:bg-accent/[0.11]"
           : "border-border bg-surface-2/40 hover:border-border-strong"
@@ -75,7 +75,7 @@ function Card({ slug, match }: { slug: string; match: Match }) {
       <div className="flex items-center justify-between gap-3 text-[10.5px]">
         <span className="truncate text-faint">{match.competitionShort}</span>
         {live ? (
-          <span className="live-badge tnum shrink-0 rounded-[3px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
+          <span className="live-badge tnum shrink-0 rounded-[4px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
             {match.clock ?? "LIVE"}
           </span>
         ) : (
@@ -213,7 +213,7 @@ export function MyTeams() {
           {teams.slice(0, 3).map((s) => (
             <span
               key={s}
-              className="h-[52px] w-[14rem] shrink-0 animate-pulse rounded-[8px] bg-surface-2"
+              className="h-[52px] w-[14rem] shrink-0 animate-pulse rounded-[10px] bg-surface-2"
             />
           ))}
         </div>

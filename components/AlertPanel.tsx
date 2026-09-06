@@ -186,7 +186,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
         <button
           type="button"
           onClick={requestPermission}
-          className="mt-2.5 w-full rounded-[5px] border border-accent/45 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
+          className="mt-2.5 w-full rounded-[4px] border border-accent/45 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
         >
           {permission === "denied"
             ? "브라우저 설정에서 알림 허용 필요"
@@ -204,7 +204,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
               key={t}
               type="button"
               onClick={() => save({ ...prefs, maxTier: t })}
-              className={`flex-1 rounded-md border py-1 text-[11px] font-semibold transition-colors ${
+              className={`flex-1 rounded-[6px] border py-1 text-[11px] font-semibold transition-colors ${
                 prefs.maxTier === t
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border text-muted hover:text-text"
@@ -226,7 +226,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
               key={t.slug}
               type="button"
               onClick={() => toggleTeam(t.slug)}
-              className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-[12px] transition-colors ${
+              className={`flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-[12px] transition-colors ${
                 prefs.teams.includes(t.slug)
                   ? "bg-accent/15 font-semibold text-accent"
                   : "text-muted hover:bg-surface-2"

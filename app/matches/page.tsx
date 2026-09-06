@@ -163,6 +163,7 @@ export default async function Matches({
             <Link
               href={href(shift(date, -1), !onlyTracked)}
               aria-label="이전 날"
+              data-press
               className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
               ‹
@@ -180,6 +181,7 @@ export default async function Matches({
             <Link
               href={href(shift(date, 1), !onlyTracked)}
               aria-label="다음 날"
+              data-press
               className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
               ›
@@ -285,6 +287,7 @@ function Scope({
     <Link
       href={href}
       aria-current={on ? "true" : undefined}
+      data-press
       className={`tnum rounded-[4px] border px-2.5 py-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
         on
           ? "border-accent/50 bg-accent/10 font-medium text-accent"

@@ -190,7 +190,7 @@ function Badge({
       {formation && <span className="tnum shrink-0 text-faint">{formation}</span>}
       {rating != null && (
         <span
-          className={`tnum shrink-0 rounded-[3px] px-1 text-[10.5px] font-bold ${ratingTone(rating)}`}
+          className={`tnum shrink-0 rounded-[4px] px-1 text-[10.5px] font-bold ${ratingTone(rating)}`}
         >
           {rating.toFixed(1)}
         </span>
@@ -247,7 +247,7 @@ export function Pitch({
        */}
       <div className="relative aspect-[3/4] w-full sm:aspect-[16/9]">
       <div
-        className="absolute inset-0 overflow-hidden rounded-[8px] border border-border"
+        className="absolute inset-0 overflow-hidden rounded-[10px] border border-border"
         /*
          * A dark, near-neutral ground rather than green grass.
          *
@@ -261,7 +261,7 @@ export function Pitch({
             "repeating-linear-gradient(to bottom, #1c1c20 0 8.333%, #202024 8.333% 16.666%)",
         }}
       >
-        <span aria-hidden className="absolute inset-2 rounded-[2px] border border-white/15" />
+        <span aria-hidden className="absolute inset-2 rounded-[4px] border border-white/15" />
         <span aria-hidden className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/15 sm:hidden" />
         <span aria-hidden className="absolute inset-y-2 left-1/2 hidden w-px -translate-x-1/2 bg-white/15 sm:block" />
         <span aria-hidden className="absolute top-1/2 left-1/2 size-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 sm:size-[22%]" />

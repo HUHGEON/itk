@@ -121,7 +121,7 @@ export function Timeline({
         {events.map((e) =>
           e.kind === "half" ? (
             <li key={e.id} className="relative flex items-center justify-center">
-              <span className="z-[1] rounded-[3px] bg-surface-2 px-2 py-[2px] text-[11px] font-medium text-muted">
+              <span className="z-[1] rounded-[4px] bg-surface-2 px-2 py-[2px] text-[11px] font-medium text-muted">
                 {e.note ?? e.minute}
               </span>
             </li>
@@ -135,7 +135,7 @@ export function Timeline({
                   <Entry e={e} side="home" onOpen={onOpen} />
                 )}
               </div>
-              <span className="tnum z-[1] rounded-[3px] bg-surface px-1.5 text-[11px] font-medium text-faint">
+              <span className="tnum z-[1] rounded-[4px] bg-surface px-1.5 text-[11px] font-medium text-faint">
                 {e.minute}
               </span>
               <div className="min-w-0">
