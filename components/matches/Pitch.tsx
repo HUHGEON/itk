@@ -245,7 +245,7 @@ export function Pitch({
        * background layer lets a token at the touchline sit slightly proud of
        * the pitch, which is what it does on a real team sheet anyway.
        */}
-      <div className="relative aspect-[3/4] w-full sm:aspect-[3/2]">
+      <div className="relative aspect-[3/4] w-full sm:aspect-[16/9]">
       <div
         className="absolute inset-0 overflow-hidden rounded-[8px] border border-border"
         /*

@@ -17,14 +17,14 @@
 export const MEASURE = "mx-auto w-full max-w-[52rem]";
 
 /**
- * The wider measure, for a match report.
+ * No measure at all, for a match report.
  *
- * A fixture row is two clubs and a time and reads best held in; a pitch is a
- * diagram of twenty-two people and wants the room. 64rem gives each half of the
- * pitch about 30rem, which is enough for a back four to spread without their
- * names touching.
+ * A fixture row is two clubs and a time and reads best held in. A pitch is a
+ * diagram of twenty-two people with their names beside them, and every rem it
+ * loses is width the back four has to share - so the report takes the whole
+ * column and the pitch grows with the window.
  */
-export const MEASURE_WIDE = "mx-auto w-full max-w-[64rem]";
+export const MEASURE_WIDE = "w-full";
 
 export function Measure({
   children,
