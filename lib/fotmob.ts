@@ -709,16 +709,25 @@ function buildEvents(json: unknown): FmEvent[] {
 /**
  * The whole report for one of this source's matches.
  *
- * Cached for ten seconds, which is what the source itself does while a match is
- * in play - measured on a live fixture, `max-age=10`, and the clock had moved a
- * minute on the next read. A finished match comes back with `max-age=3600`, so
- * asking again costs nothing there either.
+ * Not cached here at all, deliberately.
+ *
+ * Measured while a match was being played, the same answer was being held four
+ * times over: ten seconds at the source, ten in this project's data cache, ten
+ * at the edge and ten in the browser. Stacked, a goal could take forty seconds
+ * to reach a reader whose scoreline had already changed five seconds after it
+ * went in - which is exactly what a scoreline moving with no scorer beside it
+ * looks like.
+ *
+ * The source's own edge holds a live match for ten seconds and a finished one
+ * for an hour, so it already absorbs the load; the only cache kept downstream
+ * is a short one at this project's edge, which is what stops many readers of
+ * the same match from becoming many requests.
  */
 export async function fotmobReportById(id: number): Promise<FmReport | null> {
   try {
     const res = await fetch(`${API}/matchDetails?matchId=${id}`, {
       signal: AbortSignal.timeout(9000),
-      next: { revalidate: 10 },
+      cache: "no-store",
     });
     if (!res.ok) return null;
     const json = await res.json();

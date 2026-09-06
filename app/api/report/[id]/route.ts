@@ -23,6 +23,15 @@ export async function GET(
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
   return NextResponse.json(report, {
-    headers: { "cache-control": "public, max-age=10, s-maxage=10" },
+    headers: {
+      /*
+       * The edge may hold this for a few seconds so that a hundred readers of
+       * one match are not a hundred requests. The browser may not hold it at
+       * all: it is asking every five seconds precisely because it wants the
+       * newest answer, and letting it re-use its own copy would put the goal
+       * it is waiting for behind a cache of its own making.
+       */
+      "cache-control": "public, max-age=0, s-maxage=5, stale-while-revalidate=5",
+    },
   });
 }

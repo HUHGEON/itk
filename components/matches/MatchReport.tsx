@@ -96,6 +96,7 @@ export function MatchReport({
       try {
         const res = await fetch(`/api/report/${initialFm.id}`, {
           signal: ac.signal,
+          cache: "no-store",
         });
         if (!res.ok) return;
         const next = (await res.json()) as FmReport;
