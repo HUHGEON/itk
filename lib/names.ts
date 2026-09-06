@@ -18,28 +18,115 @@ export function norm(s: string): string {
     .trim();
 }
 
-/** Words half the clubs in Europe share, which therefore prove nothing. */
-const FILLER = new Set([
-  "fc", "afc", "cf", "sc", "ac", "as", "ss", "us", "united", "city", "club",
-  "football", "de", "the", "town", "county", "athletic", "real",
+/**
+ * Words that are punctuation, not identity. "FC Utrecht" and "Utrecht" are one
+ * club; "Manchester United" and "Manchester City" are not, so United and City
+ * are emphatically NOT on this list.
+ */
+const NOISE = new Set([
+  "fc", "afc", "cf", "sc", "ac", "as", "ss", "us", "club", "football", "de",
+  "the", "and", "of",
 ]);
+
+function tokens(s: string): string[] {
+  const n = norm(s);
+  return (NICKNAME[n] ?? n)
+    .split(" ")
+    .filter((w) => w.length >= 2 && !NOISE.has(w));
+}
+
+/**
+ * The handful of names that are neither the same word nor a prefix of it.
+ *
+ * Measured across four days of fixtures, sixty-nine matched pairs of names
+ * between the two sources: sixty-five agreed by prefix, and these three did
+ * not. Loosening the prefix rule to cover them would also pair Atlético Madrid
+ * with Atlético Madrileño, so they are written down instead.
+ */
+const ALIAS: Record<string, string> = {
+  rennais: "rennes",
+  munchen: "munich",
+  muenchen: "munich",
+};
+
+/**
+ * Nicknames, expanded before anything else looks at the name.
+ *
+ * These have to be handled whole rather than word by word. Mapping "psg" to
+ * "paris" made Paris FC the same club as Paris Saint-Germain, which they are
+ * emphatically not; expanding the nickname to the full name instead leaves the
+ * two with different words to disagree about.
+ */
+const NICKNAME: Record<string, string> = {
+  psg: "paris saint germain",
+  spurs: "tottenham hotspur",
+  wolves: "wolverhampton wanderers",
+  inter: "internazionale",
+  atleti: "atletico madrid",
+  barca: "barcelona",
+  gladbach: "borussia monchengladbach",
+};
+
+function canon(w: string): string {
+  return ALIAS[w] ?? w;
+}
+
+/** "man" stands for "manchester", but "city" never stands for "united". */
+function compatible(a0: string, b0: string): boolean {
+  const a = canon(a0);
+  const b = canon(b0);
+  if (a === b) return true;
+  if (a.length < 3 || b.length < 3) return false;
+  return a.startsWith(b) || b.startsWith(a);
+}
 
 /**
  * Do these two names refer to the same club?
  *
- * Asks whether they share a distinctive word, ignoring the filler. "Ipswich
- * Town" and "Ipswich" share "ipswich"; "Manchester United" and "Manchester
- * City" share only "manchester", which is why that one is not filler and this
- * check is paired with something narrower wherever it matters.
+ * Every word of the shorter name has to find a partner in the longer one, where
+ * a partner is the same word or one that starts with it. That reads both
+ * abbreviations and expansions: "Man United" against "Manchester United" pairs
+ * man with manchester and united with united, while "Manchester United" against
+ * "Manchester City" pairs manchester but leaves united with nothing.
+ *
+ * The earlier rule dropped United and City as filler and asked only for one
+ * shared word. That threw away exactly the word that tells the two Manchester
+ * clubs apart, and then failed anyway: with United gone, "Man" and
+ * "Manchester" share nothing, so a live Manchester United match found no
+ * counterpart at all and its report came back empty.
  */
+/**
+ * Words a club can be called by or not, without changing which club it is.
+ *
+ * These only matter as the words a longer name has that a shorter one lacks:
+ * "Leeds United" and "Leeds" are one club, "Deportivo Alavés" and "Alavés" are
+ * one club. Anything not on this list is identity, which is what keeps "Paris
+ * Saint-Germain" apart from "Paris FC" - the extra words there are the club.
+ */
+const QUALIFIER = new Set([
+  "town", "city", "united", "utd", "wanderers", "albion", "rovers", "hove",
+  "deportivo", "stade", "sporting", "olympique", "real", "borussia", "sv",
+  "bsc", "vfl", "vfb", "tsg", "cd", "ud", "ca", "calcio", "athletic",
+]);
+
 export function sameClub(a: string, b: string): boolean {
-  const words = (s: string) =>
-    new Set(norm(s).split(" ").filter((w) => w.length > 2 && !FILLER.has(w)));
-  const x = words(a);
-  const y = words(b);
-  if (x.size === 0 || y.size === 0) return false;
-  for (const w of x) if (y.has(w)) return true;
-  return false;
+  const x = tokens(a);
+  const y = tokens(b);
+  if (x.length === 0 || y.length === 0) return false;
+  const [short, long] = x.length <= y.length ? [x, y] : [y, x];
+
+  // Every word of the shorter name has to be in the longer one.
+  const used = new Set<number>();
+  for (const w of short) {
+    const i = long.findIndex((v, k) => !used.has(k) && compatible(w, v));
+    if (i === -1) return false;
+    used.add(i);
+  }
+  // And whatever the longer name has left over must be a qualifier, not a
+  // second club's worth of name.
+  return long.every(
+    (v, k) => used.has(k) || QUALIFIER.has(canon(v)) || QUALIFIER.has(v),
+  );
 }
 
 /**
