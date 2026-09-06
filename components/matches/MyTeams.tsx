@@ -73,7 +73,12 @@ function Card({ slug, match }: { slug: string; match: Match }) {
       }`}
     >
       <div className="flex items-center justify-between gap-3 text-[10.5px]">
-        <span className="truncate text-faint">{match.competitionShort}</span>
+        {/* The state word goes with the competition, so it never sits against
+            the kick-off time and turns into "finished at 04:00". */}
+        <span className="flex min-w-0 items-baseline gap-1.5">
+          <span className="truncate text-faint">{match.competitionShort}</span>
+          {done && <span className="shrink-0 text-faint">종료</span>}
+        </span>
         {live ? (
           <span className="live-badge tnum shrink-0 rounded-[4px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
             {match.clock ?? "LIVE"}
@@ -81,9 +86,8 @@ function Card({ slug, match }: { slug: string; match: Match }) {
         ) : (
           /* The strip is not tied to a date, so a finished match says when it
              was, in the same words an upcoming one uses. */
-          <span className="tnum flex shrink-0 items-baseline gap-1">
-            <span className="text-muted">{whenLabel(match.kickoff)}</span>
-            {done && <span className="text-faint">종료</span>}
+          <span className="tnum shrink-0 text-muted">
+            {whenLabel(match.kickoff)}
           </span>
         )}
       </div>

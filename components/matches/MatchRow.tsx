@@ -100,9 +100,18 @@ export function MatchRow({
       <Side side={match.home} align="home" />
 
       <div className="flex min-w-[72px] flex-col items-center gap-0.5">
-        {showCompetition && (
-          <span className="text-[10px] leading-none text-faint">
-            {match.competitionShort}
+        {/*
+          Kick-off sits with the competition, above the score.
+          
+          Put next to the word "종료" it read as the time the match ended -
+          "00:15 종료" is a sentence, and the wrong one. Up here it is in the
+          metadata line where a fixture time belongs, and nothing below it
+          claims to be an ending time.
+        */}
+        {(showCompetition || done || live) && (
+          <span className="flex items-baseline gap-1 text-[10px] leading-none text-faint">
+            {showCompetition && <span>{match.competitionShort}</span>}
+            {(done || live) && <span className="tnum">{time}</span>}
           </span>
         )}
         {match.state === "pre" ? (
@@ -138,10 +147,7 @@ export function MatchRow({
           above, so the hour is the only part missing.
         */}
         {done && (
-          <span className="flex items-baseline gap-1 text-[10.5px] leading-none font-medium">
-            <span className="tnum text-muted">{time}</span>
-            <span className="text-faint">종료</span>
-          </span>
+          <span className="text-[10.5px] font-medium text-faint">종료</span>
         )}
       </div>
 
