@@ -152,10 +152,24 @@ export function MyTeams() {
 
   if (!ready || teams.length === 0) return null;
 
-  // Playing first, then by kick-off. A live match is what someone came for.
+  /*
+   * One card per match, not per club.
+   *
+   * When two followed clubs meet, both point at the same fixture and the strip
+   * showed it twice - "리버풀 vs 아틀레티코" beside "아틀레티코 vs 리버풀", which
+   * reads as two matches. With a dozen clubs followed there were several such
+   * pairs. The first club listed keeps the card and leads it.
+   */
+  const seen = new Set<string>();
   const cards = teams
     .map((slug) => [slug, byClub[slug]] as const)
     .filter((e): e is [string, Match] => Boolean(e[1]))
+    .filter(([, m]) => {
+      const key = `${m.code}/${m.id}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    })
     .sort(([, a], [, b]) => {
       if ((a.state === "in") !== (b.state === "in")) return a.state === "in" ? -1 : 1;
       return a.kickoff - b.kickoff;

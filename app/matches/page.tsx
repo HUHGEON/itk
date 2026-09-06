@@ -211,9 +211,15 @@ export default async function Matches({
         </div>
       </div>
 
-      {/* Followed clubs sit above the day, because "when do my lot play" is
-          not a question a chronological list answers. */}
-      <MyTeams />
+      {/*
+        Followed clubs sit above the day, because "when do my lot play" is not
+        a question a chronological list answers.
+        
+        Only above today, though. The strip is about what is next, and its
+        labels are relative to now - on a page headed "6월 24일" a card reading
+        "오늘 22:00" claims to be about a day it has nothing to do with.
+      */}
+      {ymd(date) === ymd(today) && <MyTeams />}
 
       {picked && (
         <div className="border-b border-border">
