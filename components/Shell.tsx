@@ -54,6 +54,27 @@ export function Shell({
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
+  /*
+   * Whether the rail is a drawer or a fixed column.
+   *
+   * Below the large breakpoint the rail is slid off the left edge when closed,
+   * and being off-screen is not the same as being out of the way: measured with
+   * the drawer shut, pressing Tab walked through the logo, both site tabs, the
+   * search box, the collect button and every club in the list - about forty
+   * invisible controls - before reaching the page. `inert` takes the whole
+   * thing out of the tab order and off the accessibility tree, but only while
+   * it is actually a closed drawer, because on a wide screen the same element
+   * is the visible rail.
+   */
+  const [drawer, setDrawer] = useState(false);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(max-width: 1023.98px)");
+    const sync = () => setDrawer(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
   const pathname = usePathname();
   const params = useSearchParams();
 
@@ -85,6 +106,7 @@ export function Shell({
       )}
 
       <aside
+        inert={drawer && !open}
         className={`no-scrollbar fixed inset-y-0 left-0 z-50 flex w-[min(19rem,86vw)] flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 lg:z-30 lg:w-[var(--rail)] lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
