@@ -182,9 +182,9 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
             )}
           </>
         ) : (
-          <span className="tnum text-[13px] font-medium text-muted">
-            {d.hm}
-          </span>
+          /* The hour now lives in the date column on the left, for played and
+             upcoming alike, so repeating it here said the same thing twice. */
+          <span className="text-[12px] text-faint">예정</span>
         )}
       </div>
     </Link>
