@@ -181,7 +181,7 @@ export function ArticleCard({
               line to buy nothing — these are one- and two-line headlines, not
               body copy, and the reading-measure argument does not apply. */}
           <div className="min-w-0 flex-1">
-            <h3
+            <h2
               // Bigger than the metadata by enough to be the thing you read
               // first. At 16.5 against a 12.5 byline the two were close enough
               // that the eye had to choose, which is what made a column of
@@ -191,7 +191,7 @@ export function ArticleCard({
               }`}
             >
               {title}
-            </h3>
+            </h2>
             {/* The machine translation mangles football phrasing often enough
                 that the original has to stay readable at a glance, not be
                 hidden behind an expand. */}

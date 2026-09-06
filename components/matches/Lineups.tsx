@@ -38,7 +38,7 @@ function Rating({ r }: { r: number | null }) {
       ? "bg-emerald-500 text-black"
       : r >= 6.5
         ? "bg-amber-500 text-black"
-        : "bg-zinc-500 text-white";
+        : "bg-zinc-600 text-white";
   return (
     <span
       className={`tnum shrink-0 rounded-[3px] px-1 text-[10px] font-bold ${tone}`}
@@ -107,9 +107,9 @@ function Row({
 function Side({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="min-w-0">
-      <h4 className="truncate pb-1 text-[11.5px] font-semibold text-muted">
+      <h3 className="truncate pb-1 text-[11.5px] font-semibold text-muted">
         {title}
-      </h4>
+      </h3>
       <ul className="divide-y divide-border/50 border-t border-border/60">
         {children}
       </ul>
@@ -133,7 +133,7 @@ function Block({
   if (home.length + away.length === 0) return null;
   return (
     <section className="pt-4">
-      <h3 className="pb-2 text-[12px] font-semibold text-muted">{title}</h3>
+      <h2 className="pb-2 text-[12px] font-semibold text-muted">{title}</h2>
       <div className="grid gap-x-10 gap-y-4 sm:grid-cols-2">
         <Side title={homeName}>{home}</Side>
         <Side title={awayName}>{away}</Side>

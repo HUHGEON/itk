@@ -220,7 +220,9 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
               // Same signal without a pointer: tabbing the legend walks the bar.
               onFocus={() => setLit(i)}
               onBlur={() => setLit(null)}
-              className="group flex items-center gap-2 text-[12px]"
+              /* A standalone row in a list, so it earns a full target rather
+                 than the height of its own text. */
+              className="group -my-1 flex items-center gap-2 py-1.5 text-[12px]"
             >
               <span
                 aria-hidden

@@ -57,7 +57,8 @@
   --tier-1: #5fd68a;
   --tier-15: #54c8e8;
   --tier-2: #9aa4b5;
-  --tier-3: #737a88;
+  /* 4.61:1 on the page but 4.3:1 on the panels it actually sits in. */
+  --tier-3: #7f8794;
 
   /* A club announcing its own signing is a fact, not a report, so it sits
      outside the ladder and takes a hue none of the tiers use. */

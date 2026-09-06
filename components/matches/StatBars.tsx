@@ -62,9 +62,9 @@ export function StatBars({ groups }: { groups: FmStatGroup[] }) {
       <div className="mx-auto grid max-w-[64rem] gap-x-12 gap-y-2 sm:grid-cols-2">
         {groups.map((g) => (
           <div key={g.title} className="min-w-0">
-            <h3 className="pt-3 pb-1 text-[11.5px] font-semibold text-muted">
+            <h2 className="pt-3 pb-1 text-[11.5px] font-semibold text-muted">
               {g.title}
-            </h3>
+            </h2>
             <div className="divide-y divide-border/50">
               {g.rows.map((r) => (
                 <Row key={r.label} {...r} />

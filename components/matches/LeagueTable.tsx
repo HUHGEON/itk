@@ -66,7 +66,9 @@ export function LeagueTable({ rows }: { rows: TableRow[] }) {
                   {r.slug ? (
                     <Link
                       href={`/matches/team/${r.slug}`}
-                      className="truncate text-[13.5px] font-semibold text-text transition-colors hover:text-accent"
+                      /* A row in a table is a standalone target, so the
+                         link takes the row's height rather than its text's. */
+                      className="-my-1.5 truncate py-1.5 text-[13.5px] font-semibold text-text transition-colors hover:text-accent"
                     >
                       {r.name}
                     </Link>

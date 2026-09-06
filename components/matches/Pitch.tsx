@@ -44,7 +44,7 @@ function short(name: string): string {
 function ratingTone(r: number): string {
   if (r >= 7.5) return "bg-emerald-500 text-black";
   if (r >= 6.5) return "bg-amber-500 text-black";
-  return "bg-zinc-500 text-white";
+  return "bg-zinc-600 text-white";
 }
 
 function Token({
