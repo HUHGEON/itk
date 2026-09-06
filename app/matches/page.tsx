@@ -139,42 +139,54 @@ export default async function Matches({
           is on screen, and splitting them across the page would mean hunting
           for one after using the other. */}
       <div className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
-        <div className={`${MEASURE} flex items-center gap-1 px-[var(--gutter)] py-3`}>
-          <Link
-            href={href(shift(date, -1), !onlyTracked)}
-            aria-label="이전 날"
-            className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
-          >
-            ‹
-          </Link>
-          <span className="flex min-w-[148px] items-baseline justify-center gap-1.5 px-2 text-center">
-            <span className="text-[14px] font-semibold text-text">
-              {label(date, today).date}
-            </span>
-            {label(date, today).near && (
-              <span className="text-[12px] text-faint">
-                {label(date, today).near}
-              </span>
-            )}
-          </span>
-          <Link
-            href={href(shift(date, 1), !onlyTracked)}
-            aria-label="다음 날"
-            className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
-          >
-            ›
-          </Link>
+        {/*
+          The date holds the middle.
+          
+          It is what the whole page is about, and having it sit at one end with
+          the scope buttons at the other made the bar read as two unrelated
+          controls rather than one heading with its options.
+        */}
+        <div
+          className={`${MEASURE} grid grid-cols-[1fr_auto_1fr] items-center gap-2 px-[var(--gutter)] py-3`}
+        >
+          <span />
 
-          {ymd(date) !== ymd(today) && (
+          <div className="flex items-center justify-center gap-1">
             <Link
-              href={href(today, !onlyTracked)}
-              className="ml-1 rounded-[4px] px-2 py-1.5 text-[12.5px] text-muted transition-colors hover:text-text"
+              href={href(shift(date, -1), !onlyTracked)}
+              aria-label="이전 날"
+              className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
-              오늘
+              ‹
             </Link>
-          )}
+            <span className="flex min-w-[148px] items-baseline justify-center gap-1.5 px-2 text-center">
+              <span className="text-[14px] font-semibold text-text">
+                {label(date, today).date}
+              </span>
+              {label(date, today).near && (
+                <span className="text-[12px] text-faint">
+                  {label(date, today).near}
+                </span>
+              )}
+            </span>
+            <Link
+              href={href(shift(date, 1), !onlyTracked)}
+              aria-label="다음 날"
+              className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
+            >
+              ›
+            </Link>
+            {ymd(date) !== ymd(today) && (
+              <Link
+                href={href(today, !onlyTracked)}
+                className="ml-1 rounded-[4px] px-2 py-1.5 text-[12.5px] text-muted transition-colors hover:text-text"
+              >
+                오늘
+              </Link>
+            )}
+          </div>
 
-          <div className="ml-auto flex items-center gap-1">
+          <div className="flex items-center justify-end gap-1">
             <Scope href={href(date, false)} on={onlyTracked}>
               보고 있는 구단
               {trackedCount > 0 && (

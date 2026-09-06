@@ -48,17 +48,31 @@ function Card({ slug, match }: { slug: string; match: Match }) {
     last.current = now;
   }, [match.home.score, match.away.score]);
 
+  const crest = (side: typeof us, dim = false) =>
+    side.crest ? (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={side.crest}
+        alt=""
+        width={18}
+        height={18}
+        className={`size-[18px] shrink-0 object-contain ${dim ? "opacity-80" : ""}`}
+      />
+    ) : (
+      <span className="size-[18px] shrink-0" />
+    );
+
   return (
     <Link
       href={`/matches/game/${match.code}/${match.id}`}
       title={`${match.home.name} 대 ${match.away.name}`}
-      className={`flex min-w-[15.5rem] shrink-0 snap-start flex-col gap-1.5 rounded-[8px] border px-3 py-2.5 transition-colors ${
+      className={`flex shrink-0 snap-start flex-col gap-1 rounded-[8px] border px-3 py-2 transition-colors ${
         live
           ? "border-accent/40 bg-accent/[0.07] hover:bg-accent/[0.11]"
           : "border-border bg-surface-2/40 hover:border-border-strong"
       }`}
     >
-      <div className="flex items-center justify-between gap-2 text-[10.5px]">
+      <div className="flex items-center justify-between gap-3 text-[10.5px]">
         <span className="truncate text-faint">{match.competitionShort}</span>
         {live ? (
           <span className="live-badge tnum shrink-0 rounded-[3px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
@@ -71,59 +85,30 @@ function Card({ slug, match }: { slug: string; match: Match }) {
         )}
       </div>
 
-      <div className="flex items-center gap-2">
-        {us.crest ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={us.crest}
-            alt=""
-            width={22}
-            height={22}
-            className="size-[22px] shrink-0 object-contain"
-          />
-        ) : (
-          <span className="size-[22px] shrink-0" />
-        )}
-        <span className="min-w-0 flex-1 truncate text-[13px] font-semibold text-text">
-          {us.name}
-        </span>
-        {(live || done) && (
+      {/*
+        One line: us, the score or "vs", them.
+        
+        Two stacked rows made every card as tall as a fixture row and the strip
+        as tall as the day beneath it. The club being followed leads, so a row
+        of cards reads as a list of one's own clubs rather than of matches.
+      */}
+      <div className="flex items-center gap-1.5 whitespace-nowrap">
+        {crest(us)}
+        <span className="text-[13px] font-semibold text-text">{us.name}</span>
+        {live || done ? (
           <span
             ref={score}
-            className={`tnum shrink-0 text-[15px] font-bold ${
+            className={`tnum px-1 text-[13.5px] font-bold ${
               live ? "text-accent" : "text-text"
             }`}
           >
-            {us.score ?? 0}
+            {us.score ?? 0} : {them.score ?? 0}
           </span>
-        )}
-      </div>
-
-      <div className="flex items-center gap-2">
-        {them.crest ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={them.crest}
-            alt=""
-            width={22}
-            height={22}
-            className="size-[22px] shrink-0 object-contain opacity-80"
-          />
         ) : (
-          <span className="size-[22px] shrink-0" />
+          <span className="px-1 text-[11.5px] text-faint">vs</span>
         )}
-        <span className="min-w-0 flex-1 truncate text-[13px] text-muted">
-          {them.name}
-        </span>
-        {(live || done) && (
-          <span
-            className={`tnum shrink-0 text-[15px] font-bold ${
-              live ? "text-accent" : "text-muted"
-            }`}
-          >
-            {them.score ?? 0}
-          </span>
-        )}
+        <span className="text-[13px] text-muted">{them.name}</span>
+        {crest(them, true)}
       </div>
     </Link>
   );
@@ -178,7 +163,7 @@ export function MyTeams() {
 
   return (
     <section className="border-b border-border">
-      <div className="flex items-baseline justify-between gap-3 px-[var(--gutter)] pt-3 pb-2">
+      <div className="flex items-baseline justify-center gap-3 px-[var(--gutter)] pt-3 pb-1.5">
         <h2 className="text-[12px] font-semibold text-muted">내 팀</h2>
         {cards.length === 0 && !loading && (
           <span className="text-[11.5px] text-faint">
@@ -187,18 +172,19 @@ export function MyTeams() {
         )}
       </div>
       {cards.length > 0 && (
-        <div className="flex snap-x gap-2.5 overflow-x-auto px-[var(--gutter)] pb-3">
+        // Centred while they fit, scrolling once they do not.
+        <div className="flex snap-x justify-center gap-2.5 overflow-x-auto px-[var(--gutter)] pb-3">
           {cards.map(([slug, m]) => (
             <Card key={slug} slug={slug} match={m} />
           ))}
         </div>
       )}
       {cards.length === 0 && loading && (
-        <div className="flex gap-2.5 px-[var(--gutter)] pb-3">
+        <div className="flex justify-center gap-2.5 px-[var(--gutter)] pb-3">
           {teams.slice(0, 3).map((s) => (
             <span
               key={s}
-              className="h-[86px] min-w-[15.5rem] shrink-0 animate-pulse rounded-[8px] bg-surface-2"
+              className="h-[52px] w-[14rem] shrink-0 animate-pulse rounded-[8px] bg-surface-2"
             />
           ))}
         </div>
