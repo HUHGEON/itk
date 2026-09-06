@@ -146,6 +146,11 @@ export function kitColours(
  * is read in.
  */
 export function role(pos: string): string {
+  // The richer source gives a single letter rather than a code like "CD-L".
+  if (pos === "G") return "골키퍼";
+  if (pos === "D") return "수비수";
+  if (pos === "M") return "미드필더";
+  if (pos === "F") return "공격수";
   const d = depth(pos);
   if (d < 0) return "";
   if (d === 0) return "골키퍼";

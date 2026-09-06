@@ -1,4 +1,5 @@
 import type { FmEvent, FmEventKind } from "@/lib/fotmob";
+import { GoalIcon } from "./MatchIcons";
 
 /**
  * What happened, in order, down a centre line.
@@ -12,9 +13,9 @@ import type { FmEvent, FmEventKind } from "@/lib/fotmob";
  * rather than an event, because that is what it is.
  */
 const MARK: Record<FmEventKind, { icon: string; label: string }> = {
-  goal: { icon: "⚽", label: "골" },
-  own: { icon: "⚽", label: "자책골" },
-  pen: { icon: "⚽", label: "PK 골" },
+  goal: { icon: "", label: "골" },
+  own: { icon: "", label: "자책골" },
+  pen: { icon: "", label: "PK 골" },
   yellow: { icon: "▮", label: "경고" },
   red: { icon: "▮", label: "퇴장" },
   sub: { icon: "⇄", label: "교체" },
@@ -71,9 +72,9 @@ function Entry({
       <span
         aria-label={MARK[e.kind].label}
         title={MARK[e.kind].label}
-        className={`shrink-0 text-[11px] leading-none ${tone(e.kind)}`}
+        className={`flex shrink-0 items-center text-[11px] leading-none ${tone(e.kind)}`}
       >
-        {MARK[e.kind].icon}
+        {scored ? <GoalIcon count={1} size={11} /> : MARK[e.kind].icon}
       </span>
       <div className="min-w-0">
         {e.playerId && onOpen ? (

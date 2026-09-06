@@ -1,4 +1,5 @@
 import type { MatchSide } from "@/lib/matches";
+import { AssistIcon, GoalIcon } from "./MatchIcons";
 
 /**
  * Both elevens on a pitch.
@@ -114,7 +115,7 @@ function Token({
             title={`${p.goals}골`}
             className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black"
           >
-            ⚽{p.goals > 1 && <span className="tnum">{p.goals}</span>}
+            <GoalIcon count={p.goals} size={10} />
           </span>
         )}
         {p.goals === 0 && p.assists > 0 && (
@@ -122,7 +123,7 @@ function Token({
             title={`도움 ${p.assists}`}
             className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black"
           >
-            👟{p.assists > 1 && <span className="tnum">{p.assists}</span>}
+            <AssistIcon count={p.assists} size={10} />
           </span>
         )}
         {p.offAt != null && (

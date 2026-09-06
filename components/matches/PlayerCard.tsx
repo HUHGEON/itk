@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { FmPlayerPage, FmRecentMatch } from "@/lib/fotmob";
+import { AssistIcon, GoalIcon } from "@/components/matches/MatchIcons";
 import { seoul } from "@/lib/matches";
 
 /**
@@ -231,14 +232,10 @@ function Recent({ m }: { m: FmRecentMatch }) {
           {m.opponent}
         </span>
         {m.goals > 0 && (
-          <span className="shrink-0 text-[11px]">
-            ⚽{m.goals > 1 ? m.goals : ""}
-          </span>
+          <GoalIcon count={m.goals} size={11} className="text-text" />
         )}
         {m.assists > 0 && (
-          <span className="shrink-0 text-[11px]">
-            👟{m.assists > 1 ? m.assists : ""}
-          </span>
+          <AssistIcon count={m.assists} size={11} className="text-sky-400" />
         )}
       </span>
       <span className="flex shrink-0 items-center gap-1.5">

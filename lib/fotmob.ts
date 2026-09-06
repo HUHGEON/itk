@@ -28,6 +28,8 @@ export interface FmPlayer {
   /** This source's own id, which is what a player page is addressed by. */
   id: number;
   name: string;
+  /** Which quarter of the pitch he plays in, for a substitute's card. */
+  position: string;
   jersey: string;
   rating: number | null;
   image: string;
@@ -107,9 +109,21 @@ export interface FmReport {
   stats: FmStatGroup[];
 }
 
+/**
+ * The source numbers positions; a card only needs which quarter of the pitch.
+ * Eleven is the goalkeeper, the twenties are midfield, the thirties attack.
+ */
+function positionOf(id: number | undefined): string {
+  if (!id) return "";
+  if (id < 20) return id === 11 ? "G" : "D";
+  if (id < 30) return "M";
+  return "F";
+}
+
 interface RawPlayer {
   id?: number;
   name?: string;
+  positionId?: number;
   shirtNumber?: number;
   verticalLayout?: { x?: number; y?: number };
   performance?: {
@@ -147,6 +161,7 @@ function player(p: RawPlayer): FmPlayer {
   return {
     id: p.id ?? 0,
     name: p.name ?? "?",
+    position: positionOf(p.positionId),
     jersey: p.shirtNumber == null ? "" : String(p.shirtNumber),
     rating: typeof perf.rating === "number" ? perf.rating : null,
     image: `https://images.fotmob.com/image_resources/playerimages/${p.id}.png`,
