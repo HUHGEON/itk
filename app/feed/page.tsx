@@ -127,6 +127,11 @@ export default async function Home({
           </>
         }
       >
+        {/* The feed had no first-level heading at all: its first was an h2
+            inside a filter panel, which leaves a screen reader with no title
+            for the page it just landed on. */}
+        <h1 className="sr-only">이적 소식</h1>
+
         <Filters
           teams={teams}
           activity={activity}

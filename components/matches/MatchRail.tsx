@@ -140,7 +140,7 @@ function Row({
     <Link
       href={href}
       aria-current={on ? "page" : undefined}
-      className={`flex min-w-0 flex-1 items-center transition-colors ${
+      className={`flex min-w-0 flex-1 items-center py-2 transition-colors ${
         on ? "font-medium text-accent" : "text-muted group-hover:text-text"
       }`}
     >
@@ -150,7 +150,7 @@ function Row({
 
   return (
     <div
-      className={`group flex items-center px-[var(--gutter)] py-[7px] text-[12.5px] transition-colors ${
+      className={`group flex items-center px-[var(--gutter)] text-[12.5px] transition-colors ${
         on
           ? "border-l-2 border-accent bg-accent/[0.07] pl-[calc(var(--gutter)-2px)]"
           : "hover:bg-surface-2/50"

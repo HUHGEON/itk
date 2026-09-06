@@ -24,8 +24,18 @@
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
      contrast to stare at. */
   --text: #f2f0ec;
-  --muted: #8d8880;
-  --faint: #625d56;
+  /*
+   * Three steps, all of them readable.
+   *
+   * Measured against the page: the old faint sat at 3.05:1 and muted at 4.93:1,
+   * where small text needs 4.5:1 - so competition labels, kick-off times, table
+   * headings and every "9월 5일 (토)" on the site were below the line, forty to
+   * fifty instances a page. Both are lifted until the darkest surface they
+   * appear on clears it, and lifted together so the ladder between text, muted
+   * and faint is as legible as it was.
+   */
+  --muted: #a8a29a;
+  --faint: #8f887e;
 
   /* The ribbon itself, for the places the brand should actually show up:
      the rule under the header, the primary button, the panel markers. A flat

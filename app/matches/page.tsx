@@ -220,6 +220,21 @@ export default async function Matches({
       </div>
 
       {/*
+        Every page needs one first-level heading.
+        
+        Picking a competition gives this page a visible one, but the default
+        view had none at all - a screen reader landing here was told the first
+        thing on the page was a second-level heading with no parent, and search
+        engines saw a page with no title in its body. The date is what this view
+        is about, so that is what it says, out of the way of the design.
+      */}
+      {!picked && (
+        <h1 className="sr-only">
+          경기 일정 · {label(date, today).date}
+        </h1>
+      )}
+
+      {/*
         Followed clubs sit above the day, because "when do my lot play" is not
         a question a chronological list answers.
         

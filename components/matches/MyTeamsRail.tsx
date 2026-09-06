@@ -45,7 +45,7 @@ export function MyTeamsRail({
           return (
             <div
               key={t.slug}
-              className={`group flex items-center px-[var(--gutter)] py-[7px] text-[12.5px] transition-colors ${
+              className={`group flex items-center px-[var(--gutter)] text-[12.5px] transition-colors ${
                 on
                   ? "border-l-2 border-accent bg-accent/[0.07] pl-[calc(var(--gutter)-2px)]"
                   : "hover:bg-surface-2/50"
@@ -54,7 +54,7 @@ export function MyTeamsRail({
               <Link
                 href={`/matches/team/${t.slug}`}
                 aria-current={on ? "page" : undefined}
-                className={`flex min-w-0 flex-1 items-center gap-2 transition-colors ${
+                className={`flex min-w-0 flex-1 items-center gap-2 py-2 transition-colors ${
                   on ? "font-medium text-accent" : "text-muted group-hover:text-text"
                 }`}
               >

@@ -228,6 +228,11 @@ export function MatchReport({
      */
     <div className={MEASURE_WIDE}>
       <header className="border-b border-border px-[var(--gutter)] py-6">
+        {/* The scoreline is the page's title; it just was not marked as one. */}
+        <h1 className="sr-only">
+          {match.home.name} {match.state === "pre" ? "대" : `${match.home.score ?? 0} 대 ${match.away.score ?? 0}`}{" "}
+          {match.away.name} · {match.competition}
+        </h1>
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
           <Link
             href={`/matches?comp=${match.code}`}
