@@ -57,6 +57,8 @@ function Row({
   rating,
   note,
   minute,
+  goals = 0,
+  assists = 0,
 }: {
   id?: number;
   onOpen?: (id: number) => void;
@@ -66,6 +68,9 @@ function Row({
   rating: number | null;
   note?: React.ReactNode;
   minute?: number | null;
+  /** Goals scored after coming on. */
+  goals?: number;
+  assists?: number;
 }) {
   const inner = (
     <>
@@ -74,6 +79,24 @@ function Row({
         <div className="flex items-baseline gap-1.5">
           <span className="tnum shrink-0 text-[10.5px] text-faint">{jersey}</span>
           <span className="truncate text-[12.5px] text-text">{name}</span>
+          {/*
+            A substitute's goal has nowhere else to appear.
+            
+            The pitch draws the eleven who started, so a goal scored off the
+            bench was on the timeline and nowhere on the lineup at all -
+            measured on a 2-2 where both goals came from substitutes, the
+            lineup tab showed neither.
+          */}
+          {goals > 0 && (
+            <span title={`${goals}골`} className="shrink-0 text-[11px]">
+              ⚽{goals > 1 ? goals : ""}
+            </span>
+          )}
+          {assists > 0 && (
+            <span title={`도움 ${assists}`} className="shrink-0 text-[11px]">
+              👟{assists > 1 ? assists : ""}
+            </span>
+          )}
         </div>
         {note && <div className="truncate text-[11px] text-muted">{note}</div>}
       </div>
@@ -182,6 +205,8 @@ export function Lineups({
             image={on.image}
             rating={on.rating}
             minute={on.onAt}
+            goals={on.goals}
+            assists={on.assists}
             note={off ? <>▼ {off.name}</> : null}
           />
         );
