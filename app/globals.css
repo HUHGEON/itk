@@ -171,20 +171,25 @@ body {
  * On a phone the two halves stack, keeper at the bottom, the way a formation is
  * drawn in a column. On anything wider the pitch lies down and the home side
  * takes the left, which puts the two elevens in the same order as the scoreline
- * above them - measured against the reference, home on the left and away on the
- * right is what a reader expects when the header says "Ipswich 0 : 2 Liverpool".
+ * above them.
+ *
+ * The margins are fixed lengths rather than percentages, so a token is held the
+ * same distance from the touchline whatever size the pitch is drawn at. That is
+ * what stops a wide player's name from hanging over the edge: measured before
+ * this, the four widest players lost three pixels each on a desktop and far
+ * more on a phone, where the across axis is the narrow one.
  *
  * Each token carries both positions and the media query picks one, so the
  * markup is written once.
  */
 .pitch-token {
   position: absolute;
-  left: var(--vx);
-  top: var(--vy);
+  left: calc(2.9rem + (100% - 5.8rem) * var(--vx));
+  top: calc(2rem + (100% - 4rem) * var(--vy));
 }
 @media (min-width: 640px) {
   .pitch-token {
-    left: var(--hx);
-    top: var(--hy);
+    left: calc(2.2rem + (100% - 4.4rem) * var(--hx));
+    top: calc(2.9rem + (100% - 5.8rem) * var(--hy));
   }
 }

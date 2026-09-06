@@ -10,7 +10,7 @@ import {
   type MatchSide,
 } from "@/lib/matches";
 import { markGoal } from "@/lib/motion";
-import { MEASURE } from "./Measure";
+import { MEASURE_WIDE } from "./Measure";
 import type { FmLineup, FmTeam } from "@/lib/fotmob";
 import { spots } from "@/lib/pitch";
 import { Timeline } from "./Timeline";
@@ -179,7 +179,7 @@ export function MatchReport({
      * 1440px unconstrained, possession read "69.6%" and "30.4%" 580px apart,
      * which is two facts rather than a comparison.
      */
-    <div className={MEASURE}>
+    <div className={MEASURE_WIDE}>
       <header className="border-b border-border px-[var(--gutter)] py-6">
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-faint">
           <Link

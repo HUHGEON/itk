@@ -234,6 +234,8 @@ interface EspnCompetitor {
     displayName?: string;
     shortDisplayName?: string;
     logo?: string;
+    /** The summary endpoint uses this instead of `logo`. */
+    logos?: { href?: string }[];
     color?: string;
     alternateColor?: string;
   };
@@ -252,7 +254,15 @@ function side(c: EspnCompetitor | undefined): MatchSide {
     name: known?.ko ?? raw,
     sourceName: raw,
     slug: known?.slug ?? null,
-    crest: known?.crest ?? c?.team?.logo ?? null,
+    /*
+     * Two spellings of the same thing.
+     *
+     * The fixture list gives `logo`; the match summary gives `logos` as a list.
+     * Reading only the first left every untracked club on a report page with no
+     * badge at all - measured on Ipswich Town, whose crest the source had all
+     * along under the other name.
+     */
+    crest: known?.crest ?? c?.team?.logo ?? c?.team?.logos?.[0]?.href ?? null,
     score: Number.isFinite(n) ? n : null,
     color: hex(c?.team?.color),
     color2: hex(c?.team?.alternateColor),

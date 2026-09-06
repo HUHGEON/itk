@@ -64,8 +64,6 @@ function Token({
    * short of halfway, which keeps the two strikers from landing on each other
    * in the centre circle.
    */
-  const near = `${3 + p.y * 46}%`;
-  const far = `${97 - p.y * 46}%`;
   /*
    * Pushed out towards the touchlines.
    *
@@ -73,8 +71,13 @@ function Token({
    * of the width empty at each edge and the eleven looking huddled. Stretching
    * about the centre line opens the shape up without changing who stands where.
    */
-  const across = `${(0.5 + (p.x - 0.5) * 1.18) * 100}%`;
+  const across = 0.5 + (p.x - 0.5) * 1.18;
+  // Each side owns its own half and stops just short of the line, so the two
+  // strikers do not land on each other in the centre circle.
+  const depth = p.y * 0.47;
   const away = tint === "away";
+  const near = depth;
+  const far = 1 - depth;
 
   const body = (
     <>

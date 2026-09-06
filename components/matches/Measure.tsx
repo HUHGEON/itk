@@ -16,6 +16,16 @@
  */
 export const MEASURE = "mx-auto w-full max-w-[52rem]";
 
+/**
+ * The wider measure, for a match report.
+ *
+ * A fixture row is two clubs and a time and reads best held in; a pitch is a
+ * diagram of twenty-two people and wants the room. 64rem gives each half of the
+ * pitch about 30rem, which is enough for a back four to spread without their
+ * names touching.
+ */
+export const MEASURE_WIDE = "mx-auto w-full max-w-[64rem]";
+
 export function Measure({
   children,
   className = "",
