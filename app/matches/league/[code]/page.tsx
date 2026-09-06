@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
-import { COMPETITIONS, tableFor, matchesOn, ymd } from "@/lib/matches";
+import { COMPETITIONS, TABLE_ZONES, tableFor, matchesOn, ymd } from "@/lib/matches";
 import { LeagueTable } from "@/components/matches/LeagueTable";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchBoard } from "@/components/matches/MatchBoard";
@@ -93,7 +93,7 @@ export default async function League({ params }: { params: Params }) {
       </header>
 
       <div className={MEASURE}>
-        <LeagueTable rows={rows} />
+        <LeagueTable rows={rows} zones={TABLE_ZONES[code] ?? {}} />
       </div>
 
       {mine.length > 0 && (

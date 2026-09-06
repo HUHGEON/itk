@@ -427,7 +427,12 @@ export async function tableFor(
       children?: {
         standings?: {
           entries?: {
-            team?: { displayName?: string; logo?: string };
+            team?: {
+              displayName?: string;
+              logo?: string;
+              /** The standings endpoint uses this, like the summary does. */
+              logos?: { href?: string }[];
+            };
             stats?: { name?: string; value?: number; displayValue?: string }[];
           }[];
         };
@@ -443,7 +448,10 @@ export async function tableFor(
           rank: stat(e.stats, "rank"),
           name: known?.ko ?? raw,
           slug: known?.slug ?? null,
-          crest: known?.crest ?? e.team?.logo ?? null,
+          // Same two spellings as everywhere else: the standings endpoint
+          // gives a list, and reading only `logo` left thirteen of twenty rows
+          // with a blank where a badge belongs.
+          crest: known?.crest ?? e.team?.logo ?? e.team?.logos?.[0]?.href ?? null,
           played: stat(e.stats, "gamesPlayed"),
           won: stat(e.stats, "wins"),
           drawn: stat(e.stats, "ties"),
@@ -944,3 +952,35 @@ export async function nextForClubs(
   }
   return out;
 }
+
+
+/**
+ * Which places matter in each competition.
+ *
+ * The numbers are the competitions' own rules rather than anything the source
+ * publishes, so they are written down here: four Champions League places and
+ * three down in the big five, two down and a play-off in the Netherlands, and
+ * the European league phases, where the top eight go straight to the last
+ * sixteen and the next sixteen play off for the rest.
+ *
+ * A competition with no entry gets no bands, which is right for a cup.
+ */
+export const TABLE_ZONES: Record<
+  string,
+  {
+    top?: number;
+    second?: number;
+    drop?: number;
+    labels?: Partial<Record<"top" | "second" | "drop", string>>;
+  }
+> = {
+  "eng.1": { top: 4, second: 5, drop: 3, labels: { top: "챔피언스리그", second: "유로파리그", drop: "강등" } },
+  "esp.1": { top: 4, second: 6, drop: 3, labels: { top: "챔피언스리그", second: "유로파리그", drop: "강등" } },
+  "ita.1": { top: 4, second: 6, drop: 3, labels: { top: "챔피언스리그", second: "유로파리그", drop: "강등" } },
+  "ger.1": { top: 4, second: 6, drop: 2, labels: { top: "챔피언스리그", second: "유로파리그", drop: "강등" } },
+  "fra.1": { top: 3, second: 5, drop: 2, labels: { top: "챔피언스리그", second: "유로파리그", drop: "강등" } },
+  "ned.1": { top: 2, second: 5, drop: 2, labels: { top: "챔피언스리그", second: "유럽 대항전", drop: "강등" } },
+  "uefa.champions": { top: 8, second: 24, labels: { top: "16강 직행", second: "플레이오프" } },
+  "uefa.europa": { top: 8, second: 24, labels: { top: "16강 직행", second: "플레이오프" } },
+  "uefa.europa.conf": { top: 8, second: 24, labels: { top: "16강 직행", second: "플레이오프" } },
+};

@@ -12,7 +12,52 @@ import type { TableRow } from "@/lib/matches";
  *
  * Clubs the feed follows are links. The rest are the table, not the point.
  */
-export function LeagueTable({ rows }: { rows: TableRow[] }) {
+/**
+ * Which positions mean something.
+ *
+ * A table without its zones is a list of numbers: the whole reason to look at
+ * one in September is to see who is in the European places and who is in the
+ * bottom three. The bands differ by competition - a 36 team league phase takes
+ * the top eight straight through and the next sixteen to a play-off - so the
+ * caller says how many rows are in play rather than this guessing from length.
+ */
+export interface TableZones {
+  /** Positions 1..n are the top band. */
+  top?: number;
+  /** The band under it, for a play-off or a secondary competition. */
+  second?: number;
+  /** The last n positions go down. */
+  drop?: number;
+  /** What each band is called in this competition. */
+  labels?: Partial<Record<"top" | "second" | "drop", string>>;
+}
+
+function zoneOf(rank: number, total: number, z: TableZones) {
+  if (z.top && rank <= z.top) return "top";
+  if (z.second && rank <= z.second) return "second";
+  if (z.drop && rank > total - z.drop) return "drop";
+  return null;
+}
+
+const DEFAULT_LABEL: Record<string, string> = {
+  top: "상위",
+  second: "다음 라운드",
+  drop: "강등",
+};
+
+const ZONE_BAR: Record<string, string> = {
+  top: "bg-emerald-400",
+  second: "bg-sky-400",
+  drop: "bg-red-400",
+};
+
+export function LeagueTable({
+  rows,
+  zones = {},
+}: {
+  rows: TableRow[];
+  zones?: TableZones;
+}) {
   if (rows.length === 0) {
     return (
       <p className="px-[var(--gutter)] py-12 text-center text-[14px] text-muted">
@@ -21,11 +66,16 @@ export function LeagueTable({ rows }: { rows: TableRow[] }) {
     );
   }
 
+  const shown = (["top", "second", "drop"] as const).filter(
+    (k) => zones[k === "top" ? "top" : k === "second" ? "second" : "drop"],
+  );
+
   return (
     <div className="overflow-x-auto px-[var(--gutter)] pb-8">
       <table className="w-full min-w-[30rem] border-collapse">
         <thead>
           <tr className="border-b border-border text-[11px] text-faint">
+            <th className="w-2 py-2" aria-hidden />
             <th className="w-8 py-2 text-left font-medium">#</th>
             <th className="py-2 text-left font-medium">구단</th>
             <th className="w-9 py-2 text-right font-medium">경기</th>
@@ -47,6 +97,18 @@ export function LeagueTable({ rows }: { rows: TableRow[] }) {
                 r.slug ? "bg-accent/[0.04]" : ""
               }`}
             >
+              {/* A colour down the outside edge, which is how a table
+                  says "these go up" without a legend in every row. */}
+              <td className="w-2 py-0">
+                {zoneOf(r.rank, rows.length, zones) && (
+                  <span
+                    aria-hidden
+                    className={`block h-[34px] w-[3px] rounded-full ${
+                      ZONE_BAR[zoneOf(r.rank, rows.length, zones)!]
+                    }`}
+                  />
+                )}
+              </td>
               <td className="tnum py-2.5 text-[12.5px] text-muted">{r.rank}</td>
               <td className="py-2.5">
                 <span className="flex items-center gap-2">
@@ -104,6 +166,20 @@ export function LeagueTable({ rows }: { rows: TableRow[] }) {
           ))}
         </tbody>
       </table>
+
+      {shown.length > 0 && (
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 text-[11px] text-faint">
+          {shown.map((k) => (
+            <li key={k} className="flex items-center gap-1.5">
+              <span
+                aria-hidden
+                className={`h-2.5 w-[3px] rounded-full ${ZONE_BAR[k]}`}
+              />
+              {zones.labels?.[k] ?? DEFAULT_LABEL[k]}
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }
