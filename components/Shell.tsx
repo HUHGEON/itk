@@ -165,10 +165,12 @@ export function Shell({
             than in the header: someone who opens this daily is here for the
             stories, and a nav item above them would sell the site to someone
             already using it. */}
-        <div className="mt-auto border-t border-border px-[var(--gutter)] py-3">
+        <div className="mt-auto border-t border-border px-[var(--gutter)] py-1.5">
           <Link
             href="/"
-            className="text-[11.5px] text-faint transition-colors hover:text-muted"
+            /* A row of its own at the foot of the rail, so it gets a row's
+               height rather than the height of eleven-point text. */
+            className="-mx-1 flex items-center rounded-[4px] px-1 py-2 text-[11.5px] text-faint transition-colors hover:bg-surface-2/50 hover:text-muted"
           >
             ITK+ 소개
           </Link>
