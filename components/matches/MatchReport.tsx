@@ -117,11 +117,26 @@ export function MatchReport({
   ): PitchPlayer[] | null => {
     const t = fm?.[side];
     if (t) {
+      /*
+       * The home side's width is mirrored.
+       *
+       * Each team's coordinates are given in its own attacking frame, so the
+       * same x means "my left" for both - and drawing them facing each other
+       * then puts one of them backwards. Measured against the source's own
+       * rendering of Chelsea against Brighton: Colwill, a left centre-back at
+       * x=0.79, is drawn at the top of the home half, while Brighton's Wieffer
+       * at x=0.125 is also drawn at the top of theirs. One frame is reversed
+       * relative to the other, and it is the home one.
+       *
+       * Reported as a left-sided centre-back appearing on the right, which is
+       * exactly what an unmirrored home half looks like.
+       */
+      const mirror = side === "home";
       return t.starters.map((p) => ({
         id: p.id,
         name: p.name,
         jersey: p.jersey,
-        x: p.x,
+        x: mirror ? 1 - p.x : p.x,
         y: p.y,
         rating: p.rating,
         image: p.image,
