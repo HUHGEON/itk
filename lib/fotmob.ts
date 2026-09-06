@@ -57,6 +57,54 @@ export interface FmLineup {
   away: FmTeam;
 }
 
+export type FmEventKind =
+  | "goal"
+  | "own"
+  | "pen"
+  | "yellow"
+  | "red"
+  | "sub"
+  | "half";
+
+export interface FmEvent {
+  id: string;
+  kind: FmEventKind;
+  /** "24'", "45+2'". */
+  minute: string;
+  /** Sorting key. */
+  at: number;
+  side: "home" | "away" | null;
+  /** Scorer, booked player, or the player coming on. */
+  player: string | null;
+  playerId: number | null;
+  /** Assist, or the player going off. */
+  second: string | null;
+  secondId: number | null;
+  /** The scoreline after a goal. */
+  score: string | null;
+  /** Half time, full time, added time - a divider rather than an event. */
+  note: string | null;
+}
+
+export interface FmStat {
+  label: string;
+  home: string;
+  away: string;
+  /** Home's share of the bar, 0-1. Null when the pair cannot be compared. */
+  share: number | null;
+}
+
+export interface FmStatGroup {
+  title: string;
+  rows: FmStat[];
+}
+
+export interface FmReport {
+  lineup: FmLineup | null;
+  events: FmEvent[];
+  stats: FmStatGroup[];
+}
+
 interface RawPlayer {
   id?: number;
   name?: string;
@@ -404,6 +452,251 @@ export async function fotmobPlayer(id: number): Promise<FmPlayerPage | null> {
       injury: j.injuryInformation?.expectedReturn
         ? `복귀 예정 ${j.injuryInformation.expectedReturn}`
         : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+
+/* -------------------------------------------------------------------------
+ * The timeline and the statistics.
+ * ----------------------------------------------------------------------- */
+
+const STAT_KO_LABEL: Record<string, string> = {
+  "Ball possession": "점유율",
+  "Expected goals (xG)": "기대 득점 (xG)",
+  "xG open play": "오픈 플레이 xG",
+  "xG set play": "세트피스 xG",
+  "xG non-penalty": "PK 제외 xG",
+  "xG on target (xGOT)": "유효슈팅 xG",
+  "Total shots": "슈팅",
+  "Shots on target": "유효 슈팅",
+  "Shots off target": "빗나간 슈팅",
+  "Blocked shots": "막힌 슈팅",
+  "Hit woodwork": "골대 강타",
+  "Shots inside box": "박스 안 슈팅",
+  "Shots outside box": "박스 밖 슈팅",
+  "Big chances": "결정적 기회",
+  "Big chances missed": "결정적 기회 실패",
+  "Touches in opposition box": "상대 박스 터치",
+  "Accurate passes": "패스 성공",
+  Passes: "패스 시도",
+  "Own half": "자기 진영 패스",
+  "Opposition half": "상대 진영 패스",
+  "Accurate long balls": "롱볼 성공",
+  "Accurate crosses": "크로스 성공",
+  Throws: "스로인",
+  Offsides: "오프사이드",
+  Corners: "코너킥",
+  Tackles: "태클",
+  Interceptions: "인터셉트",
+  Blocks: "블록",
+  Clearances: "클리어",
+  "Keeper saves": "선방",
+  "Duels won": "듀얼 승리",
+  "Ground duels won": "지상 듀얼",
+  "Aerial duels won": "공중 듀얼",
+  "Successful dribbles": "드리블 성공",
+  "Yellow cards": "경고",
+  "Red cards": "퇴장",
+  "Fouls committed": "파울",
+  "Distance covered": "뛴 거리",
+  "Sprinting distance": "스프린트 거리",
+  "Number of sprints": "스프린트 횟수",
+};
+
+const GROUP_KO: Record<string, string> = {
+  "Top stats": "요약",
+  Shots: "슈팅",
+  "Expected goals (xG)": "기대 득점",
+  "Physical performance": "활동량",
+  Passes: "패스",
+  Defence: "수비",
+  Duels: "듀얼",
+  Discipline: "규율",
+};
+
+/**
+ * A statistic's two values, as text and as a share of a bar.
+ *
+ * The source mixes plain numbers with strings like "357 (83%)", and distances
+ * arrive in metres as five figure integers. The number that matters for the bar
+ * is the leading one; the text is kept as published, except distances, which
+ * are read as kilometres because 116566 is not a quantity anyone pictures.
+ */
+function statPair(title: string, raw: [unknown, unknown]): FmStat | null {
+  const [a, b] = raw;
+  if (a === null || a === undefined || b === null || b === undefined) return null;
+
+  const isDistance = title.includes("distance") || title === "Distance covered";
+  const text = (v: unknown) => {
+    if (typeof v === "number" && isDistance) return `${(v / 1000).toFixed(1)}km`;
+    return String(v);
+  };
+  const lead = (v: unknown) => {
+    const n = Number(String(v).match(/-?[\d.]+/)?.[0]);
+    return Number.isFinite(n) ? n : null;
+  };
+  const na = lead(a);
+  const nb = lead(b);
+  return {
+    label: STAT_KO_LABEL[title] ?? title,
+    home: text(a),
+    away: text(b),
+    share:
+      na === null || nb === null || na + nb === 0 ? null : na / (na + nb),
+  };
+}
+
+interface RawStatGroup {
+  title?: string;
+  stats?: { title?: string; stats?: [unknown, unknown]; type?: string }[];
+}
+
+function buildStats(json: unknown): FmStatGroup[] {
+  const all = (
+    json as {
+      content?: { stats?: { Periods?: { All?: { stats?: RawStatGroup[] } } } };
+    }
+  ).content?.stats?.Periods?.All?.stats;
+  if (!all) return [];
+
+  const out: FmStatGroup[] = [];
+  for (const g of all) {
+    const rows: FmStat[] = [];
+    for (const s of g.stats ?? []) {
+      // A "title" row repeats the group heading and carries no values.
+      if (s.type === "title" || !s.stats) continue;
+      const pair = statPair(s.title ?? "", s.stats);
+      if (pair) rows.push(pair);
+    }
+    if (rows.length > 0) {
+      out.push({ title: GROUP_KO[g.title ?? ""] ?? g.title ?? "", rows });
+    }
+  }
+  return out;
+}
+
+interface RawEvent {
+  type?: string;
+  time?: number;
+  overloadTime?: number | null;
+  eventId?: number;
+  nameStr?: string;
+  playerId?: number;
+  assistStr?: string;
+  assistInput?: { id?: number };
+  isHome?: boolean;
+  ownGoal?: boolean | null;
+  goalDescription?: string | null;
+  card?: string;
+  newScore?: [number, number];
+  swap?: { name?: string; id?: string }[];
+  halfStrShort?: string;
+  minutesAddedInput?: number;
+}
+
+const HALF_KO: Record<string, string> = {
+  HT: "하프타임",
+  FT: "경기 종료",
+};
+
+function buildEvents(json: unknown): FmEvent[] {
+  const raw = (
+    json as {
+      content?: { matchFacts?: { events?: { events?: RawEvent[] } } };
+    }
+  ).content?.matchFacts?.events?.events;
+  if (!raw) return [];
+
+  const out: FmEvent[] = [];
+  for (const [i, e] of raw.entries()) {
+    const minute =
+      e.overloadTime && e.overloadTime > 0
+        ? `${e.time}+${e.overloadTime}'`
+        : `${e.time}'`;
+    const at = (e.time ?? 0) + (e.overloadTime ?? 0) / 100;
+    const side: "home" | "away" | null =
+      e.isHome === true ? "home" : e.isHome === false ? "away" : null;
+    const base = {
+      id: String(e.eventId ?? `${e.type}${i}`),
+      minute,
+      at,
+      side,
+      score: e.newScore ? `${e.newScore[0]} : ${e.newScore[1]}` : null,
+      note: null as string | null,
+    };
+
+    if (e.type === "Goal") {
+      const pen = (e.goalDescription ?? "").toLowerCase().includes("penalty");
+      out.push({
+        ...base,
+        kind: e.ownGoal ? "own" : pen ? "pen" : "goal",
+        player: e.nameStr ?? null,
+        playerId: e.playerId ?? null,
+        second: e.assistStr?.replace(/^assist by\s*/i, "") ?? null,
+        secondId: e.assistInput?.id ?? null,
+      });
+    } else if (e.type === "Card") {
+      out.push({
+        ...base,
+        kind: e.card === "Red" ? "red" : "yellow",
+        player: e.nameStr ?? null,
+        playerId: e.playerId ?? null,
+        second: null,
+        secondId: null,
+      });
+    } else if (e.type === "Substitution") {
+      const [on, off] = e.swap ?? [];
+      out.push({
+        ...base,
+        kind: "sub",
+        player: on?.name ?? null,
+        playerId: on?.id ? Number(on.id) : null,
+        second: off?.name ?? null,
+        secondId: off?.id ? Number(off.id) : null,
+      });
+    } else if (e.type === "Half") {
+      out.push({
+        ...base,
+        kind: "half",
+        player: null,
+        playerId: null,
+        second: null,
+        secondId: null,
+        note: HALF_KO[e.halfStrShort ?? ""] ?? e.halfStrShort ?? null,
+      });
+    }
+    // Added time and free-text comments are noise on a timeline of this size.
+  }
+  out.sort((a, b) => a.at - b.at);
+  return out;
+}
+
+/** The whole report from this source: lineups, timeline and statistics. */
+export async function fotmobReport(match: Match): Promise<FmReport | null> {
+  const id = await cachedId(
+    match.kickoff,
+    match.home.sourceName,
+    match.away.sourceName,
+  );
+  if (!id) return null;
+  try {
+    const res = await fetch(`${API}/matchDetails?matchId=${id}`, {
+      signal: AbortSignal.timeout(9000),
+      next: { revalidate: 120 },
+    });
+    if (!res.ok) return null;
+    const json = await res.json();
+    const lu = (json as { content?: { lineup?: { homeTeam?: RawTeam; awayTeam?: RawTeam } } })
+      .content?.lineup;
+    const home = team(lu?.homeTeam);
+    const away = team(lu?.awayTeam);
+    return {
+      lineup: home && away ? { home, away } : null,
+      events: buildEvents(json),
+      stats: buildStats(json),
     };
   } catch {
     return null;

@@ -11,7 +11,7 @@ import {
 } from "@/lib/matches";
 import { markGoal } from "@/lib/motion";
 import { MEASURE_WIDE } from "./Measure";
-import type { FmLineup, FmTeam } from "@/lib/fotmob";
+import type { FmReport } from "@/lib/fotmob";
 import { spots } from "@/lib/pitch";
 import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
@@ -53,8 +53,8 @@ export function MatchReport({
   faces = {},
 }: {
   initial: MatchDetail;
-  /** Ratings, photographs and exact positions, when the match was found. */
-  fm?: FmLineup | null;
+  /** The richer report - ratings, positions, timeline, statistics. */
+  fm?: FmReport | null;
   /** Fallback photographs, keyed by player name. */
   faces?: Record<string, string>;
 }) {
@@ -115,7 +115,7 @@ export function MatchReport({
   const pitchSide = (
     side: "home" | "away",
   ): PitchPlayer[] | null => {
-    const t = fm?.[side];
+    const t = fm?.lineup?.[side];
     if (t) {
       /*
        * The home side's width is mirrored.
@@ -163,7 +163,7 @@ export function MatchReport({
     }));
   };
   const meta = (side: "home" | "away") => {
-    const t = fm?.[side];
+    const t = fm?.lineup?.[side];
     return {
       formation: t?.formation ?? detail.lineups?.[side]?.formation ?? null,
       rating: t?.rating ?? null,
@@ -172,10 +172,19 @@ export function MatchReport({
   };
   const hasPitch = Boolean(pitchSide("home") && pitchSide("away"));
 
+  /*
+   * The timeline and the statistics come from the richer source where it has
+   * the match - it carries expected goals, distances and duels the first source
+   * has never heard of, and its events name the players by id so a timeline
+   * entry opens the same panel a face does.
+   */
+  const events = fm?.events ?? [];
+  const stats = fm?.stats ?? [];
+
   const tabs = [
-    (hasPitch || fm) && { id: "lineup" as const, label: "라인업" },
-    detail.events.length > 0 && { id: "events" as const, label: "경기 기록" },
-    detail.stats.length > 0 && { id: "stats" as const, label: "통계" },
+    (hasPitch || fm?.lineup) && { id: "lineup" as const, label: "라인업" },
+    events.length > 0 && { id: "events" as const, label: "경기 기록" },
+    stats.length > 0 && { id: "stats" as const, label: "통계" },
   ].filter((t): t is { id: TabId; label: string } => Boolean(t));
 
   // The chosen tab, or the first one that exists. Holding the choice rather
@@ -307,16 +316,18 @@ export function MatchReport({
                 onOpen={setOpenPlayer}
               />
               <Lineups
-                home={fm?.home ?? null}
-                away={fm?.away ?? null}
+                home={fm?.lineup?.home ?? null}
+                away={fm?.lineup?.away ?? null}
                 homeName={match.home.name}
                 awayName={match.away.name}
                 onOpen={setOpenPlayer}
               />
             </section>
           )}
-          {current === "events" && <Timeline events={detail.events} />}
-          {current === "stats" && <StatBars groups={detail.stats} />}
+          {current === "events" && (
+            <Timeline events={events} onOpen={setOpenPlayer} />
+          )}
+          {current === "stats" && <StatBars groups={stats} />}
         </>
       )}
 

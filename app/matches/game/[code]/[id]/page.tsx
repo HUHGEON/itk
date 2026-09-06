@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { facesFor } from "@/lib/faces";
-import { fotmobLineup } from "@/lib/fotmob";
+import { fotmobReport } from "@/lib/fotmob";
 import { matchDetail, seoul, ymd } from "@/lib/matches";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchReport } from "@/components/matches/MatchReport";
@@ -61,7 +61,7 @@ export default async function Game({ params }: { params: Params }) {
    * it does not are portraits looked up one player at a time, which is the
    * slower path and the one worth avoiding.
    */
-  const fm = await fotmobLineup(detail.match);
+  const fm = await fotmobReport(detail.match);
 
   const squad = (side: "home" | "away") => {
     const l = detail.lineups?.[side];
@@ -72,7 +72,7 @@ export default async function Game({ params }: { params: Params }) {
     }));
   };
   const faces =
-    !fm && detail.lineups
+    !fm?.lineup && detail.lineups
       ? await facesFor([...squad("home"), ...squad("away")])
       : {};
 
