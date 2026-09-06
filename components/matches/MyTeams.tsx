@@ -172,11 +172,26 @@ export function MyTeams() {
         )}
       </div>
       {cards.length > 0 && (
-        // Centred while they fit, scrolling once they do not.
-        <div className="flex snap-x justify-center gap-2.5 overflow-x-auto px-[var(--gutter)] pb-3">
-          {cards.map(([slug, m]) => (
-            <Card key={slug} slug={slug} match={m} />
-          ))}
+        /*
+         * Centred while they fit, scrolling from the start once they do not.
+         *
+         * `justify-center` on the scrolling box itself looks right until the
+         * cards outgrow it, and then it centres the overflow - pushing the
+         * first ones off the left edge where `scrollLeft` cannot reach them.
+         * Measured with seventeen clubs followed: the first card sat 1,311px to
+         * the left of the viewport with the scroll already at zero, so nine of
+         * them could not be seen at all.
+         *
+         * An inner box of max-content width centres itself with auto margins
+         * while it is narrower than the scroller, and its margins collapse to
+         * zero once it is wider - which is exactly the behaviour wanted.
+         */
+        <div className="snap-x overflow-x-auto px-[var(--gutter)] pb-3">
+          <div className="mx-auto flex w-max gap-2.5">
+            {cards.map(([slug, m]) => (
+              <Card key={slug} slug={slug} match={m} />
+            ))}
+          </div>
         </div>
       )}
       {cards.length === 0 && loading && (
