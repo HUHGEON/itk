@@ -102,6 +102,58 @@ export interface Match {
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
 /**
+ * Whether this browser has been refused by the source.
+ *
+ * Once one call has failed there is no reason to keep trying the direct route
+ * on every poll: the refusal is about who is asking, not which fixture. The
+ * flag lives for the page's lifetime and costs one failed request to set.
+ */
+let blocked = false;
+
+/**
+ * Fetches from the fixture source, through this project if it has to.
+ *
+ * On the server there is nothing to work around. In a browser the direct call
+ * is tried first, because it costs this project nothing, and the proxy is only
+ * used once the direct one has been refused.
+ */
+async function espnFetch(
+  url: string,
+  init?: RequestInit,
+): Promise<Response | null> {
+  const viaProxy = () => {
+    const rest = url.slice(ESPN.length + 1);
+    return fetch(`/api/espn/${rest}`, init);
+  };
+
+  if (typeof window === "undefined") {
+    try {
+      const res = await fetch(url, init);
+      return res.ok ? res : null;
+    } catch {
+      return null;
+    }
+  }
+
+  if (!blocked) {
+    try {
+      const res = await fetch(url, init);
+      if (res.ok) return res;
+      blocked = true;
+    } catch {
+      blocked = true;
+    }
+  }
+  try {
+    const res = await viaProxy();
+    return res.ok ? res : null;
+  } catch {
+    return null;
+  }
+}
+
+
+/**
  * Everything on these pages is Korean time, wherever the code is running.
  *
  * The site is read from Korea and rendered on servers set to UTC, which are
@@ -320,12 +372,12 @@ async function fetchOne(
   signal?: AbortSignal,
 ): Promise<Match[]> {
   try {
-    const res = await fetch(`${ESPN}/${code}/scoreboard?dates=${date}`, {
+    const res = await espnFetch(`${ESPN}/${code}/scoreboard?dates=${date}`, {
       signal,
       // Live scores must not be served from a cache.
       cache: "no-store",
     });
-    if (!res.ok) return [];
+    if (!res) return [];
     const json = (await res.json()) as { events?: unknown[] };
     return (json.events ?? [])
       .map((e) => toMatch(e, code))
@@ -492,11 +544,11 @@ export async function matchesForTeam(
   const lists = await Promise.all(
     COMPETITIONS.map(async (c) => {
       try {
-        const res = await fetch(
+        const res = await espnFetch(
           `${ESPN}/${c.code}/scoreboard?dates=${span}`,
-          { signal, next: { revalidate: 120 } },
+          { signal, next: { revalidate: 120 } } as RequestInit,
         );
-        if (!res.ok) return [];
+        if (!res) return [];
         const json = (await res.json()) as { events?: unknown[] };
         return (json.events ?? [])
           .map((e) => toMatch(e, c.code))
@@ -838,6 +890,21 @@ export function toDetail(
   };
 }
 
+/** The summary, through the fallback route if the browser has been refused. */
+export async function fetchSummary(
+  code: string,
+  id: string,
+  init?: RequestInit,
+): Promise<unknown | null> {
+  const res = await espnFetch(summaryUrl(code, id), init);
+  if (!res) return null;
+  try {
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
 /** The summary endpoint for one match. Open, keyless, same host as the board. */
 export function summaryUrl(code: string, id: string): string {
   return `${ESPN}/${code}/summary?event=${id}`;
@@ -921,11 +988,11 @@ export async function nextForClubs(
   const lists = await Promise.all(
     COMPETITIONS.map(async (c) => {
       try {
-        const res = await fetch(`${ESPN}/${c.code}/scoreboard?dates=${span}`, {
+        const res = await espnFetch(`${ESPN}/${c.code}/scoreboard?dates=${span}`, {
           signal,
           cache: "no-store",
         });
-        if (!res.ok) return [];
+        if (!res) return [];
         const json = (await res.json()) as { events?: unknown[] };
         return (json.events ?? [])
           .map((e) => toMatch(e, c.code))

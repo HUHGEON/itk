@@ -5,7 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   parseSummary,
   seoul,
-  summaryUrl,
+  fetchSummary,
   type MatchDetail,
   type MatchSide,
 } from "@/lib/matches";
@@ -82,12 +82,12 @@ export function MatchReport({
        * that never gained the goal that caused it.
        */
       try {
-        const res = await fetch(summaryUrl(match.code, match.id), {
+        const json = await fetchSummary(match.code, match.id, {
           signal: ac.signal,
           cache: "no-store",
         });
-        if (res.ok) {
-          const next = parseSummary(await res.json(), match.code, match.id);
+        if (json) {
+          const next = parseSummary(json, match.code, match.id);
           if (next && !ac.signal.aborted) setDetail(next);
         }
       } catch {
