@@ -101,12 +101,30 @@ export interface FmStatGroup {
   rows: FmStat[];
 }
 
+export interface FmMeeting {
+  date: number;
+  competition: string | null;
+  home: string;
+  away: string;
+  /** "2 - 1". */
+  score: string;
+  /** From this match's home side's point of view. */
+  outcome: "home" | "away" | "draw";
+}
+
+export interface FmHeadToHead {
+  /** Wins for this match's home side, draws, wins for the away side. */
+  record: [number, number, number];
+  meetings: FmMeeting[];
+}
+
 export interface FmReport {
   /** This source's match id, so the browser can poll the same match. */
   id: number;
   lineup: FmLineup | null;
   events: FmEvent[];
   stats: FmStatGroup[];
+  h2h: FmHeadToHead | null;
 }
 
 /**
@@ -771,6 +789,7 @@ export async function fotmobReportById(id: number): Promise<FmReport | null> {
       lineup: home && away ? { home, away } : null,
       events: buildEvents(json),
       stats: buildStats(json),
+      h2h: buildH2H(json, home?.name ?? ""),
     };
   } catch {
     return null;
@@ -786,4 +805,72 @@ export async function fotmobReport(match: Match): Promise<FmReport | null> {
   );
   if (!id) return null;
   return fotmobReportById(id);
+}
+
+
+/* -------------------------------------------------------------------------
+ * The two clubs' history.
+ * ----------------------------------------------------------------------- */
+
+interface RawMeeting {
+  time?: { utcTime?: string };
+  league?: { name?: string };
+  home?: { name?: string };
+  away?: { name?: string };
+  status?: { finished?: boolean; scoreStr?: string };
+}
+
+/**
+ * Every previous meeting, and the record between them.
+ *
+ * This arrives inside the report that is already being fetched, so it costs
+ * nothing extra. The summary is a triple, and it is worth saying which way
+ * round: counted by hand against thirty-eight finished meetings of one fixture,
+ * [7, 11, 20] was seven wins for the side at home in *this* match, eleven
+ * draws, and twenty for the side away in it. Not home-and-away as played, which
+ * is what it looks like at first glance.
+ */
+function buildH2H(json: unknown, homeName: string): FmHeadToHead | null {
+  const h2h = (json as {
+    content?: { h2h?: { summary?: number[]; matches?: RawMeeting[] } };
+  }).content?.h2h;
+  if (!h2h?.matches?.length) return null;
+
+  const meetings: FmMeeting[] = [];
+  for (const m of h2h.matches) {
+    if (!m.status?.finished) continue;
+    const score = m.status.scoreStr ?? "";
+    const parts = score.split(" - ").map(Number);
+    if (parts.length !== 2 || parts.some((n) => !Number.isFinite(n))) continue;
+    const [a, b] = parts;
+    const wasHome = m.home?.name ?? "";
+    // Which of *this* match's two clubs won, not which side of that one.
+    const winner = a === b ? null : a > b ? wasHome : (m.away?.name ?? "");
+    meetings.push({
+      date: Date.parse(m.time?.utcTime ?? "") || 0,
+      competition: m.league?.name ?? null,
+      home: wasHome,
+      away: m.away?.name ?? "",
+      score,
+      outcome:
+        winner === null
+          ? "draw"
+          : clubScore(winner, homeName) > 0
+            ? "home"
+            : "away",
+    });
+  }
+  if (meetings.length === 0) return null;
+  meetings.sort((x, y) => y.date - x.date);
+
+  const s = h2h.summary;
+  const record: [number, number, number] =
+    Array.isArray(s) && s.length === 3
+      ? [s[0], s[1], s[2]]
+      : [
+          meetings.filter((m) => m.outcome === "home").length,
+          meetings.filter((m) => m.outcome === "draw").length,
+          meetings.filter((m) => m.outcome === "away").length,
+        ];
+  return { record, meetings };
 }

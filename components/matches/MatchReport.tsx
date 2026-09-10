@@ -16,6 +16,7 @@ import { spots } from "@/lib/pitch";
 import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
+import { HeadToHead } from "./HeadToHead";
 import { Pitch, type PitchPlayer } from "./Pitch";
 import { PlayerCard } from "./PlayerCard";
 
@@ -33,7 +34,7 @@ import { PlayerCard } from "./PlayerCard";
  */
 const INTERVAL_MS = 5000;
 
-type TabId = "lineup" | "events" | "stats";
+type TabId = "lineup" | "events" | "stats" | "h2h";
 
 /** When each player was replaced, read off the timeline. */
 function subMinutes(events: MatchDetail["events"]): Record<string, string> {
@@ -209,6 +210,7 @@ export function MatchReport({
     (hasPitch || fm?.lineup) && { id: "lineup" as const, label: "라인업" },
     events.length > 0 && { id: "events" as const, label: "경기 기록" },
     stats.length > 0 && { id: "stats" as const, label: "통계" },
+    fm?.h2h && { id: "h2h" as const, label: "역대 전적" },
   ].filter((t): t is { id: TabId; label: string } => Boolean(t));
 
   // The chosen tab, or the first one that exists. Holding the choice rather
@@ -355,6 +357,9 @@ export function MatchReport({
             <Timeline events={events} onOpen={setOpenPlayer} />
           )}
           {current === "stats" && <StatBars groups={stats} />}
+          {current === "h2h" && fm?.h2h && (
+            <HeadToHead h2h={fm.h2h} home={match.home} away={match.away} />
+          )}
         </>
       )}
 
