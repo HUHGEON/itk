@@ -102,30 +102,37 @@ export interface Match {
 const ESPN = "https://site.api.espn.com/apis/site/v2/sports/soccer";
 
 /**
- * Whether this browser has been refused by the source.
+ * Whether this browser has been refused by the source, decided once.
  *
- * Once one call has failed there is no reason to keep trying the direct route
- * on every poll: the refusal is about who is asking, not which fixture. The
- * flag lives for the page's lifetime and costs one failed request to set.
+ * A day's board asks twenty-three competitions at the same instant, so a naive
+ * "try direct, fall back on failure" made twenty-three doomed requests before
+ * any of them could record that the door was shut - twenty-three network
+ * errors in the console on every first load behind a block. One request decides
+ * it now, and the other twenty-two wait for that answer rather than repeating
+ * it.
  */
-let blocked = false;
+let gate: Promise<boolean> | null = null;
+
+async function directWorks(url: string, init?: RequestInit): Promise<boolean> {
+  try {
+    const res = await fetch(url, init);
+    return res.ok;
+  } catch {
+    return false;
+  }
+}
 
 /**
  * Fetches from the fixture source, through this project if it has to.
  *
  * On the server there is nothing to work around. In a browser the direct call
- * is tried first, because it costs this project nothing, and the proxy is only
- * used once the direct one has been refused.
+ * is tried once, because it costs this project nothing, and the proxy carries
+ * everything after that if the direct one was refused.
  */
 async function espnFetch(
   url: string,
   init?: RequestInit,
 ): Promise<Response | null> {
-  const viaProxy = () => {
-    const rest = url.slice(ESPN.length + 1);
-    return fetch(`/api/espn/${rest}`, init);
-  };
-
   if (typeof window === "undefined") {
     try {
       const res = await fetch(url, init);
@@ -135,17 +142,20 @@ async function espnFetch(
     }
   }
 
-  if (!blocked) {
+  gate ??= directWorks(url, init);
+  const ok = await gate;
+
+  if (ok) {
     try {
       const res = await fetch(url, init);
       if (res.ok) return res;
-      blocked = true;
     } catch {
-      blocked = true;
+      // Fall through to the proxy: the door closed mid-session.
+      gate = Promise.resolve(false);
     }
   }
   try {
-    const res = await viaProxy();
+    const res = await fetch(`/api/espn/${url.slice(ESPN.length + 1)}`, init);
     return res.ok ? res : null;
   } catch {
     return null;
