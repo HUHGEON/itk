@@ -64,7 +64,16 @@ export default async function Team({ params }: { params: Params }) {
    */
   const [all, news] = await Promise.all([
     matchesForTeam(slug),
-    getFeed({ teams: [slug], limit: 5, tieredOnly: false }).catch(() => []),
+    /*
+     * The same bar the feed sets for itself.
+     *
+     * Dropping it to include everything filled this section with untranslated
+     * English headlines: measured, five rows and not one Korean title, against
+     * forty out of forty on the feed page. The stories that carry a ranked
+     * reporter are the ones that get translated, so asking for less is asking
+     * for a worse section, not a fuller one.
+     */
+    getFeed({ teams: [slug], limit: 5, tieredOnly: true }).catch(() => []),
   ]);
   const now = Date.now();
   const played = all.filter((m) => m.state === "post");
