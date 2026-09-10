@@ -2,9 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
+import { getFeed } from "@/lib/feed";
 import { matchesForTeam, type Match } from "@/lib/matches";
 import { loadTeams } from "@/lib/registry";
 import { MatchRail } from "@/components/matches/MatchRail";
+import { TeamNews } from "@/components/matches/TeamNews";
 import { TeamSeason } from "@/components/matches/TeamSeason";
 import { TeamCrest } from "@/components/TeamCrest";
 import { MEASURE } from "@/components/matches/Measure";
@@ -53,7 +55,17 @@ export default async function Team({ params }: { params: Params }) {
   const t = club(slug);
   if (!t) notFound();
 
-  const all = await matchesForTeam(slug);
+  /*
+   * Fixtures and news, fetched together.
+   *
+   * Someone on a club's page is thinking about that club, not about which half
+   * of the site they are on. The two ran in parallel because neither depends on
+   * the other and the page should not wait twice.
+   */
+  const [all, news] = await Promise.all([
+    matchesForTeam(slug),
+    getFeed({ teams: [slug], limit: 5, tieredOnly: false }).catch(() => []),
+  ]);
   const now = Date.now();
   const played = all.filter((m) => m.state === "post");
   const upcoming = all.filter((m) => m.state !== "post" && m.kickoff >= now - 3 * 3600_000);
@@ -95,6 +107,8 @@ export default async function Team({ params }: { params: Params }) {
       </header>
 
       <TeamSeason slug={slug} played={played} upcoming={upcoming} live={live} />
+
+      <TeamNews rows={news} slug={slug} name={t.ko} now={Date.now()} />
     </Shell>
   );
 }
