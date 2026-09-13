@@ -169,10 +169,17 @@ export function Shell({
         {/* The way back to the front page, at the bottom of the rail rather
             than in the header: someone who opens this daily is here for the
             stories, and a nav item above them would sell the site to someone
-            already using it. */}
+            already using it.
+
+            `?intro` because the root now goes straight to the feed for anyone
+            who has been here before - this is the deliberate way back in, and
+            without the parameter it would bounce straight to where it started.
+            Not prefetched: it is the least-clicked link on the page and it
+            was pulling the whole introduction's chunk down on every load. */}
         <div className="mt-auto border-t border-border px-[var(--gutter)] py-1.5">
           <Link
-            href="/"
+            href="/?intro=1"
+            prefetch={false}
             /* A row of its own at the foot of the rail, so it gets a row's
                height rather than the height of eleven-point text. */
             className="-mx-1 flex items-center rounded-[4px] px-1 py-2 text-[11.5px] text-faint transition-colors hover:bg-surface-2/50 hover:text-muted"

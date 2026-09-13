@@ -8,5 +8,5 @@ import { permanentRedirect } from "next/navigation";
  * the right place rather than on a 404.
  */
 export default function AboutMoved(): never {
-  permanentRedirect("/");
+  permanentRedirect("/?intro=1");
 }
