@@ -140,7 +140,7 @@ function Token({
         <span className="tnum shrink-0 text-[10px] font-semibold text-white/60">
           {p.jersey}
         </span>
-        <span className="truncate text-[10.5px] leading-[1.4] font-medium text-white sm:text-[11.5px]">
+        <span className="truncate text-[10.5px] leading-[1.4] font-semibold text-white sm:text-[11.5px]">
           {short(p.name)}
         </span>
       </span>

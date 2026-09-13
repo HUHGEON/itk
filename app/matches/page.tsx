@@ -290,7 +290,7 @@ function Scope({
       data-press
       className={`tnum rounded-[4px] border px-2.5 py-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
         on
-          ? "border-accent/50 bg-accent/10 font-medium text-accent"
+          ? "border-accent/50 bg-accent/10 font-semibold text-accent"
           : "border-border text-muted hover:border-border-strong hover:text-text"
       }`}
     >

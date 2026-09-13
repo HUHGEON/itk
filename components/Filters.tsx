@@ -190,7 +190,7 @@ export function Filters({
           five strengths rather than five unrelated colours. Labelled by what
           they rank, not by the abstraction: "신뢰도" of what was never said. */}
       <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
-        <span className="shrink-0 pr-1.5 text-[11px] font-medium tracking-wide text-muted">
+        <span className="shrink-0 pr-1.5 text-[11px] font-semibold tracking-wide text-muted">
           기자 티어
         </span>
         {ALL_TIERS.map((t) => {
@@ -206,7 +206,7 @@ export function Filters({
                 toggleIn("tier", key);
               }}
               aria-pressed={on}
-              className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-medium transition-colors"
+              className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-semibold transition-colors"
               // Unselected chips still carry their hue: the rail is where you
               // learn which colour means which tier, and five identical grey
               // pills teach nothing. Dimming with opacity rather than mixing
@@ -234,7 +234,7 @@ export function Filters({
 
       {selectedTiers.length > 0 && (
         <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
-          <span className="shrink-0 pr-1 text-[11px] font-medium tracking-wide text-muted">
+          <span className="shrink-0 pr-1 text-[11px] font-semibold tracking-wide text-muted">
             이름
           </span>
           {tierReporters.length === 0 ? (
@@ -256,7 +256,7 @@ export function Filters({
                   title={`${j.en}${j.outlet ? ` · ${j.outlet}` : ""}`}
                   className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
                     on
-                      ? "border-accent/50 bg-accent/10 font-medium text-accent"
+                      ? "border-accent/50 bg-accent/10 font-semibold text-accent"
                       : "border-border text-muted hover:border-border-strong hover:text-text"
                   }`}
                 >
@@ -321,7 +321,7 @@ export function Filters({
                   aria-pressed={on}
                   className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
                     on
-                      ? "border-accent/50 bg-accent/10 font-medium text-accent"
+                      ? "border-accent/50 bg-accent/10 font-semibold text-accent"
                       : "border-border text-muted hover:border-border-strong hover:text-text"
                   }`}
                 >
@@ -349,7 +349,7 @@ export function Filters({
                       toggleIn("team", t.slug);
                     }}
                     title="선택 해제"
-                    className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-medium text-accent"
+                    className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
                   >
                     <TeamCrest team={t} size={16} />
                     {t.ko}

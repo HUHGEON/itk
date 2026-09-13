@@ -147,7 +147,7 @@ export function MatchRow({
           above, so the hour is the only part missing.
         */}
         {done && (
-          <span className="text-[10.5px] font-medium text-faint">종료</span>
+          <span className="text-[10.5px] font-semibold text-faint">종료</span>
         )}
       </div>
 

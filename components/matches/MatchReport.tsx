@@ -247,7 +247,7 @@ export function MatchReport({
         <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px]">
           <Link
             href={`/matches?comp=${match.code}`}
-            className="font-medium text-muted underline-offset-4 hover:text-text hover:underline"
+            className="font-semibold text-muted underline-offset-4 hover:text-text hover:underline"
           >
             {match.competition}
           </Link>
@@ -293,7 +293,7 @@ export function MatchReport({
               </span>
             )}
             {done && (
-              <span className="text-[11px] font-medium text-faint">경기 종료</span>
+              <span className="text-[11px] font-semibold text-faint">경기 종료</span>
             )}
           </div>
 

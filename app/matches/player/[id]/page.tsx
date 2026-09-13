@@ -109,7 +109,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
             {p.facts.map((f) => (
               <div key={f.label} className="min-w-0">
                 <dt className="text-[11px] text-faint">{f.label}</dt>
-                <dd className="truncate text-[13.5px] font-medium text-text">
+                <dd className="truncate text-[13.5px] font-semibold text-text">
                   {f.value}
                 </dd>
               </div>

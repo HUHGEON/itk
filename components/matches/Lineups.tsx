@@ -76,7 +76,7 @@ function Card({
         <span className="tnum shrink-0 text-[10.5px] text-faint">
           {p.jersey}
         </span>
-        <span className="truncate text-[12px] font-medium text-text">
+        <span className="truncate text-[12px] font-semibold text-text">
           {p.name.split(" ").slice(-1)[0]}
         </span>
       </span>

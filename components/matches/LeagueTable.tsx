@@ -76,17 +76,17 @@ export function LeagueTable({
         <thead>
           <tr className="border-b border-border text-[11px] text-faint">
             <th className="w-2 py-2" aria-hidden />
-            <th className="w-8 py-2 text-left font-medium">#</th>
-            <th className="py-2 text-left font-medium">구단</th>
-            <th className="w-9 py-2 text-right font-medium">경기</th>
-            <th className="w-8 py-2 text-right font-medium">승</th>
-            <th className="w-8 py-2 text-right font-medium">무</th>
-            <th className="w-8 py-2 text-right font-medium">패</th>
-            <th className="hidden w-12 py-2 text-right font-medium sm:table-cell">
+            <th className="w-8 py-2 text-left font-semibold">#</th>
+            <th className="py-2 text-left font-semibold">구단</th>
+            <th className="w-9 py-2 text-right font-semibold">경기</th>
+            <th className="w-8 py-2 text-right font-semibold">승</th>
+            <th className="w-8 py-2 text-right font-semibold">무</th>
+            <th className="w-8 py-2 text-right font-semibold">패</th>
+            <th className="hidden w-12 py-2 text-right font-semibold sm:table-cell">
               득실
             </th>
-            <th className="w-10 py-2 text-right font-medium">차</th>
-            <th className="w-11 py-2 text-right font-medium">승점</th>
+            <th className="w-10 py-2 text-right font-semibold">차</th>
+            <th className="w-11 py-2 text-right font-semibold">승점</th>
           </tr>
         </thead>
         <tbody>

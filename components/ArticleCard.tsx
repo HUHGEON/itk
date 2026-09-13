@@ -137,7 +137,7 @@ export function ArticleCard({
                 <span
                   key={t.slug}
                   title={t.ko}
-                  className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-3 p-[2px] text-[11px] font-medium text-text sm:pr-2.5"
+                  className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-3 p-[2px] text-[11px] font-semibold text-text sm:pr-2.5"
                 >
                   <span className="flex size-[18px] items-center justify-center rounded-full bg-surface">
                     <TeamCrest team={t} size={15} />
@@ -156,7 +156,7 @@ export function ArticleCard({
               // covers the Premier League, and that is the category it sits
               // under. Without this the row simply had nothing.
               // Same weight as a club chip — it answers the same question.
-              <span className="hidden shrink-0 rounded-full border border-border-strong bg-surface-3 px-2.5 py-[3px] text-[11px] font-medium text-text sm:inline">
+              <span className="hidden shrink-0 rounded-full border border-border-strong bg-surface-3 px-2.5 py-[3px] text-[11px] font-semibold text-text sm:inline">
                 {leagueLabel}
               </span>
             )
@@ -249,7 +249,7 @@ export function ArticleCard({
             href={row.url}
             target="_blank"
             rel="noopener noreferrer"
-            className="mt-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-medium text-accent underline-offset-4 hover:underline"
+            className="mt-3.5 inline-flex items-center gap-1.5 text-[12.5px] font-semibold text-accent underline-offset-4 hover:underline"
           >
             원문 보기
             <svg

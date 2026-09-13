@@ -526,7 +526,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
                         key={t}
                         type="button"
                         onClick={() => setMaxTier(t)}
-                        className={`flex-1 rounded-[4px] border py-1.5 text-[11px] font-medium ${
+                        className={`flex-1 rounded-[4px] border py-1.5 text-[11px] font-semibold ${
                           maxTier === t
                             ? "border-accent bg-accent/15 text-accent"
                             : "border-border text-muted hover:text-text"
@@ -681,7 +681,7 @@ export function DiscordPanel({ teams }: { teams: Team[] }) {
           type="button"
           onClick={() => setListOpen(true)}
           disabled={!subs || subs.length === 0}
-          className="flex-1 rounded-[4px] border border-border bg-surface-2 px-3 py-1.5 text-[12px] font-medium text-text transition-colors hover:border-border-strong disabled:opacity-40"
+          className="flex-1 rounded-[4px] border border-border bg-surface-2 px-3 py-1.5 text-[12px] font-semibold text-text transition-colors hover:border-border-strong disabled:opacity-40"
         >
           목록 보기
         </button>

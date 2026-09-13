@@ -60,7 +60,7 @@ export function ScaleStrip({
           <div key={s.label} data-cell className="min-w-0">
             <p className="tnum text-[2.4rem] leading-none font-bold tracking-tight text-text sm:text-5xl">
               <span data-n={s.value}>{s.value}</span>
-              <span className="ml-0.5 text-[1.1rem] font-medium text-muted sm:text-2xl">
+              <span className="ml-0.5 text-[1.1rem] font-semibold text-muted sm:text-2xl">
                 {s.unit}
               </span>
             </p>

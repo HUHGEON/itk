@@ -102,7 +102,7 @@ export function TierLadder({
             {tiers.map((t) => (
               <li key={t.tier} className="flex items-center gap-3.5">
                 <span
-                  className="w-[52px] shrink-0 text-[12.5px] font-medium"
+                  className="w-[52px] shrink-0 text-[12.5px] font-semibold"
                   style={{ color: tierColor(t.tier) }}
                 >
                   {tierLabel(t.tier)}

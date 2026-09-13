@@ -405,7 +405,7 @@ export function PitchSequence({ teams }: { teams: Team[] }) {
           ref={prompt}
           className="pointer-events-none absolute inset-x-0 bottom-[7vh] z-30 px-[var(--gutter)] text-center opacity-0"
         >
-          <p className="text-[14px] font-medium text-white/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)] sm:text-[15.5px]">
+          <p className="text-[14px] font-semibold text-white/85 drop-shadow-[0_2px_14px_rgba(0,0,0,0.95)] sm:text-[15.5px]">
             보고 싶은 팀을 고르면 그 팀 기사만 모아 보여줍니다
           </p>
         </div>

@@ -141,7 +141,7 @@ function Row({
       href={href}
       aria-current={on ? "page" : undefined}
       className={`flex min-w-0 flex-1 items-center py-2 transition-colors ${
-        on ? "font-medium text-accent" : "text-muted group-hover:text-text"
+        on ? "font-semibold text-accent" : "text-muted group-hover:text-text"
       }`}
     >
       {children}

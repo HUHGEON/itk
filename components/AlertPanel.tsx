@@ -186,7 +186,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
         <button
           type="button"
           onClick={requestPermission}
-          className="mt-2.5 w-full rounded-[4px] border border-accent/45 px-3 py-1.5 text-[12px] font-medium text-accent transition-colors hover:bg-accent/10"
+          className="mt-2.5 w-full rounded-[4px] border border-accent/45 px-3 py-1.5 text-[12px] font-semibold text-accent transition-colors hover:bg-accent/10"
         >
           {permission === "denied"
             ? "브라우저 설정에서 알림 허용 필요"

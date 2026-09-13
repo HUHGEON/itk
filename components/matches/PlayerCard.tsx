@@ -157,7 +157,7 @@ export function PlayerCard({
                 {player.facts.map((f) => (
                   <div key={f.label} className="min-w-0">
                     <dt className="text-[10.5px] text-faint">{f.label}</dt>
-                    <dd className="truncate text-[13px] font-medium text-text">
+                    <dd className="truncate text-[13px] font-semibold text-text">
                       {f.value}
                     </dd>
                   </div>
