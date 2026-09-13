@@ -139,7 +139,55 @@ body {
   font-feature-settings: "tnum";
 }
 
-/* Chip rails scroll horizontally without showing a bar. */
+/*
+ * Scrollbars that take the colour of whatever they are sitting on.
+ *
+ * Left alone the browser draws its own, and its own is a cool grey bar against
+ * a warm near-black page - the same mismatch the palette note above was written
+ * to avoid. Measured in Chrome 153: `scrollbar-color` and `scrollbar-width` are
+ * both supported, and `::-webkit-scrollbar` paints nothing at all on macOS, so
+ * the standard properties are the only ones worth writing here.
+ *
+ * The track is transparent rather than a named colour. A scroller shows up on
+ * the page (#0a0908), in the drawer and in a dialog (#131211), on the player
+ * sheet (#0a0908) and inside a #1c1a18 box - naming the track would mean naming
+ * five of them and repainting on every new panel, and one wrong guess reads as
+ * a stripe down the side. Transparent is correct in all five by construction,
+ * which is what "matching the surface" actually needs to mean.
+ *
+ * The thumb is one colour because it has to clear the same bar on all of them:
+ * #6f655a is 3.06:1 on the lightest surface a scroller appears on and 3.48:1 on
+ * the page, so it stays a visible control rather than a smudge. It sits on the
+ * palette's warm hue (~31 deg), and it is deliberately not the accent - tier is
+ * the only thing on this page that earns colour, and a scrollbar is furniture.
+ *
+ * `scrollbar-color` inherits and `scrollbar-width` does not (measured, not
+ * assumed), which is why one is set once on the root and the other on `*`.
+ */
+:root {
+  --scroll-thumb: #6f655a;
+  scrollbar-color: var(--scroll-thumb) transparent;
+}
+
+* {
+  scrollbar-width: thin;
+}
+
+/*
+ * The gutter is held open whether or not the bar is there.
+ *
+ * Opening a dialog locks the page behind it, and on a platform with classic
+ * scrollbars that takes the page's bar away and shifts the whole layout a few
+ * pixels sideways underneath the modal. Reserving the space costs nothing where
+ * scrollbars overlay the content - measured here: 1200px of client width before
+ * and after.
+ */
+html {
+  scrollbar-gutter: stable;
+}
+
+/* Chip rails scroll horizontally without showing a bar: the card cut off at the
+   edge is the affordance, and a bar under a row of chips is noise. */
 .no-scrollbar {
   scrollbar-width: none;
 }
