@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { matchesOn, type Match } from "@/lib/matches";
+import { ymd, type Match } from "@/lib/matches";
 
 /**
  * Keeps a day's matches current while anyone is looking at them.
@@ -29,12 +29,29 @@ export function useLiveMatches(date: Date, initial: Match[]) {
   // would linger until the first poll returned.
   useEffect(() => setMatches(initial), [initial, day]);
 
+  /*
+   * One request for the day, not one per competition.
+   *
+   * `matchesOn` asks the source once per competition and once per UTC day on
+   * either side of the Korean one, so calling it here meant 23 requests every
+   * five seconds from every open tab. Measured on production before this
+   * changed: 69 requests in twelve seconds, roughly 900ms each, with the board
+   * still settling ten seconds after the page had painted.
+   *
+   * The same work now happens once behind /api/board and is held at the edge
+   * for the length of one interval, so readers share a single fan-out.
+   */
   const refresh = useCallback(async () => {
     abort.current?.abort();
     const ac = new AbortController();
     abort.current = ac;
     try {
-      const next = await matchesOn(date, ac.signal);
+      const res = await fetch(`/api/board?d=${ymd(date)}`, {
+        signal: ac.signal,
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const next = (await res.json()) as Match[];
       if (!ac.signal.aborted && next.length) setMatches(next);
     } catch {
       // A failed poll is not worth surfacing: the previous scoreline is still

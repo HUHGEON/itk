@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { nextForClubs, seoul, type Match } from "@/lib/matches";
+import { seoul, type Match } from "@/lib/matches";
 import { useFavourites } from "@/lib/favourites";
 import { markGoal } from "@/lib/motion";
 import { ScrollRail } from "@/components/ScrollRail";
@@ -18,7 +18,17 @@ import { ScrollRail } from "@/components/ScrollRail";
  * A club in play is pulled to the front and keeps ticking, because a live match
  * is the only thing here that changes while it is being looked at.
  */
-const INTERVAL_MS = 5000;
+/*
+ * Five seconds while a followed club is playing, a minute when none is.
+ *
+ * The strip used to ask every five seconds either way, and the comment on the
+ * effect below claimed otherwise - so a page left open on a Tuesday afternoon
+ * was re-fetching a fortnight of fixtures twelve times a minute to be told the
+ * same kick-off times again. Nothing here moves between matches except a match
+ * starting, and a minute is soon enough to notice that.
+ */
+const LIVE_MS = 5000;
+const IDLE_MS = 60_000;
 const WEEKDAY = ["일", "월", "화", "수", "목", "금", "토"];
 
 /** "오늘 22:00", "내일 04:00", "9.13 (일) 23:15". */
@@ -134,26 +144,60 @@ export function MyTeams() {
       return;
     }
     const ac = new AbortController();
-    let timer: ReturnType<typeof setInterval> | null = null;
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    let stopped = false;
 
-    const load = async () => {
+    /*
+     * One request, not twenty-three.
+     *
+     * `nextForClubs` sweeps a fortnight of every competition it knows about,
+     * which from the browser was 23 calls per refresh. The same sweep runs on
+     * the server behind this route, in parallel and cached at the edge for the
+     * length of one interval, so the strip costs a single fetch.
+     */
+    const load = async (): Promise<Record<string, Match> | undefined> => {
       try {
-        const next = await nextForClubs(teams, ac.signal);
+        const res = await fetch(
+          `/api/board/next?teams=${encodeURIComponent(teams.join(","))}`,
+          { signal: ac.signal, cache: "no-store" },
+        );
+        if (!res.ok) return undefined;
+        const next = (await res.json()) as Record<string, Match>;
         if (!ac.signal.aborted) setByClub(next);
+        return next;
       } catch {
         // Keep whatever is on screen.
+        return undefined;
       }
     };
 
-    setLoading(true);
-    load().finally(() => !ac.signal.aborted && setLoading(false));
+    const schedule = (next: Record<string, Match> | undefined) => {
+      if (stopped) return;
+      const live = next
+        ? Object.values(next).some((m) => m.state === "in")
+        : false;
+      timer = setTimeout(tick, live ? LIVE_MS : IDLE_MS);
+    };
 
-    timer = setInterval(() => {
-      if (document.visibilityState === "visible") load();
-    }, INTERVAL_MS);
+    const tick = async () => {
+      if (document.visibilityState !== "visible") {
+        schedule(undefined);
+        return;
+      }
+      schedule(await load());
+    };
+
+    setLoading(true);
+    void load()
+      .then((next) => {
+        if (!ac.signal.aborted) setLoading(false);
+        schedule(next);
+      });
+
     return () => {
+      stopped = true;
       ac.abort();
-      if (timer) clearInterval(timer);
+      if (timer) clearTimeout(timer);
     };
     // Joined so the effect does not restart on every render of the same list.
   }, [ready, teams.join(",")]);
