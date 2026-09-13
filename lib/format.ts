@@ -116,3 +116,37 @@ export function timeAgo(ts: number, now = Date.now()): string {
     day: "numeric",
   });
 }
+
+/**
+ * Splits the run of emoji a headline opens with from the headline itself.
+ *
+ * These come from the reporters, not from us. A Fabrizio Romano post opens with
+ * the two club colours and a star, a signing with a siren and a flag, and the
+ * feed shows them at headline size and headline weight - so the loudest thing
+ * on a row is three saturated circles and the Korean sentence is what the eye
+ * gets to second. Measured on a page of forty: nine headlines open this way and
+ * eleven carry emoji somewhere, and because one reporter files most of them the
+ * run clusters - five of the first seven rows on screen.
+ *
+ * Nothing is thrown away. The run is returned separately so it can be set small
+ * and quiet beside the sentence it decorates, which is the size it was doing
+ * its job at on the site it was written for.
+ *
+ * The pattern deliberately does not use \p{Emoji}, which matches the digits and
+ * the hash sign: "2026년" would lose its year.
+ */
+const LEADING_EMOJI =
+  /^\s*(?:[\p{Extended_Pictographic}\u{1F1E6}-\u{1F1FF}\u{1F3FB}-\u{1F3FF}️‍⃣]+\s*)+/u;
+
+export function splitLeadingEmoji(title: string): {
+  mark: string;
+  text: string;
+} {
+  const m = title.match(LEADING_EMOJI);
+  if (!m) return { mark: "", text: title };
+  const text = title.slice(m[0].length);
+  // A headline that is nothing but emoji keeps them: demoting the whole line to
+  // a decoration would leave the row with no headline at all.
+  if (!text.trim()) return { mark: "", text: title };
+  return { mark: m[0].trim(), text };
+}

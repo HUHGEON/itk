@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { FeedRow } from "@/lib/feed";
-import { timeAgo, tierLabel, tierStyle } from "@/lib/format";
+import { splitLeadingEmoji, tierLabel, tierStyle, timeAgo } from "@/lib/format";
 
 /**
  * The club's latest stories, under its fixtures.
@@ -60,8 +60,27 @@ export function TeamNews({
                   </span>
                 )}
                 <span className="min-w-0 flex-1">
+                  {/* Same treatment as the feed: the reporters' own emoji are
+                      kept but set small, so the sentence leads the line. */}
                   <span className="line-clamp-2 text-[13px] leading-[1.45] text-text">
-                    {r.titleKo ?? r.title}
+                    {(() => {
+                      const { mark, text } = splitLeadingEmoji(
+                        r.titleKo ?? r.title,
+                      );
+                      return (
+                        <>
+                          {mark && (
+                            <span
+                              aria-hidden
+                              className="mr-1 text-[0.78em] opacity-60"
+                            >
+                              {mark}
+                            </span>
+                          )}
+                          {text}
+                        </>
+                      );
+                    })()}
                   </span>
                   <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-faint">
                     {r.journalistKo && <span>{r.journalistKo}</span>}

@@ -154,6 +154,8 @@ export function ArticleList({
         <ArticleCard key={row.id} row={row} teams={teams} now={now} />
       ))}
 
+      {loading && <LoadingRows />}
+
       <div ref={sentinel} className="px-4 py-5 text-center">
         {done ? (
           <p className="text-[12px] text-muted">
@@ -167,9 +169,7 @@ export function ArticleList({
           >
             불러오지 못했습니다 · 다시 시도
           </button>
-        ) : loading ? (
-          <p className="text-[12px] text-muted">불러오는 중…</p>
-        ) : (
+        ) : loading ? null : (
           <button
             type="button"
             onClick={() => void loadMore()}
@@ -179,6 +179,51 @@ export function ArticleList({
           </button>
         )}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The shape of what is coming, while it comes.
+ *
+ * The next page loads on its own as the end of the list comes into view, and
+ * the only sign of it was the words "불러오는 중…" on one centred line - which
+ * is both a different shape from the rows it is standing in for and a jump when
+ * they replace it. Three rows in the outline of an article row hold the space
+ * instead, so the column keeps its rhythm and the page does not move when the
+ * stories land.
+ *
+ * The widths are uneven on purpose: three identical bars read as a graphic, and
+ * headlines are not all the same length.
+ */
+const SKELETON = [
+  { chip: "7rem", head: "82%", sub: "54%" },
+  { chip: "9rem", head: "68%", sub: "41%" },
+  { chip: "6rem", head: "90%", sub: "60%" },
+];
+
+function LoadingRows() {
+  return (
+    <div aria-hidden className="animate-pulse">
+      {SKELETON.map((r, i) => (
+        <div
+          key={i}
+          className="border-b border-border py-3.5 pr-[var(--gutter)] pl-[var(--gutter)]"
+        >
+          <div
+            className="h-[18px] rounded-[4px] bg-surface-2"
+            style={{ width: r.chip }}
+          />
+          <div
+            className="mt-2.5 h-[15px] rounded-[4px] bg-surface-2"
+            style={{ width: r.head }}
+          />
+          <div
+            className="mt-2 h-[10px] rounded-[4px] bg-surface-2/60"
+            style={{ width: r.sub }}
+          />
+        </div>
+      ))}
     </div>
   );
 }

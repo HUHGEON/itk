@@ -4,7 +4,13 @@ import { useRef, useState } from "react";
 import type { FeedRow } from "@/lib/feed";
 import type { League, Team } from "@/lib/types";
 import { LEAGUE_LABEL } from "@/lib/types";
-import { tierLabel, tierStyle, timeAgo } from "@/lib/format";
+import {
+  splitLeadingEmoji,
+  tierLabel,
+  tierRule,
+  tierStyle,
+  timeAgo,
+} from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { Chevron } from "./icons";
 import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
@@ -58,6 +64,12 @@ export function ArticleCard({
   // resolve at render time — either the row has Korean or it does not.
   const title = row.titleKo ?? row.title;
   const translated = title !== row.title;
+  // The reporters' own emoji, held apart from the sentence they open. See
+  // `splitLeadingEmoji`: they are kept, just not at headline size.
+  const { mark, text: headline } = splitLeadingEmoji(title);
+  // The original sits under the translation for checking, and it opens with the
+  // same run - left alone it put the emoji back at full size one line down.
+  const original = splitLeadingEmoji(row.title);
   const showImage = Boolean(row.imageUrl) && imageOk;
   const expandable = Boolean(body) || showImage;
 
@@ -93,13 +105,36 @@ export function ArticleCard({
           : "border-b border-border last:border-b-0"
       }`}
     >
+      {/*
+        Tier, read down the edge rather than row by row.
+
+        Which reporter said it is the premise of the site, and until now the
+        only way to see it was to read forty badges one at a time. A rule in the
+        tier's own colour, at the tier's own strength — solid at the top of the
+        ladder, a faint wash at the bottom — turns that into something the eye
+        picks up going down the page without reading anything at all.
+
+        Absolutely positioned, so it adds no width and shifts no text: it lives
+        in the gutter the row already has to the left of its first character.
+      */}
+      {!open && (
+        <span
+          aria-hidden
+          className="absolute inset-y-0 left-0 w-[2px]"
+          style={{ background: tierRule(row.tier, row.official) }}
+        />
+      )}
+
       <button
         type="button"
         onClick={() => expandable && setOpen((v) => !v)}
         aria-expanded={expandable ? open : undefined}
-        className={`block w-full py-3.5 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors ${
+        // A real focus ring rather than the tinted background alone: on a
+        // column of rows that all change colour on hover, a background shift is
+        // not a strong enough answer to "where is the keyboard".
+        className={`block w-full rounded-[6px] py-3.5 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none focus-visible:ring-inset ${
           expandable
-            ? "cursor-pointer hover:bg-surface-2/50 focus-visible:bg-surface-2/50 focus-visible:outline-none"
+            ? "cursor-pointer hover:bg-surface-2/50"
             : "cursor-default"
         }`}
       >
@@ -121,7 +156,7 @@ export function ArticleCard({
             >
               {row.official ? "공식" : tierLabel(row.tier)}
             </span>
-            <span className="min-w-0 truncate bg-surface-2 px-2 py-[3px] text-[12.5px] leading-[1.35] font-bold text-text">
+            <span className="min-w-0 truncate bg-surface-2 px-2 py-[3px] text-[12.5px] leading-[1.35] font-semibold text-text">
               {row.official ? officialName : (byline ?? "기자 미확인")}
             </span>
           </span>
@@ -186,11 +221,26 @@ export function ArticleCard({
               // first. At 16.5 against a 12.5 byline the two were close enough
               // that the eye had to choose, which is what made a column of
               // these feel flat.
-              className={`text-[16px] leading-[1.4] font-semibold text-text sm:text-[17.5px] ${
+              //
+              // `text-pretty` because Korean is set with `word-break: keep-all`
+              // and a two-line headline was regularly leaving one short word
+              // alone on the second line.
+              className={`text-[16.5px] leading-[1.38] font-semibold tracking-[-0.011em] text-pretty text-text sm:text-[18px] ${
                 open ? "" : "line-clamp-3"
               }`}
             >
-              {title}
+              {/* Kept, but at the size it was written at. Hidden from screen
+                  readers: "blue circle red circle star" before every Romano
+                  headline is not what that run is there to say. */}
+              {mark && (
+                <span
+                  aria-hidden
+                  className="mr-1.5 align-[0.08em] text-[0.72em] opacity-60"
+                >
+                  {mark}
+                </span>
+              )}
+              {headline}
             </h2>
             {/* The machine translation mangles football phrasing often enough
                 that the original has to stay readable at a glance, not be
@@ -204,7 +254,12 @@ export function ArticleCard({
                   open ? "" : "line-clamp-1"
                 }`}
               >
-                {row.title}
+                {original.mark && (
+                  <span aria-hidden className="mr-1 text-[0.8em] opacity-55">
+                    {original.mark}
+                  </span>
+                )}
+                {original.text}
               </p>
             )}
           </div>
