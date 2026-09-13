@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { nextForClubs, seoul, type Match } from "@/lib/matches";
 import { useFavourites } from "@/lib/favourites";
 import { markGoal } from "@/lib/motion";
+import { ScrollRail } from "@/components/ScrollRail";
 
 /**
  * The clubs someone follows, and what each is doing next.
@@ -206,14 +207,19 @@ export function MyTeams() {
          * An inner box of max-content width centres itself with auto margins
          * while it is narrower than the scroller, and its margins collapse to
          * zero once it is wider - which is exactly the behaviour wanted.
+         *
+         * It is a ScrollRail rather than a bare `overflow-x-auto` because a
+         * wheel mouse has no sideways gesture: this was the one horizontal rail
+         * on the site left without the edge arrows, so past the first screenful
+         * of cards it could not be reached at all without a trackpad.
          */
-        <div className="snap-x overflow-x-auto px-[var(--gutter)] pb-3">
+        <ScrollRail className="snap-x px-[var(--gutter)] pb-3">
           <div className="mx-auto flex w-max gap-2.5">
             {cards.map(([slug, m]) => (
               <Card key={slug} slug={slug} match={m} />
             ))}
           </div>
-        </div>
+        </ScrollRail>
       )}
       {cards.length === 0 && loading && (
         <div className="flex justify-center gap-2.5 px-[var(--gutter)] pb-3">

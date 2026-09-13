@@ -105,9 +105,14 @@ export function Shell({
         />
       )}
 
+      {/* The rail scrolls with a bar rather than without one. It fits on any
+          window taller than about 660px and shows nothing at all there, since
+          `auto` only draws a bar on real overflow - but measured at 560px it
+          runs 45px past the bottom, and a nav list cut off with no mark at all
+          gives no reason to look further. */}
       <aside
         inert={drawer && !open}
-        className={`no-scrollbar fixed inset-y-0 left-0 z-50 flex w-[min(19rem,86vw)] flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 lg:z-30 lg:w-[var(--rail)] lg:translate-x-0 ${
+        className={`fixed inset-y-0 left-0 z-50 flex w-[min(19rem,86vw)] flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 lg:z-30 lg:w-[var(--rail)] lg:translate-x-0 ${
           open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
