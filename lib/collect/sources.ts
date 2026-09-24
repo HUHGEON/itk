@@ -103,9 +103,12 @@ export const WOMENS_FOOTBALL = new RegExp(
     "여자\\s?축구",
     "여자부",
     "\\bfemminile\\b",
-    "\\bfemenin[ao]s?\\b",
+    // The vowel is optional because club URL slugs strip accents: PSG files a
+    // women's transfer under "…paris-saint-germain-feminin-2026-2027", which
+    // "feminin[ao]" required an a or an o to match and so let straight through.
+    "\\bfemenin[ao]?s?\\b",
     "\\bféminines?\\b",
-    "\\bfeminin[ao]s?\\b",
+    "\\bfeminin[ao]?s?\\b",
     "\\bfrauen\\b",
     "\\bvrouwen\\b",
   ].join("|"),
