@@ -28,6 +28,22 @@ const COOLDOWN_BASE_MS = 10 * 60_000;
 const COOLDOWN_MAX_MS = 6 * 3_600_000;
 const COOLDOWN_AFTER_FAILURES = 3;
 
+/**
+ * How many "come back later" answers in a row from one host before we stop
+ * arguing with it for the rest of the run.
+ *
+ * Retrying is right for one feed having a bad moment and wrong for a host that
+ * has decided to refuse everything. Measured on a failed scheduled run: Google
+ * News answered 503 to all 61 queries, and because each one then retried twice
+ * more the pass spent 154.7s making 183 requests to a service that had already
+ * said no - which is both the slowest way to collect nothing and the surest way
+ * to stay blocked.
+ *
+ * Tripped, a host still gets one attempt per feed, so a block that lifts
+ * mid-run is picked straight back up; it just stops being argued with.
+ */
+const HOST_TRIP_AFTER = 5;
+
 export interface FeedItem {
   link?: string;
   title?: string;
@@ -101,6 +117,8 @@ class HostThrottle {
 
 export class FeedFetcher {
   private throttle = new HostThrottle();
+  /** Consecutive 429/5xx answers per host, this run. See HOST_TRIP_AFTER. */
+  private refusals = new Map<string, number>();
   private state = new Map<string, FeedState>();
   private updates = new Map<
     string,
@@ -155,10 +173,15 @@ export class FeedFetcher {
     }
 
     const prev = this.state.get(url);
+    const host = hostOf(url);
     let lastError = "unknown";
     let lastStatus: number | undefined;
 
-    for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+    // One attempt while this host is refusing everything, three otherwise.
+    const attempts =
+      (this.refusals.get(host) ?? 0) >= HOST_TRIP_AFTER ? 1 : MAX_ATTEMPTS;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
       await this.throttle.acquire(url);
 
       const headers: Record<string, string> = {
@@ -179,6 +202,7 @@ export class FeedFetcher {
         lastStatus = res.status;
 
         if (res.status === 304) {
+          this.refusals.delete(host);
           this.updates.set(url, {
             etag: prev?.etag ?? null,
             lastModified: prev?.lastModified ?? null,
@@ -196,7 +220,8 @@ export class FeedFetcher {
               ? Math.min(retryAfter * 1000, 60_000)
               : backoffMs(attempt);
           lastError = `HTTP ${res.status}`;
-          if (attempt < MAX_ATTEMPTS) {
+          this.refusals.set(host, (this.refusals.get(host) ?? 0) + 1);
+          if (attempt < attempts) {
             await sleep(wait);
             continue;
           }
@@ -212,6 +237,7 @@ export class FeedFetcher {
         const body = await res.text();
         const feed = await parser.parseString(body);
 
+        this.refusals.delete(host);
         this.updates.set(url, {
           etag: res.headers.get("etag"),
           lastModified: res.headers.get("last-modified"),
@@ -222,7 +248,7 @@ export class FeedFetcher {
       } catch (err) {
         clearTimeout(timer);
         lastError = err instanceof Error ? err.message : String(err);
-        if (attempt < MAX_ATTEMPTS) {
+        if (attempt < attempts) {
           await sleep(backoffMs(attempt));
           continue;
         }

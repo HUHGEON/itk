@@ -358,7 +358,10 @@ export interface CollectStats {
   /** dropped for being older than the retention window */
   tooOld: number;
   pruned: number;
-  failures: { label: string; error: string }[];
+  /** `status` is the HTTP code when there was one — a timeout or a DNS
+   * failure has none. It is what tells "come back later" apart from "this
+   * feed is broken". */
+  failures: { label: string; error: string; status?: number }[];
   /**
    * Bluesky handles that answered but had nothing recent to say. Not a failure
    * — a dead source and a healthy one look identical from the response code, so
@@ -545,7 +548,7 @@ export async function collect(
   // write used to throw away every article the run had already fetched.
 
   const counts = { ok: 0, notModified: 0, failed: 0, skipped: 0 };
-  const failures: { label: string; error: string }[] = [];
+  const failures: { label: string; error: string; status?: number }[] = [];
   for (const r of results) {
     switch (r.outcome.kind) {
       case "ok":
@@ -559,7 +562,11 @@ export async function collect(
         break;
       case "failed":
         counts.failed++;
-        failures.push({ label: r.label, error: r.outcome.error });
+        failures.push({
+          label: r.label,
+          error: r.outcome.error,
+          status: r.outcome.status,
+        });
         break;
     }
   }

@@ -75,13 +75,48 @@ async function main() {
     );
   }
 
-  // A run where most sources failed means the IP is throttled or a feed format
-  // changed — surface it as a non-zero exit so CI goes red instead of quietly
-  // collecting nothing.
-  const attempted = stats.ok + stats.notModified + stats.failed;
-  if (attempted > 0 && stats.failed / attempted > 0.5) {
-    console.error("\n⚠ 절반 이상의 소스가 실패했습니다. 차단 또는 피드 변경을 의심하세요.");
+  /*
+   * A red run should mean something is broken, not that Google had a moment.
+   *
+   * The old rule was "more than half the sources failed → exit 1", and it was
+   * firing on the wrong thing. Measured over 300 scheduled runs: 7 failed, and
+   * every one of them was a warm or cold pass — the two bands that query
+   * nothing but Google News — with a 503 on every single source. Twenty minutes
+   * later the next pass collected normally. So the alarm was going off for an
+   * upstream hiccup that fixes itself, roughly once every forty runs, which is
+   * exactly often enough to teach someone to ignore it.
+   *
+   * What still deserves a red run is a failure a later pass will not fix: a
+   * feed whose format changed, a host that 404s, a name that no longer
+   * resolves. And a block that has stopped being momentary shows up on its own
+   * — three consecutive failures put a feed into cooldown, so a block that
+   * outlived several passes leaves most of the run skipped rather than failed.
+   */
+  const sources = stats.ok + stats.notModified + stats.failed + stats.skipped;
+  const half = sources / 2;
+  // 429 and 5xx are the server asking for time. Everything else is a fault.
+  const throttled = stats.failures.filter(
+    (f) => f.status === 429 || (f.status ?? 0) >= 500,
+  ).length;
+  const broken = stats.failed - throttled;
+
+  if (sources > 0 && broken > half) {
+    console.error(
+      `\n⚠ 절반 이상(${broken}/${sources})이 일시적이지 않은 오류로 실패했습니다. ` +
+        "피드 형식이 바뀌었거나 차단됐는지 확인하세요.",
+    );
     process.exitCode = 1;
+  } else if (sources > 0 && stats.skipped > half) {
+    console.error(
+      `\n⚠ 연속 실패로 쿨다운에 들어간 소스가 절반을 넘습니다 (${stats.skipped}/${sources}). ` +
+        "한 회차로 끝난 문제가 아닙니다.",
+    );
+    process.exitCode = 1;
+  } else if (sources > 0 && throttled > half) {
+    console.log(
+      `\n일시적인 상류 제한으로 ${throttled}/${sources}곳이 429·5xx를 반환했습니다. ` +
+        "다음 회차에서 다시 시도합니다.",
+    );
   }
 }
 
