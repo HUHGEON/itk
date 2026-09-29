@@ -4,11 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowDown,
   ArrowUp,
-  ArrowsLeftRight,
-  CaretDoubleLeft,
-  CaretDoubleRight,
-  CaretLeft,
-  CaretRight,
   ChartBar,
   Eye,
   EyeSlash,
@@ -17,6 +12,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { loadWho, photoUrl, type WhoData } from "@/lib/games/data";
 import { daily, dayNumber } from "@/lib/games/seed";
+import { ArchiveNav } from "./ArchiveNav";
 import { PlayerPicker, type PickerItem } from "./PlayerPicker";
 import { share, useDaily } from "./useDaily";
 import { StatsModal, recordResult, useRecord } from "./Stats";
@@ -357,39 +353,7 @@ export function WhoGame() {
         )}
       </div>
 
-      {/* The original's pagination: first, previous, number and a random game, next, today. */}
-      <nav className="mt-2 flex items-center justify-between text-[13px] font-bold text-text" aria-label="지난 게임">
-        <div className="flex items-center gap-1">
-          <button type="button" disabled={game <= 1} onClick={() => go(1)} aria-label="첫 게임" className="p-1 text-[#ceff27] disabled:opacity-30">
-            <CaretDoubleLeft className="size-4" weight="bold" />
-          </button>
-          <button type="button" disabled={game <= 1} onClick={() => go(game - 1)} className="flex items-center gap-1 p-1 disabled:opacity-30">
-            <CaretLeft className="size-4 text-[#ceff27]" weight="bold" />
-            이전
-          </button>
-        </div>
-        <div className="flex items-center gap-1.5 text-muted">
-          <span className="tnum">#{game}</span>
-          <button
-            type="button"
-            aria-label="아무 게임이나"
-            disabled={today <= 1}
-            onClick={() => go(1 + Math.floor(Math.random() * today))}
-            className="p-1 hover:text-text disabled:opacity-30"
-          >
-            <ArrowsLeftRight className="size-4" weight="bold" />
-          </button>
-        </div>
-        <div className="flex items-center gap-1">
-          <button type="button" disabled={game >= today} onClick={() => go(game + 1)} className="flex items-center gap-1 p-1 disabled:opacity-30">
-            다음
-            <CaretRight className="size-4 text-[#ceff27]" weight="bold" />
-          </button>
-          <button type="button" disabled={game >= today} onClick={() => go(today)} aria-label="오늘 게임" className="p-1 text-[#ceff27] disabled:opacity-30">
-            <CaretDoubleRight className="size-4" weight="bold" />
-          </button>
-        </div>
-      </nav>
+      <ArchiveNav game={game} today={today} onGo={(g) => go(g)} />
 
       {count > 0 && (
         <div className="mt-2 w-full">

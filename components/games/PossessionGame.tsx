@@ -65,6 +65,7 @@ interface Settings extends RoomSettings {
   pool: Pool;
 }
 
+const SEARCH_MS = 240_000;
 const RANDOM: Settings = { lengthMs: 0, chaining: false, turnMs: RANDOM_TURN_MS, pool: "all" };
 
 /**
@@ -79,6 +80,19 @@ export function PossessionGame() {
   const [settings, setSettings] = useState<Settings>({ lengthMs: 240_000, chaining: false, pool: "all" });
   const [mode, setMode] = useState<Mode>({ kind: "menu" });
   const [joinCode, setJoinCode] = useState("");
+  const expired = useToast();
+
+  // A random search that finds nobody ends with the original's "Search
+  // expired". There the server decides when; its timing is not in the client
+  // code, so four minutes here is a choice, not a copy.
+  useEffect(() => {
+    if (mode.kind !== "searching") return;
+    const id = window.setTimeout(() => {
+      setMode({ kind: "menu" });
+      expired.show("검색 시간이 끝났습니다. 다시 시도하세요.");
+    }, SEARCH_MS);
+    return () => window.clearTimeout(id);
+  }, [mode.kind]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // A shared link opens straight into the room - as whoever this tab was in
   // it, so a reload is a return rather than a second guest.
@@ -126,6 +140,7 @@ export function PossessionGame() {
 
   return (
     <div className="mx-auto max-w-[520px] space-y-3">
+      <Toast message={expired.message} />
       {mode.kind === "searching" ? (
         <div className="rounded-[10px] border border-border-strong bg-surface p-5 text-center">
           <p className="live-badge text-[15px] font-semibold text-text">상대를 찾는 중…</p>

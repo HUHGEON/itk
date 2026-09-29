@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { animate } from "animejs";
-import { ChartBar } from "@phosphor-icons/react/dist/ssr";
+import { ChartBar, Info, X } from "@phosphor-icons/react/dist/ssr";
 import { loadCareer, type CareerAnswer } from "@/lib/games/data";
 import { daily, dayNumber } from "@/lib/games/seed";
-import { reducedMotion } from "@/lib/motion";
+import { ArchiveNav } from "./ArchiveNav";
 import { PlayerPicker } from "./PlayerPicker";
+import { Toast } from "./Toast";
 import { useGrid, type GridPick } from "./useGrid";
 import { share, useDaily } from "./useDaily";
 import { StatsModal, recordResult, useRecord } from "./Stats";
@@ -53,35 +53,18 @@ const maskYears = (a: number, b: number | null, level: Level) =>
 const span = (a: number, b: number | null) => (b === null ? `${a}–` : a === b ? `${a}` : `${a}–${b}`);
 
 /**
- * Text that types itself in, as the original's rows do when they open.
- * Renders the finished text straight away under reduced motion.
+ * A cell as it opens: the original fades each one in, a column 100ms after
+ * the one to its left. Rows already open when the page loads just show.
  */
-function Typed({ text, play }: { text: string; play: boolean }) {
-  const el = useRef<HTMLSpanElement>(null);
-  useEffect(() => {
-    const node = el.current;
-    if (!node || !play || reducedMotion()) return;
-    const chars = [...text];
-    const t = { n: 0 };
-    node.textContent = "";
-    const anim = animate(t, {
-      n: chars.length,
-      duration: Math.min(700, 40 * chars.length + 120),
-      ease: "linear",
-      onUpdate: () => {
-        node.textContent = chars.slice(0, Math.round(t.n)).join("");
-      },
-      onComplete: () => {
-        node.textContent = text;
-      },
-    });
-    return () => {
-      anim.revert();
-      node.textContent = text;
-    };
-  }, [text, play]);
-  return <span ref={el}>{text}</span>;
+function Reveal({ text, col, play }: { text: string; col: number; play: boolean }) {
+  return (
+    <span style={play ? { animation: `toast-in 500ms ease-out ${col * 100}ms both` } : undefined}>{text}</span>
+  );
 }
+
+/** How long the original leaves a result on screen before the stats open. */
+const RESULT_MS = 2000;
+const PRAISE = ["잘했어요!", "훌륭해요!", "대단해요!"];
 
 /**
  * Career Path: a player's clubs as a Wikipedia infobox, one row at a time.
@@ -92,19 +75,44 @@ function Typed({ text, play }: { text: string; play: boolean }) {
  * game is over.
  */
 export function CareerGame() {
-  const { items, error } = useGrid();
+  const { grid, items, error } = useGrid();
   const [pool, setPool] = useState<CareerAnswer[] | null>(null);
   useEffect(() => {
     loadCareer().then((c) => setPool(c.slice(0, POOL)));
   }, []);
 
-  const day = dayNumber();
+  const today = dayNumber();
+  const [day, setDay] = useState(today);
+  useEffect(() => {
+    const g = Number(new URLSearchParams(window.location.search).get("game"));
+    if (g >= 1 && g <= today) setDay(g);
+  }, [today]);
+  const go = (g: number) => {
+    setDay(g);
+    window.history.replaceState(null, "", g === today ? window.location.pathname : `?game=${g}`);
+  };
   const answer = useMemo(() => (pool ? daily(pool, day, 4099) : null), [pool, day]);
   const [save, setSave] = useDaily<Save>("career", day, { level: null, guesses: [], won: false, done: false });
   const [record, setRecord] = useRecord("career");
   const [showStats, setShowStats] = useState(false);
-  const [toast, setToast] = useState<string | null>(null);
+  const [toast, setToast] = useState<{ text: string; good: boolean } | null>(null);
   const [copied, setCopied] = useState(false);
+  const [info, setInfo] = useState(false);
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem("itk:career:info")) setInfo(true);
+    } catch {
+      // no storage
+    }
+  }, []);
+  const closeInfo = () => {
+    setInfo(false);
+    try {
+      localStorage.setItem("itk:career:info", "1");
+    } catch {
+      // nothing
+    }
+  };
 
   const total = answer?.clubs.length ?? 0;
   const shown = save.done ? total : Math.min(total, 1 + save.guesses.length);
@@ -115,19 +123,15 @@ export function CareerGame() {
     seen.current = shown;
   }, [shown]);
 
-  const toastEl = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!toast || !toastEl.current || reducedMotion()) return;
-    animate(toastEl.current, { opacity: [0, 1], y: [-10, 0], duration: 300, ease: "outExpo" });
-    const id = window.setTimeout(() => setToast(null), 2200);
-    return () => window.clearTimeout(id);
-  }, [toast]);
-
   const finish = (guesses: (string | null)[], won: boolean) => {
     setSave((s) => ({ ...s, guesses, won, done: true }));
-    setRecord(recordResult("career", day, won, guesses.length));
-    setToast(won ? "정답입니다!" : "아쉽네요");
-    window.setTimeout(() => setShowStats(true), 1800);
+    // Only today's puzzle counts toward the record.
+    if (day === today) setRecord(recordResult("career", day, won, guesses.length));
+    setToast({ text: won ? PRAISE[Math.floor(Math.random() * PRAISE.length)] : "축구 지식 마이너스", good: won });
+    window.setTimeout(() => {
+      setToast(null);
+      setShowStats(true);
+    }, RESULT_MS);
   };
 
   const guess = (p: GridPick | null) => {
@@ -142,6 +146,9 @@ export function CareerGame() {
   if (!answer || items.length === 0) return <p className="py-16 text-center text-muted">불러오는 중…</p>;
 
   const level = save.level;
+  // The international career opens with the last club, as the original's does.
+  const intlOpen = save.done || shown >= total;
+  const intlFresh = intlOpen && fresh < shown;
 
   const shareText = () => {
     const marks = save.guesses.map((g, i) => (save.won && i === save.guesses.length - 1 ? "🟩" : g ? "🟥" : "⬜")).join("");
@@ -150,21 +157,19 @@ export function CareerGame() {
 
   return (
     <div className="mx-auto max-w-[520px]">
-      <div className="mb-2 flex items-center justify-between text-[12.5px] text-muted">
-        <span className="font-semibold text-text">#{day}</span>
-        <button type="button" onClick={() => setShowStats(true)} aria-label="통계" className="rounded-[6px] p-1 text-muted hover:text-text">
-          <ChartBar className="size-5" />
+      <div className="mb-2 flex items-center justify-between text-muted">
+        <button type="button" onClick={() => setInfo(true)} aria-label="하는 법" className="rounded-[6px] p-1 hover:text-text">
+          <Info className="size-6" />
+        </button>
+        <button type="button" onClick={() => setShowStats(true)} aria-label="통계" className="rounded-[6px] p-1 hover:text-text">
+          <ChartBar className="size-6" />
         </button>
       </div>
 
-      {toast && (
-        <div ref={toastEl} className="fixed top-20 left-1/2 z-40 -translate-x-1/2 rounded-[6px] bg-[var(--p1)] px-4 py-2 text-[14px] font-bold text-white shadow-lg">
-          {toast}
-        </div>
-      )}
+      <Toast message={toast?.text ?? ""} variant={toast?.good ? "success" : "warning"} />
 
       {/* The infobox. A pale panel on the dark page, as a Wikipedia infobox is. */}
-      <div className="overflow-hidden rounded-[10px] bg-[#f6f8fa] text-[#1f2328] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.8)]">
+      <div className="overflow-hidden rounded-[10px] bg-[#f8f9fa] text-black shadow-[0_10px_30px_-12px_rgba(0,0,0,0.8)]">
         {level === null ? (
           <>
             <div className="bg-[#b0c4de] py-3 text-center font-mono text-[14px] font-bold tracking-wide">난이도 선택</div>
@@ -206,20 +211,20 @@ export function CareerGame() {
                   return (
                     <tr key={i} className={open ? "" : "text-[#8c959f]"}>
                       <td className="py-1 pl-4 whitespace-nowrap">
-                        {open ? <Typed text={span(c[0], c[1])} play={typing} /> : maskYears(c[0], c[1], level)}
+                        {open ? <Reveal text={span(c[0], c[1])} col={0} play={typing} /> : maskYears(c[0], c[1], level)}
                       </td>
                       <td className="py-1 pr-2">
                         {open ? (
-                          <Typed text={name} play={typing} />
+                          <Reveal text={name} col={1} play={typing} />
                         ) : level === "hard" ? (
                           "------"
                         ) : (
                           `${c[5] ? "→ " : ""}${maskName(c[2], level)}${c[5] ? " (임대)" : ""}`
                         )}
                       </td>
-                      <td className="py-1 text-right">{open ? <Typed text={String(c[3] ?? "–")} play={typing} /> : maskNum(c[3], level)}</td>
+                      <td className="py-1 text-right">{open ? <Reveal text={String(c[3] ?? "–")} col={2} play={typing} /> : maskNum(c[3], level)}</td>
                       <td className="py-1 pr-4 text-right whitespace-nowrap">
-                        ({open ? <Typed text={String(c[4] ?? "–")} play={typing} /> : maskNum(c[4], level)})
+                        ({open ? <Reveal text={String(c[4] ?? "–")} col={3} play={typing} /> : maskNum(c[4], level)})
                       </td>
                     </tr>
                   );
@@ -233,22 +238,30 @@ export function CareerGame() {
                 <table className="w-full font-mono text-[13px]">
                   <tbody>
                     {answer.intl.map((c, i) => (
-                      <tr key={i} className={save.done ? "" : "text-[#8c959f]"}>
+                      <tr key={i} className={intlOpen ? "" : "text-[#8c959f]"}>
                         <td className="py-1.5 pl-4 whitespace-nowrap">
-                          {save.done ? <Typed text={span(c[0], c[1])} play /> : maskYears(c[0], c[1], level)}
+                          {intlOpen ? <Reveal text={span(c[0], c[1])} col={0} play={intlFresh} /> : maskYears(c[0], c[1], level)}
                         </td>
                         <td className="py-1.5 pr-2">
-                          {save.done ? <Typed text={c[2]} play /> : maskName(c[2], level)}
+                          {intlOpen ? <Reveal text={c[2]} col={1} play={intlFresh} /> : maskName(c[2], level)}
                         </td>
-                        <td className="py-1.5 text-right">{save.done ? (c[3] ?? "–") : maskNum(c[3], level)}</td>
-                        <td className="py-1.5 pr-4 text-right">({save.done ? (c[4] ?? "–") : maskNum(c[4], level)})</td>
+                        <td className="py-1.5 text-right">
+                          {intlOpen ? <Reveal text={String(c[3] ?? "–")} col={2} play={intlFresh} /> : maskNum(c[3], level)}
+                        </td>
+                        <td className="py-1.5 pr-4 text-right">
+                          ({intlOpen ? <Reveal text={String(c[4] ?? "–")} col={3} play={intlFresh} /> : maskNum(c[4], level)})
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               </>
             )}
-            <div className="h-3" />
+            {grid?.built && (
+              <p className="p-2 pb-4 text-center text-xs leading-tight text-[#2f4f4f]">
+                클럽 리그 출전·골 기록 기준일: {grid.built}
+              </p>
+            )}
           </>
         )}
       </div>
@@ -256,8 +269,8 @@ export function CareerGame() {
       {level !== null && (
         <div className="mt-4">
           {save.done ? (
-            <div className="text-center">
-              <p className={`font-serif text-[24px] ${save.won ? "text-emerald-300" : "text-text"}`}>{answer.ko}</p>
+            <div className="mt-4 mb-6 text-center" style={{ animation: "toast-in 600ms ease-out both" }}>
+              <p className="font-serif text-2xl text-text">{answer.ko}</p>
               <p className="text-[12.5px] text-muted">
                 {answer.en}
                 {answer.born ? ` · ${answer.born}년생` : ""}
@@ -277,12 +290,39 @@ export function CareerGame() {
                 type="button"
                 data-press
                 onClick={() => guess(null)}
-                className="shrink-0 rounded-[10px] bg-[var(--p2)] px-5 text-[14px] font-bold text-white hover:opacity-90"
+                className="max-h-[53px] min-w-[70px] shrink-0 rounded-sm bg-rose-500 px-1.5 text-center font-bold text-white uppercase sm:min-w-[80px] sm:rounded-lg sm:px-3 sm:text-lg"
               >
-                건너뛰기
+                {save.guesses.length + 1 >= total ? "포기" : "건너뛰기"}
               </button>
             </div>
           )}
+        </div>
+      )}
+
+      <ArchiveNav game={day} today={today} onGo={go} />
+
+      {info && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 p-4" onClick={closeInfo}>
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="하는 법"
+            onClick={(e) => e.stopPropagation()}
+            className="relative w-full max-w-sm rounded-lg bg-gray-800 px-4 pt-5 pb-6 text-left text-white shadow-xl sm:px-6"
+          >
+            <button type="button" onClick={closeInfo} aria-label="닫기" className="absolute top-4 right-4 text-white/80 hover:text-white">
+              <X className="size-6" />
+            </button>
+            <h3 className="mb-4 text-center text-lg font-medium">하는 법</h3>
+            <p className="text-sm text-gray-300">
+              이름난 선수를 그가 뛴 클럽 수만큼의 기회 안에 맞히세요. 오늘의 선수는 클럽 {total}곳에서 뛰었으니 {total}번
+              추측할 수 있습니다.
+            </p>
+            <p className="mt-4 text-sm text-gray-300">
+              시작하면 첫 클럽이 위키백과 같은 표로 나옵니다. 추측할 때마다 다음 클럽이 열리고, 마지막 클럽이 열리면
+              국가대표 경력도 함께 보입니다.
+            </p>
+          </div>
         </div>
       )}
 
@@ -293,7 +333,7 @@ export function CareerGame() {
           highlight={save.won ? (save.guesses.length >= 7 ? "7+" : String(save.guesses.length)) : undefined}
           nextLabel="다음 문제까지"
           shared={copied}
-          onShare={async () => setCopied(await share(shareText()))}
+          onShare={save.done ? async () => setCopied(await share(shareText())) : undefined}
           onClose={() => setShowStats(false)}
         />
       )}
