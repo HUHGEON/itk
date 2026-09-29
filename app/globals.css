@@ -357,3 +357,8 @@ html {
   55% { opacity: 1; transform: translateY(0) scale(1.08); }
   100% { opacity: 1; transform: translateY(0) scale(1); }
 }
+/* Who Are Ya's reveal: each circle drops into place, one after another. */
+@keyframes fade-in-down {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -12,7 +12,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
-import { clubScore, sameClub, samePlayer } from "../lib/names";
+import { clubScore, norm, sameClub, samePlayer } from "../lib/names";
 import { CLUBS } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
 
@@ -171,7 +171,14 @@ async function main() {
   let named = 0;
   const hits = squads.map(({ m }) => {
     const cands = m.dateOfBirth ? (byDate.get(m.dateOfBirth) ?? []) : [];
-    return cands.find((c) => samePlayer(c.en, m.name)) ?? null;
+    const exact = cands.find((c) => samePlayer(c.en, m.name));
+    if (exact) return exact;
+    // Same birthday already: one shared word of three letters is enough when
+    // it picks out a single candidate ("Heung-Min Son" and "Son Heung-min").
+    const words = (s: string) => new Set(norm(s).split(" ").filter((w) => w.length >= 3));
+    const mine = words(m.name);
+    const loose = cands.filter((c) => [...words(c.en)].some((w) => mine.has(w)));
+    return loose.length === 1 ? loose[0] : null;
   });
   // The name fans use, as on the grid (see games/namuwiki); the Wikipedia
   // spelling stays searchable.

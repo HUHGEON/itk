@@ -174,6 +174,11 @@ export function samePlayer(a: string, b: string): boolean {
   const x = norm(a);
   const y = norm(b);
   if (x === y) return true;
+  // The same words in another order: "Min-Jae Kim" and "Kim Min-jae". Korean
+  // names are three-letter syllables, below the four-letter bar further down,
+  // so without this not one of them matched.
+  const sorted = (s: string) => s.split(" ").filter(Boolean).sort().join(" ");
+  if (sorted(x) === sorted(y)) return true;
   const words = (s: string) => new Set(s.split(" ").filter((w) => w.length >= 4));
   const wx = words(x);
   for (const w of words(y)) if (wx.has(w)) return true;
