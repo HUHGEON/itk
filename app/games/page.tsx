@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: "미니게임 · ITK+",
-  description: "축구 지식으로 푸는 한글 미니게임 네 가지. 점유율 전쟁, 히트맵, 커리어 추적, 후 아 유?",
+  description: "축구 지식으로 푸는 한글 미니게임 네 가지. Possession Play, The Heatmap, Career Path, Who Are Ya?",
 };
 
 /*

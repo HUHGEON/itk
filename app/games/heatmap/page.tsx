@@ -10,13 +10,13 @@ import { HeatmapGame } from "@/components/games/HeatmapGame";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "히트맵 · ITK+ 미니게임",
+  title: "The Heatmap · ITK+ 미니게임",
   description: "하루 한 판, 한 번에 여러 칸을 채울수록 점수가 불어나는 축구 육각 퍼즐.",
 };
 
 export default function Page() {
   return (
-    <GamePage title="히트맵" en="The Heatmap">
+    <GamePage title="The Heatmap" en="하루 한 판 육각 퍼즐" width={405}>
       <HeatmapGame />
     </GamePage>
   );

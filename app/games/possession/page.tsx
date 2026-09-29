@@ -10,13 +10,13 @@ import { PossessionGame } from "@/components/games/PossessionGame";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "점유율 전쟁 · ITK+ 미니게임",
+  title: "Possession Play · ITK+ 미니게임",
   description: "칸을 골라 선수를 대고 맞닿은 칸까지 빼앗는 1대1 축구 땅따먹기.",
 };
 
 export default function Page() {
   return (
-    <GamePage title="점유율 전쟁" en="Possession Play">
+    <GamePage title="Possession Play" en="1대1 축구 땅따먹기" width={720}>
       <PossessionGame />
     </GamePage>
   );

@@ -10,13 +10,13 @@ import { CareerGame } from "@/components/games/CareerGame";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "커리어 추적 · ITK+ 미니게임",
+  title: "Career Path · ITK+ 미니게임",
   description: "한 줄씩 공개되는 이적 경로만 보고 오늘의 선수를 맞혀 보세요.",
 };
 
 export default function Page() {
   return (
-    <GamePage title="커리어 추적" en="Career Path">
+    <GamePage title="Career Path" en="이적 경로로 선수 맞히기">
       <CareerGame />
     </GamePage>
   );

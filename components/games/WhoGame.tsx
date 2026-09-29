@@ -235,7 +235,7 @@ export function WhoGame() {
         m(g.shirt === answer.shirt),
       ].join("");
     };
-    return `#후아유 ${quiz.name} #${game} ${save.won ? count : "X"}/${MAX}${save.photo === false ? " (사진 없이)" : ""}\n${save.guesses.map(line).join("\n")}\nhttps://itkplus.vercel.app/games/who`;
+    return `#WhoAreYa ${quiz.name} #${game} ${save.won ? count : "X"}/${MAX}${save.photo === false ? " (사진 없이)" : ""}\n${save.guesses.map(line).join("\n")}\nhttps://itkplus.vercel.app/games/who`;
   };
 
   const lost = save.done && !save.won;
@@ -603,7 +603,7 @@ function Rules({ quiz, modal = false }: { quiz: (typeof QUIZZES)[number]; modal?
   return (
     <div className={modal ? "text-sm" : "mt-6 text-sm text-muted"}>
       <h2 className={`mb-2 text-base ${modal ? "text-center font-medium" : "text-text"}`}>
-        <b>후 아 유?</b> 매일 하는 축구 선수 맞히기
+        <b>Who Are Ya?</b> 매일 하는 축구 선수 맞히기
       </h2>
       <ul className="list-disc space-y-1 pl-5">
         <li>{leagues}에서 뛰는 선수를 8번 안에 맞히세요.</li>

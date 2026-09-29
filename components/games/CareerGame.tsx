@@ -152,7 +152,7 @@ export function CareerGame() {
 
   const shareText = () => {
     const marks = save.guesses.map((g, i) => (save.won && i === save.guesses.length - 1 ? "🟩" : g ? "🟥" : "⬜")).join("");
-    return `ITK+ 커리어 추적 #${day} (${LEVELS.find((l) => l.id === level)?.ko})\n${marks}\nhttps://itkplus.vercel.app/games/career`;
+    return `#CareerPath #${day} (${LEVELS.find((l) => l.id === level)?.ko})\n${marks}\nhttps://itkplus.vercel.app/games/career`;
   };
 
   return (

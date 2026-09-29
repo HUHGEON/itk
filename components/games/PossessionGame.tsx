@@ -2,7 +2,20 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Copy, Globe, Users, DeviceMobile, User, X as XIcon } from "@phosphor-icons/react/dist/ssr";
+import {
+  ArrowsInSimple,
+  CaretRight,
+  Check,
+  Copy,
+  DeviceMobile,
+  Globe,
+  Hexagon,
+  Timer,
+  Trophy,
+  User,
+  Users,
+  X as XIcon,
+} from "@phosphor-icons/react/dist/ssr";
 import { makeBoard, poolGrid, POOLS, type BoardCell, type Pool } from "@/lib/games/board";
 import type { Grid } from "@/lib/games/data";
 import { cellId, neighbours } from "@/lib/games/hex";
@@ -135,133 +148,284 @@ export function PossessionGame() {
     );
 
   const ready = !!grid;
-  const card =
-    "flex w-full items-center gap-3 rounded-[10px] border border-border bg-surface p-4 text-left transition-colors enabled:hover:border-border-strong enabled:hover:bg-surface-2 disabled:opacity-50";
-
   return (
-    <div className="mx-auto max-w-[520px] space-y-3">
+    <div className="mx-auto max-w-[720px]">
       <Toast message={expired.message} />
       {mode.kind === "searching" ? (
-        <div className="rounded-[10px] border border-border-strong bg-surface p-5 text-center">
-          <p className="live-badge text-[15px] font-semibold text-text">상대를 찾는 중…</p>
-          <p className="tnum mt-1 text-[12.5px] text-muted">지금 대기 중 {waiting}명</p>
-          <button type="button" onClick={toMenu} className="mt-3 text-[13px] text-muted underline underline-offset-2 hover:text-text">
-            취소
-          </button>
-        </div>
+        <Searching waiting={waiting} onCancel={toMenu} />
       ) : (
-        <>
-          {/* The original puts the code box first: someone holding a code
-              should not have to read past three other ways to play. */}
-          <form
-            className="flex gap-2"
-            onSubmit={(e) => {
-              e.preventDefault();
-              const code = joinCode.trim().toUpperCase();
-              if (code.length >= 4) join(code, "guest");
-            }}
-          >
-            <input
-              value={joinCode}
-              onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
-              placeholder="방 코드"
-              aria-label="방 코드"
-              className="tnum min-w-0 flex-1 rounded-[10px] border border-border-strong bg-surface px-4 py-3 text-[15px] tracking-[0.2em] text-text outline-none placeholder:tracking-normal placeholder:text-faint focus:border-accent"
+        <div className="space-y-4">
+          {/* The banner: what the game is at a glance, and the way in for
+              someone who already holds a code - the original puts the code
+              box first, so nobody reads past three modes to find it. */}
+          <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-surface p-5 sm:p-6">
+            <div
+              aria-hidden
+              className="pointer-events-none absolute inset-0"
+              style={{
+                background:
+                  "radial-gradient(60% 90% at 100% 0%, rgba(37,99,235,0.28), transparent 70%), radial-gradient(50% 80% at 85% 100%, rgba(239,68,68,0.22), transparent 70%)",
+              }}
             />
-            <button type="submit" className="rounded-[10px] border border-border-strong px-4 text-[14px] font-semibold text-text hover:bg-surface-2">
-              참가
-            </button>
-          </form>
-
-          <button type="button" disabled={!ready} onClick={() => setMode({ kind: "searching" })} className={card}>
-            <Globe className="size-7 shrink-0 text-emerald-400" weight="duotone" />
-            <span>
-              <span className="block text-[15px] font-semibold text-text">온라인 상대 찾기</span>
-              <span className="block text-[12.5px] text-muted">기다리는 사람과 바로 붙습니다. 한 수에 30초입니다.</span>
-            </span>
-          </button>
-          <button type="button" disabled={!ready} onClick={() => join(roomCode(), "host")} className={card}>
-            <Users className="size-7 shrink-0 text-[#60A5FA]" weight="duotone" />
-            <span>
-              <span className="block text-[15px] font-semibold text-text">친구와 하기</span>
-              <span className="block text-[12.5px] text-muted">방을 만들고 링크나 코드를 보냅니다</span>
-            </span>
-          </button>
-          <button type="button" disabled={!ready} onClick={() => setMode({ kind: "local" })} className={card}>
-            <DeviceMobile className="size-7 shrink-0 text-[#FB7185]" weight="duotone" />
-            <span>
-              <span className="block text-[15px] font-semibold text-text">한 화면에서 둘이</span>
-              <span className="block text-[12.5px] text-muted">한 기기를 번갈아 씁니다</span>
-            </span>
-          </button>
-          <Link href="/games/heatmap" className={card}>
-            <User className="size-7 shrink-0 text-amber-400" weight="duotone" />
-            <span>
-              <span className="block text-[15px] font-semibold text-text">혼자 하기</span>
-              <span className="block text-[12.5px] text-muted">같은 보드를 혼자 채우는 히트맵으로</span>
-            </span>
-          </Link>
-
-          <section className="rounded-[10px] border border-border bg-surface p-4">
-            <h2 className="text-[13px] font-semibold text-text">방 설정 (친구와 하기, 한 화면에서 둘이)</h2>
-            <p className="mt-2 text-[12px] font-semibold text-muted">시간</p>
-            <div className="mt-1 grid grid-cols-3 gap-1.5">
-              {LENGTHS.map((l) => (
-                <Choice
-                  key={l.ms}
-                  on={settings.lengthMs === l.ms}
-                  onClick={() => setSettings((s) => ({ ...s, lengthMs: l.ms }))}
-                  label={l.label}
-                  sub={l.sub}
-                />
-              ))}
+            <div aria-hidden className="pointer-events-none absolute top-1/2 right-6 hidden -translate-y-1/2 sm:block">
+              <BannerHexes />
             </div>
-            <p className="mt-3 text-[12px] font-semibold text-muted">선수 풀</p>
-            <div className="mt-1 grid grid-cols-2 gap-1.5">
-              {POOLS.map((p) => (
-                <Choice
-                  key={p.id}
-                  on={settings.pool === p.id}
-                  onClick={() => setSettings((s) => ({ ...s, pool: p.id }))}
-                  label={p.label}
-                  sub={p.sub}
+            <div className="relative sm:max-w-[60%]">
+              <p className="text-[20px] leading-snug font-bold tracking-tight text-text sm:text-[22px]">1대1 축구 땅따먹기</p>
+              <p className="mt-1 text-[13.5px] text-muted">칸을 골라 선수를 대고, 맞닿은 칸까지 빼앗으세요.</p>
+              <form
+                className="mt-4 flex max-w-[340px] gap-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const code = joinCode.trim().toUpperCase();
+                  if (code.length >= 4) join(code, "guest");
+                }}
+              >
+                <input
+                  value={joinCode}
+                  onChange={(e) => setJoinCode(e.target.value.toUpperCase().slice(0, 5))}
+                  placeholder="받은 방 코드"
+                  aria-label="방 코드"
+                  className="min-w-0 flex-1 rounded-xl border border-white/10 bg-black/35 px-4 py-2.5 font-mono text-[15px] tracking-[0.3em] text-text outline-none backdrop-blur-sm placeholder:font-sans placeholder:tracking-normal placeholder:text-faint focus:border-[#60A5FA]"
                 />
-              ))}
+                <button
+                  type="submit"
+                  disabled={joinCode.trim().length < 4}
+                  className="rounded-xl bg-white px-4 text-[14px] font-bold text-slate-900 transition-opacity hover:opacity-90 disabled:opacity-40"
+                >
+                  참가
+                </button>
+              </form>
             </div>
-            <label className="mt-3 flex cursor-pointer items-center justify-between gap-3">
+          </section>
+
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <ModeTile
+              tone="#10B981"
+              icon={<Globe weight="duotone" />}
+              title="온라인 상대 찾기"
+              sub="기다리는 사람과 바로 붙습니다. 한 수에 30초."
+              disabled={!ready}
+              onClick={() => setMode({ kind: "searching" })}
+            />
+            <ModeTile
+              tone="#3B82F6"
+              icon={<Users weight="duotone" />}
+              title="친구와 하기"
+              sub="방을 만들고 링크나 코드를 보냅니다."
+              disabled={!ready}
+              onClick={() => join(roomCode(), "host")}
+            />
+            <ModeTile
+              tone="#F43F5E"
+              icon={<DeviceMobile weight="duotone" />}
+              title="한 화면에서 둘이"
+              sub="기기 하나를 번갈아 씁니다."
+              disabled={!ready}
+              onClick={() => setMode({ kind: "local" })}
+            />
+            <ModeTile tone="#F59E0B" icon={<User weight="duotone" />} title="혼자 하기" sub="같은 보드를 혼자 채우는 The Heatmap으로." href="/games/heatmap" />
+          </div>
+
+          <section className="rounded-2xl border border-white/[0.07] bg-surface p-5">
+            <div className="flex items-baseline justify-between gap-3">
+              <h2 className="text-[15px] font-bold text-text">방 설정</h2>
+              <span className="text-[12px] text-faint">친구와 하기, 한 화면에서 둘이에 적용</span>
+            </div>
+            <div className="mt-4 grid gap-4 sm:grid-cols-2">
+              <Segment
+                label="시간"
+                options={LENGTHS.map((l) => ({ id: l.ms, label: l.label, sub: l.sub }))}
+                value={settings.lengthMs}
+                onChange={(ms) => setSettings((s) => ({ ...s, lengthMs: ms }))}
+              />
+              <Segment
+                label="선수 풀"
+                options={POOLS.map((p) => ({ id: p.id, label: p.label, sub: p.sub }))}
+                value={settings.pool}
+                onChange={(pool) => setSettings((s) => ({ ...s, pool }))}
+              />
+            </div>
+            <button
+              type="button"
+              role="switch"
+              aria-checked={settings.chaining}
+              onClick={() => setSettings((s) => ({ ...s, chaining: !s.chaining }))}
+              className="mt-4 flex w-full items-center justify-between gap-4 rounded-xl border border-white/[0.07] bg-surface-2/60 px-4 py-3 text-left transition-colors hover:border-white/[0.14]"
+            >
               <span>
                 <span className="block text-[14px] font-semibold text-text">연쇄 점령</span>
-                <span className="block text-[12px] text-muted">조건이 맞는 칸이 이어져 있으면 끝까지 따라가며 가져옵니다</span>
+                <span className="block text-[12px] text-muted">조건이 맞는 칸이 이어져 있으면 끝까지 따라가며 가져옵니다.</span>
               </span>
-              <input
-                type="checkbox"
-                checked={settings.chaining}
-                onChange={(e) => setSettings((s) => ({ ...s, chaining: e.target.checked }))}
-                className="size-5 shrink-0 accent-[var(--accent)]"
-              />
-            </label>
+              <span
+                className={`relative h-6 w-11 shrink-0 rounded-full transition-colors duration-200 ${settings.chaining ? "bg-[#3B82F6]" : "bg-white/15"}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 size-5 rounded-full bg-white shadow transition-transform duration-200 ${settings.chaining ? "translate-x-5" : ""}`}
+                />
+              </span>
+            </button>
           </section>
+
           <HowTo />
-        </>
+        </div>
       )}
     </div>
   );
 }
 
-function Choice({ on, onClick, label, sub }: { on: boolean; onClick: () => void; label: string; sub: string }) {
+/** The two colours of the game as a small hex cluster, for the banner. */
+function BannerHexes() {
+  const HEXCLIP = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+  const cells: [number, number, string][] = [
+    [0, 0, "#2563EB"],
+    [1, 0, "#EF4444"],
+    [-0.5, 0.75, "#2563EB"],
+    [0.5, 0.75, "#DCE6F2"],
+    [1.5, 0.75, "#EF4444"],
+    [0, 1.5, "#DCE6F2"],
+    [1, 1.5, "#2563EB"],
+  ];
   return (
-    <button
-      type="button"
-      data-press
-      onClick={onClick}
-      aria-pressed={on}
-      className={`rounded-[6px] border px-3 py-2 text-left transition-colors ${
-        on ? "border-accent bg-accent/15 text-text" : "border-border text-muted hover:border-border-strong hover:text-text"
-      }`}
-    >
-      <span className="block text-[14px] font-semibold">{label}</span>
-      <span className="block text-[11.5px] opacity-80">{sub}</span>
+    <div className="relative h-[124px] w-[150px]">
+      {cells.map(([x, y, c], i) => (
+        <span
+          key={i}
+          className="absolute size-[48px]"
+          style={{ left: 27 + x * 48, top: y * 48 - 4, clipPath: HEXCLIP, background: c, opacity: 0.92 }}
+        />
+      ))}
+    </div>
+  );
+}
+
+function ModeTile({
+  tone,
+  icon,
+  title,
+  sub,
+  onClick,
+  href,
+  disabled,
+}: {
+  tone: string;
+  icon: React.ReactNode;
+  title: string;
+  sub: string;
+  onClick?: () => void;
+  href?: string;
+  disabled?: boolean;
+}) {
+  const body = (
+    <>
+      <span
+        className="flex size-11 shrink-0 items-center justify-center rounded-xl text-[26px] transition-transform duration-300 group-hover:scale-105"
+        style={{ background: `${tone}22`, color: tone, boxShadow: `inset 0 0 0 1px ${tone}44` }}
+      >
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block text-[15px] font-bold text-text">{title}</span>
+        <span className="block text-[12.5px] leading-snug text-muted">{sub}</span>
+      </span>
+      <CaretRight className="size-4 shrink-0 text-faint transition-transform duration-200 group-hover:translate-x-0.5 group-hover:text-text" weight="bold" />
+    </>
+  );
+  const cls =
+    "group relative flex w-full items-center gap-3.5 overflow-hidden rounded-2xl border border-white/[0.07] bg-surface p-4 text-left transition-[transform,border-color] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 hover:border-white/[0.16] active:scale-[0.99] disabled:pointer-events-none disabled:opacity-50";
+  const glow = (
+    <span
+      aria-hidden
+      className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+      style={{ background: `radial-gradient(80% 120% at 0% 50%, ${tone}1f, transparent 70%)` }}
+    />
+  );
+  return href ? (
+    <Link href={href} className={cls}>
+      {glow}
+      {body}
+    </Link>
+  ) : (
+    <button type="button" onClick={onClick} disabled={disabled} className={cls}>
+      {glow}
+      {body}
     </button>
+  );
+}
+
+function Segment<T extends string | number>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { id: T; label: string; sub: string }[];
+  value: T;
+  onChange: (v: T) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-1.5 text-[12px] font-semibold text-muted">{label}</p>
+      <div className="flex gap-1 rounded-xl bg-black/30 p-1" role="radiogroup" aria-label={label}>
+        {options.map((o) => {
+          const on = o.id === value;
+          return (
+            <button
+              key={String(o.id)}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              onClick={() => onChange(o.id)}
+              className={`flex-1 rounded-lg px-2 py-2 text-center transition-colors ${
+                on ? "bg-white/[0.1] text-text shadow-[inset_0_0_0_1px_rgba(255,255,255,0.12)]" : "text-muted hover:text-text"
+              }`}
+            >
+              <span className="block text-[13.5px] font-bold">{o.label}</span>
+              <span className="block text-[11px] opacity-75">{o.sub}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** Looking for a stranger: a radar sweep and how many are waiting. */
+function Searching({ waiting, onCancel }: { waiting: number; onCancel: () => void }) {
+  const [since] = useState(() => Date.now());
+  const [, tickNow] = useState(0);
+  useEffect(() => {
+    const id = window.setInterval(() => tickNow((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, []);
+  return (
+    <section className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-surface px-6 py-10 text-center">
+      <div className="relative mx-auto flex size-32 items-center justify-center">
+        {[0, 1, 2].map((i) => (
+          <span
+            key={i}
+            aria-hidden
+            className="absolute inset-0 rounded-full border border-emerald-400/50"
+            style={{ animation: `radar-ping 2.4s cubic-bezier(0.22, 1, 0.36, 1) ${i * 0.8}s infinite` }}
+          />
+        ))}
+        <span className="relative flex size-16 items-center justify-center rounded-full bg-emerald-500/15 text-[34px] text-emerald-400 shadow-[inset_0_0_0_1px_rgba(52,211,153,0.35)]">
+          <Globe weight="duotone" />
+        </span>
+      </div>
+      <p className="mt-6 text-[18px] font-bold text-text">상대를 찾고 있습니다</p>
+      <p className="tnum mt-1 text-[13px] text-muted">
+        지금 기다리는 사람 {waiting}명, {up(Date.now() - since)} 지났습니다
+      </p>
+      <button
+        type="button"
+        onClick={onCancel}
+        className="mt-6 rounded-xl border border-white/10 px-5 py-2 text-[13.5px] font-semibold text-muted transition-colors hover:border-white/20 hover:text-text"
+      >
+        취소
+      </button>
+    </section>
   );
 }
 
@@ -370,42 +534,80 @@ function OnlineMatch({
   }
 
   if (!room.state) {
+    const hosting = role === "host" && !random;
+    const connecting = room.phase === "connecting";
     return (
-      <div className="mx-auto max-w-[520px] rounded-[10px] border border-border-strong bg-surface p-5 text-center">
-        {role === "host" && !random ? (
-          <>
-            <p className="text-[12px] font-bold tracking-[0.2em] text-muted">방 코드:</p>
-            <p className="tnum mt-1 text-[34px] font-bold tracking-[0.3em] text-text">{code}</p>
-            <p className="mt-3 text-[13px] text-muted">친구에게 이 링크를 보내세요:</p>
-            <button
-              type="button"
-              data-press
-              onClick={async () => {
-                try {
-                  await navigator.clipboard.writeText(link);
-                  setCopied(true);
-                } catch {
-                  setCopied(false);
-                }
-              }}
-              className="mt-1.5 inline-flex max-w-full items-center gap-1.5 rounded-[6px] border border-border-strong px-3.5 py-2 text-[13px] font-semibold text-text hover:bg-surface-2"
-            >
-              <Copy className="size-4 shrink-0" />
-              <span className="truncate">{copied ? "링크를 복사했습니다" : link.replace(/^https?:\/\//, "")}</span>
-            </button>
-            <p className="live-badge mt-4 text-[13px] text-muted">
-              {room.phase === "connecting" ? "방을 여는 중…" : "친구가 들어오면 게임이 시작됩니다"}
-            </p>
-          </>
-        ) : (
-          <p className="live-badge text-[14px] text-muted">
-            {room.phase === "connecting" ? `${code} 방에 연결하는 중…` : "상대를 기다리는 중…"}
+      <section className="relative mx-auto max-w-[520px] overflow-hidden rounded-2xl border border-white/[0.07] bg-surface px-6 py-8 text-center">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0"
+          style={{ background: "radial-gradient(70% 60% at 50% 0%, rgba(37,99,235,0.22), transparent 70%)" }}
+        />
+        <div className="relative">
+          {hosting ? (
+            <>
+              <p className="text-[13px] font-semibold text-muted">방 코드</p>
+              {/* One box per character: easy to read out loud or copy by eye. */}
+              <div className="mt-2 flex justify-center gap-1.5" aria-label={`방 코드 ${code}`}>
+                {[...code].map((ch, i) => (
+                  <span
+                    key={i}
+                    className="flex h-14 w-11 items-center justify-center rounded-xl border border-white/10 bg-black/40 font-mono text-[26px] font-bold text-text shadow-[inset_0_1px_0_rgba(255,255,255,0.06)]"
+                  >
+                    {ch}
+                  </span>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  try {
+                    await navigator.clipboard.writeText(link);
+                    setCopied(true);
+                  } catch {
+                    setCopied(false);
+                  }
+                }}
+                className="mx-auto mt-5 flex items-center justify-center gap-2 rounded-xl bg-[#2563EB] px-5 py-2.5 text-[14px] font-bold text-white transition-[filter,transform] hover:brightness-110 active:scale-[0.98]"
+              >
+                {copied ? <Check className="size-4" weight="bold" /> : <Copy className="size-4" weight="bold" />}
+                {copied ? "링크를 복사했습니다" : "초대 링크 복사"}
+              </button>
+              <p className="mt-2 truncate text-[12px] text-faint">{link.replace(/^https?:\/\//, "")}</p>
+            </>
+          ) : null}
+
+          <div className={`flex items-center justify-center gap-1.5 ${hosting ? "mt-7" : ""}`} aria-hidden>
+            {["#2563EB", "#DCE6F2", "#EF4444"].map((c, i) => (
+              <span
+                key={c}
+                className="size-4"
+                style={{
+                  clipPath: "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)",
+                  background: c,
+                  animation: `waiting-hex 1.2s ease-in-out ${i * 0.2}s infinite`,
+                }}
+              />
+            ))}
+          </div>
+          <p className="mt-3 text-[14px] font-semibold text-text" role="status">
+            {connecting
+              ? hosting
+                ? "방을 여는 중입니다"
+                : `${code} 방에 연결하는 중입니다`
+              : hosting
+                ? "친구가 들어오면 바로 시작합니다"
+                : "상대를 기다리고 있습니다"}
           </p>
-        )}
-        <button type="button" onClick={leave} className="mt-4 text-[13px] text-muted underline underline-offset-2 hover:text-text">
-          나가기
-        </button>
-      </div>
+          <button
+            type="button"
+            onClick={leave}
+            className="mt-6 rounded-xl border border-white/10 px-5 py-2 text-[13.5px] font-semibold text-muted transition-colors hover:border-white/20 hover:text-text"
+          >
+            나가기
+          </button>
+        </div>
+      </section>
     );
   }
 
@@ -1081,21 +1283,29 @@ function Notice({ title, body, onMenu }: { title: string; body: string; onMenu: 
 }
 
 function HowTo() {
+  const rules: { icon: React.ReactNode; tone: string; title: string; body: string }[] = [
+    { icon: <Hexagon weight="duotone" />, tone: "#60A5FA", title: "칸 고르고 선수 대기", body: "차례마다 중립 칸을 하나 고르고, 그 칸 조건에 맞는 선수를 댑니다." },
+    { icon: <ArrowsInSimple weight="duotone" />, tone: "#FB7185", title: "맞닿은 칸까지", body: "그 선수가 옆 칸 조건에도 맞으면 그 칸도 가져옵니다. 상대 칸이면 빼앗습니다." },
+    { icon: <Timer weight="duotone" />, tone: "#FBBF24", title: "시계는 내 차례에만", body: "시간이 다 된 쪽은 멈추고, 남은 쪽이 이어서 둡니다. 랜덤 매치는 한 수에 30초." },
+    { icon: <Trophy weight="duotone" />, tone: "#34D399", title: "칸이 많으면 승리", body: "31칸이 다 차거나 두 시계가 모두 끝나면 더 많이 가진 쪽이 이깁니다." },
+  ];
   return (
-    <section className="rounded-[10px] border border-border p-4 text-[13.5px] leading-relaxed text-muted">
-      <h2 className="mb-1.5 text-[14px] font-semibold text-text">하는 법</h2>
-      <p>
-        번갈아 가며 중립 칸을 하나 고르고, 그 칸 조건에 맞는 선수를 댑니다. 그 선수가{" "}
-        <b className="text-text">맞닿은 칸의 조건에도 맞으면</b> 그 칸들도 같이 가져오고, 상대 칸이면 뺏어 옵니다.
-      </p>
-      <p className="mt-1.5">각자 시계가 있고, 자기 차례에만 흐릅니다.</p>
-      <p className="mt-1.5">
-        시간이 다 된 쪽은 더 둘 수 없고, 남은 쪽이 혼자 이어서 둡니다. 판이 다 차거나 남은 시계도 끝나면 칸이 많은
-        쪽이 이깁니다.
-      </p>
-      <p className="mt-1.5">랜덤 매치는 한 수에 30초입니다. 두 번 시간을 넘기면 기권패입니다.</p>
-      <p className="mt-1.5">31칸이 모두 차면 더 많이 가진 쪽이 이깁니다.</p>
-      <p className="mt-2 text-[12px] text-faint">한글, 영문, 초성으로 검색할 수 있습니다. 예: 손흥민, Son, ㅅㅎㅁ</p>
+    <section className="rounded-2xl border border-white/[0.07] bg-surface p-5">
+      <h2 className="text-[15px] font-bold text-text">하는 법</h2>
+      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+        {rules.map((r) => (
+          <div key={r.title} className="flex gap-3 rounded-xl bg-surface-2/60 p-3.5">
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[20px]" style={{ background: `${r.tone}1f`, color: r.tone }}>
+              {r.icon}
+            </span>
+            <span>
+              <span className="block text-[13.5px] font-bold text-text">{r.title}</span>
+              <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{r.body}</span>
+            </span>
+          </div>
+        ))}
+      </div>
+      <p className="mt-3 text-[12px] text-faint">한글, 영문, 초성으로 검색할 수 있습니다. 예: 손흥민, Son, ㅅㅎㅁ</p>
     </section>
   );
 }

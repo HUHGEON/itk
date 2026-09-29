@@ -10,13 +10,13 @@ import { WhoGame } from "@/components/games/WhoGame";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "후 아 유? · ITK+ 미니게임",
+  title: "Who Are Ya? · ITK+ 미니게임",
   description: "국적·리그·팀·포지션·나이·등번호 힌트로 오늘의 선수를 8번 안에 맞혀 보세요.",
 };
 
 export default function Page() {
   return (
-    <GamePage title="후 아 유?" en="Who Are Ya?">
+    <GamePage title="Who Are Ya?" en="힌트로 오늘의 선수 맞히기" width={460}>
       <WhoGame />
     </GamePage>
   );

@@ -286,7 +286,7 @@ export function HeatmapGame() {
           onShare={async () =>
             setCopied(
               await share(
-                `#ITK히트맵 ${day}\n\n${shareGrid(board, heat)}\n\n점수: ${save.score}\n시도: ${save.guesses}\n최고 한 수: ${save.best}\n열기 밀도: ${density.toFixed(2)}x\n\nhttps://itkplus.vercel.app/games/heatmap`,
+                `#TheHeatmap ${day}\n\n${shareGrid(board, heat)}\n\n점수: ${save.score}\n시도: ${save.guesses}\n최고 한 수: ${save.best}\n열기 밀도: ${density.toFixed(2)}x\n\nhttps://itkplus.vercel.app/games/heatmap`,
               ),
             )
           }
@@ -307,7 +307,7 @@ function HowTo({ onClose }: { onClose: () => void }) {
     ["더 큰 수 만들기", "맞는 선수는 맞닿은 칸도 확인합니다. 이웃 칸 조건에도 맞으면 같은 수에 함께 차지합니다."],
     ["콤보로 점수 올리기", "새로 차지한 칸은 콤보로 계산됩니다: 1칸 = 1점, 2칸 = 3점, 3칸 = 6점, 4칸 = 10점…"],
     ["다시 달구기", "이미 차지한 이웃 칸도 선수가 맞으면 1점씩 더하고 보드가 더 뜨거워집니다."],
-    ["히트맵 완성", "칸을 모두 채우면 끝납니다. 열기 밀도는 완성된 보드의 평균 열기입니다. 틀리면 1점이 깎입니다."],
+    ["Heatmap 완성", "칸을 모두 채우면 끝납니다. 열기 밀도는 완성된 보드의 평균 열기입니다. 틀리면 1점이 깎입니다."],
   ];
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 p-4" onClick={onClose}>
@@ -384,14 +384,14 @@ function HeatModal({
         ref={box}
         role="dialog"
         aria-modal="true"
-        aria-label={save.done ? "히트맵 완성" : "통계"}
+        aria-label={save.done ? "Heatmap 완성" : "통계"}
         onClick={(e) => e.stopPropagation()}
         className="relative w-full max-w-[360px] rounded-[10px] border border-border-strong bg-surface p-5 text-text shadow-2xl"
       >
         <button type="button" onClick={onClose} aria-label="닫기" className="absolute top-3 right-3 text-muted hover:text-text">
           <X className="size-5" />
         </button>
-        <h2 className="text-center text-[15px] font-bold">{save.done ? `히트맵 #${day} 완성` : "통계"}</h2>
+        <h2 className="text-center text-[15px] font-bold">{save.done ? `Heatmap #${day} 완성` : "통계"}</h2>
         {save.done && (
           <>
             <div className="mt-3 text-center">
@@ -417,7 +417,7 @@ function HeatModal({
           <Figure v={`${avg(record.totalDensity, 2)}x`} l="평균 밀도" />
         </div>
         <p className="mt-4 text-center text-[12px] font-semibold text-muted">
-          다음 히트맵까지 <span className="tnum text-text">{clock}</span>
+          다음 Heatmap까지 <span className="tnum text-text">{clock}</span>
         </p>
         {save.done && (
           <button
