@@ -24,6 +24,8 @@ export interface LastMove {
   wrong: boolean;
   /** the clock ran out on a per-turn match and the turn passed with no answer */
   missed?: boolean;
+  /** this side's game clock ran out; the other plays on alone */
+  flagged?: boolean;
 }
 
 export interface MatchState {
@@ -52,6 +54,14 @@ export interface MatchState {
    * fills the rest alone - the original's "Clean Up". The turn never passes.
    */
   solo?: Side;
+  /**
+   * A side whose game clock has run out. It makes no more moves; the other
+   * side keeps playing the neutral hexes on its own clock, and the game ends
+   * when the board is full or that clock runs out too - decided on hexes, not
+   * on who ran out first. (The original ends it on the spot for the side with
+   * time left; players here found that a win for a clock rather than a board.)
+   */
+  flagged?: Side;
   status: "live" | "over";
   result: { winner: Side | null; reason: "board" | "time" | "forfeit" } | null;
   last: LastMove | null;
@@ -112,21 +122,15 @@ export function play(
     wrong: !move.valid,
   };
   if (!move.valid) {
-    if (s.solo) return { ...s, last, seq: s.seq + 1 };
+    if (s.solo || s.flagged) return { ...s, last, seq: s.seq + 1 };
     return { ...s, turn: other(s.turn), spent: 0, last, seq: s.seq + 1 };
   }
 
   for (const id of move.claimed) owners.set(id, s.turn);
   const t = tally(owners);
   const next: MatchState = { ...s, owners: Object.fromEntries(owners), last, seq: s.seq + 1 };
-  if (t.none === 0) {
-    return {
-      ...next,
-      status: "over",
-      result: { winner: t.p1 === t.p2 ? null : t.p1 > t.p2 ? "p1" : "p2", reason: "board" },
-    };
-  }
-  if (s.solo) return next;
+  if (t.none === 0) return { ...next, status: "over", result: { winner: leader(next), reason: "board" } };
+  if (s.solo || s.flagged) return next;
   return { ...next, turn: other(s.turn), spent: 0 };
 }
 
@@ -151,14 +155,20 @@ export function tick(s: MatchState, dt: number): MatchState {
   if (!s.lengthMs) return { ...s, spent };
   const left = s.time[s.turn] - dt;
   if (left > 0) return { ...s, spent, time: { ...s.time, [s.turn]: left } };
-  return {
-    ...s,
-    spent,
-    time: { ...s.time, [s.turn]: 0 },
-    status: "over",
-    result: { winner: other(s.turn), reason: "time" },
-    seq: s.seq + 1,
-  };
+  const time = { ...s.time, [s.turn]: 0 };
+  const last: LastMove = { by: s.turn, player: "", cell: "", claimed: [], stolen: [], wrong: false, flagged: true };
+  // Both clocks gone: the board decides.
+  if (s.flagged) {
+    return { ...s, spent, time, last, status: "over", result: { winner: leader(s), reason: "time" }, seq: s.seq + 1 };
+  }
+  // One gone: the other plays on alone.
+  return { ...s, spent: 0, time, last, flagged: s.turn, turn: other(s.turn), seq: s.seq + 1 };
+}
+
+/** Who holds more hexes, or null on a tie. */
+function leader(s: MatchState): Side | null {
+  const t = tally(new Map(Object.entries(s.owners)));
+  return t.p1 === t.p2 ? null : t.p1 > t.p2 ? "p1" : "p2";
 }
 
 export function forfeit(s: MatchState, loser: Side): MatchState {

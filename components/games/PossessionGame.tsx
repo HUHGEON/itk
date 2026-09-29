@@ -561,6 +561,15 @@ function MatchView({
         toast.show(state.solo ? "틀렸습니다. 다른 수를 두세요." : "틀렸습니다. 차례가 넘어갑니다.");
       }
     }
+    if (l?.flagged) {
+      toast.show(
+        !mySide
+          ? `${names[l.by]} 시간 종료 — ${names[l.by === "p1" ? "p2" : "p1"]} 혼자 남은 칸을 둡니다`
+          : theirs
+            ? "상대 시간이 끝났습니다 — 남은 칸을 계속 채우세요"
+            : "시간이 끝났습니다 — 상대가 남은 칸을 둡니다",
+      );
+    }
     if (l?.missed && !theirs) {
       toast.show(
         state.status === "over"
@@ -633,7 +642,9 @@ function MatchView({
   const cat = selected ? grid.cats[byId.get(selected)!.cat] : null;
   const placeholder = (mobile: boolean) =>
     !canMove
-      ? "상대 차례를 기다리세요…"
+      ? state.flagged === mySide
+        ? "시간이 끝났습니다 — 상대가 남은 칸을 둡니다"
+        : "상대 차례를 기다리세요…"
       : selected
         ? `${cat!.short}에 맞는 선수를 찾으세요…`
         : mobile
@@ -934,28 +945,25 @@ function FullTime({
   } else if (mySide) {
     const won = w === mySide;
     const score = won ? `${count[my]}-${count[op]}` : `${count[op]}-${count[my]}`;
+    // A random match's clock is per turn: two misses lose outright. A game
+    // clock running out only ends the game once both have, on the board.
+    const byBoard = !w ? `무승부 ${count.p1}-${count.p2}` : won ? `승리 ${score}` : `상대 승리 ${score}`;
     message =
-      r.reason === "time"
+      r.reason === "time" && state.turnMs
         ? won
-          ? "승리 — 상대의 시간이 다 됐습니다."
-          : "패배 — 시간이 다 됐습니다."
-        : r.reason === "forfeit"
-          ? won
-            ? "상대가 나가 기권승했습니다."
-            : "기권패했습니다."
-          : !w
-            ? `무승부 ${count.p1}-${count.p2}`
-            : won
-              ? `승리 ${score}`
-              : `상대 승리 ${score}`;
+          ? "승리 — 상대가 두 번 시간을 넘겼습니다."
+          : "패배 — 두 번 시간을 넘겼습니다."
+        : r.reason === "time"
+          ? `두 시계가 모두 끝났습니다 · ${byBoard}`
+          : r.reason === "forfeit"
+            ? won
+              ? "상대가 나가 기권승했습니다."
+              : "기권패했습니다."
+            : byBoard;
   } else {
     const loser = w === "p1" ? "p2" : "p1";
-    message =
-      r.reason === "time"
-        ? `${names[w!]} 승리 — ${names[loser]}의 시간이 다 됐습니다.`
-        : !w
-          ? `무승부 ${count.p1}-${count.p2}`
-          : `${names[w]} 승리 ${count[w]}-${count[loser]}`;
+    const byBoard = !w ? `무승부 ${count.p1}-${count.p2}` : `${names[w]} 승리 ${count[w]}-${count[loser]}`;
+    message = r.reason === "time" ? `두 시계가 모두 끝났습니다 · ${byBoard}` : byBoard;
   }
   const pct = { p1: count.share, p2: 100 - count.share };
 
@@ -1081,6 +1089,10 @@ function HowTo() {
         <b className="text-text">맞닿은 칸의 조건에도 맞으면</b> 그 칸들도 같이 가져오고, 상대 칸이면 뺏어 옵니다.
       </p>
       <p className="mt-1.5">각자 시계가 있고, 자기 차례에만 흐릅니다.</p>
+      <p className="mt-1.5">
+        시간이 다 된 쪽은 더 둘 수 없고, 남은 쪽이 혼자 이어서 둡니다. 판이 다 차거나 남은 시계도 끝나면 칸이 많은
+        쪽이 이깁니다.
+      </p>
       <p className="mt-1.5">랜덤 매치는 한 수에 30초입니다. 두 번 시간을 넘기면 기권패입니다.</p>
       <p className="mt-1.5">31칸이 모두 차면 더 많이 가진 쪽이 이깁니다.</p>
       <p className="mt-2 text-[12px] text-faint">한글·영문·초성으로 검색할 수 있습니다 (손흥민 · Son · ㅅㅎㅁ).</p>
