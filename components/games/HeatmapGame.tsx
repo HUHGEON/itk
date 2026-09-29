@@ -10,6 +10,7 @@ import { HexBoard, type HexLook } from "./HexBoard";
 import { PlayerPicker } from "./PlayerPicker";
 import { useGrid, type GridPick } from "./useGrid";
 import { share, useDaily } from "./useDaily";
+import { ChartBar, X } from "@phosphor-icons/react/dist/ssr";
 
 /** The score sits where the middle hex would be, as in the original. */
 const SCORE_SLOT = { q: 2, r: 3 };
@@ -23,6 +24,55 @@ interface Save {
 }
 
 const EMPTY: Save = { heat: {}, score: 0, guesses: 0, best: 0, done: false };
+
+/**
+ * The running record, with the same six figures the original keeps: games,
+ * average score, best score, fewest guesses, best single move, average heat.
+ */
+interface HeatRecord {
+  played: number;
+  totalScore: number;
+  best: number;
+  fewest: number;
+  bestMove: number;
+  totalDensity: number;
+  lastDay: number;
+}
+const NO_RECORD: HeatRecord = { played: 0, totalScore: 0, best: 0, fewest: 0, bestMove: 0, totalDensity: 0, lastDay: 0 };
+
+function readRecord(): HeatRecord {
+  try {
+    return { ...NO_RECORD, ...JSON.parse(localStorage.getItem("itk:stats:heatmap") ?? "{}") };
+  } catch {
+    return NO_RECORD;
+  }
+}
+
+function saveRecord(day: number, save: Save, density: number): HeatRecord {
+  const r = readRecord();
+  if (r.lastDay === day) return r;
+  const next: HeatRecord = {
+    played: r.played + 1,
+    totalScore: r.totalScore + save.score,
+    best: Math.max(r.best, save.score),
+    fewest: r.fewest ? Math.min(r.fewest, save.guesses) : save.guesses,
+    bestMove: Math.max(r.bestMove, save.best),
+    totalDensity: r.totalDensity + density,
+    lastDay: day,
+  };
+  try {
+    localStorage.setItem("itk:stats:heatmap", JSON.stringify(next));
+  } catch {
+    // no storage
+  }
+  return next;
+}
+
+const untilMidnight = () => {
+  const left = 86_400_000 - ((Date.now() + 9 * 3600_000) % 86_400_000);
+  const s = Math.floor(left / 1000);
+  return [s / 3600, (s % 3600) / 60, s % 60].map((n) => String(Math.floor(n)).padStart(2, "0")).join(":");
+};
 
 /** Hotter hexes, more of the accent: seven steps from a warm tint to full orange. */
 function heatFill(h: number): { fill: string; ink: string } {
@@ -56,6 +106,9 @@ export function HeatmapGame() {
   const [shake, setShake] = useState({ id: "", nonce: 0 });
   const [log, setLog] = useState("");
   const [copied, setCopied] = useState(false);
+  const [modal, setModal] = useState(false);
+  const [record, setRecord] = useState<HeatRecord>(NO_RECORD);
+  useEffect(() => setRecord(readRecord()), []);
 
   const board = useMemo(
     () => (grid ? makeBoard(grid, day * 1009 + 17, SCORE_SLOT) : []),
@@ -87,13 +140,20 @@ export function HeatmapGame() {
     for (const id of move.fresh) next[id] = 1;
     for (const id of move.reheated) next[id] = (next[id] ?? 0) + 1;
     const done = board.every((c) => (next[c.id] ?? 0) > 0);
-    setSave((s) => ({
+    const after: Save = {
       heat: next,
-      score: s.score + move.points,
-      guesses: s.guesses + 1,
-      best: Math.max(s.best, move.points),
+      score: save.score + move.points,
+      guesses: save.guesses + 1,
+      best: Math.max(save.best, move.points),
       done,
-    }));
+    };
+    setSave(after);
+    if (done) {
+      const d = board.reduce((a, c) => a + (next[c.id] ?? 0), 0) / board.length;
+      setRecord(saveRecord(day, after, d));
+      // After the last cells have turned over.
+      window.setTimeout(() => setModal(true), 1400);
+    }
     setFlip({ ids: [...move.fresh, ...move.reheated], nonce: Date.now() });
     setLog(
       `${p.ko} — 새로 ${move.fresh.length}칸` +
@@ -121,11 +181,14 @@ export function HeatmapGame() {
 
   return (
     <div className="mx-auto max-w-[520px]">
-      <div className="mb-3 flex items-baseline justify-between text-[12.5px] text-muted">
+      <div className="mb-3 flex items-center justify-between text-[12.5px] text-muted">
         <span className="font-semibold text-text">#{day}</span>
         <span className="tnum">
           {claimed}/{board.length}칸 · 시도 {save.guesses} · 최고 한 수 {save.best}점
         </span>
+        <button type="button" onClick={() => setModal(true)} aria-label="통계" className="rounded-[6px] p-1 text-muted hover:text-text">
+          <ChartBar className="size-5" />
+        </button>
       </div>
 
       <HexBoard
@@ -148,19 +211,14 @@ export function HeatmapGame() {
 
       <div className="mt-4">
         {save.done ? (
-          <Finished
-            day={day}
-            save={save}
-            density={density}
-            copied={copied}
-            onShare={async () => {
-              setCopied(
-                await share(
-                  `ITK+ 히트맵 #${day}\n점수 ${save.score} · 열기 ${density.toFixed(2)} · 시도 ${save.guesses}\nhttps://itkplus.vercel.app/games/heatmap`,
-                ),
-              );
-            }}
-          />
+          <button
+            type="button"
+            data-press
+            onClick={() => setModal(true)}
+            className="w-full rounded-[10px] border border-border-strong py-3 text-[14px] font-semibold text-text hover:bg-surface-2"
+          >
+            히트맵 완성 · {save.score}점 — 결과 보기
+          </button>
         ) : (
           <PlayerPicker
             items={items}
@@ -176,6 +234,24 @@ export function HeatmapGame() {
           {log}
         </p>
       </div>
+
+      {modal && (
+        <HeatModal
+          day={day}
+          save={save}
+          density={density}
+          record={record}
+          copied={copied}
+          onShare={async () =>
+            setCopied(
+              await share(
+                `ITK+ 히트맵 #${day}\n점수 ${save.score} · 열기 ${density.toFixed(2)}x · 시도 ${save.guesses}\nhttps://itkplus.vercel.app/games/heatmap`,
+              ),
+            )
+          }
+          onClose={() => setModal(false)}
+        />
+      )}
 
       {!save.done && save.guesses === 0 && (
         <section className="mt-2 rounded-[10px] border border-border p-4 text-[13.5px] leading-relaxed text-muted">
@@ -193,40 +269,99 @@ export function HeatmapGame() {
   );
 }
 
-function Finished({
+/**
+ * The end of the day, as the original lays it out: this board's score and its
+ * three figures on top, the running record under them, the countdown to the
+ * next board and a share button. Opened from the chart icon at any time, in
+ * which case it shows only the record.
+ */
+function HeatModal({
   day,
   save,
   density,
+  record,
   copied,
   onShare,
+  onClose,
 }: {
   day: number;
   save: Save;
   density: number;
+  record: HeatRecord;
   copied: boolean;
   onShare: () => void;
+  onClose: () => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
+  const [clock, setClock] = useState(untilMidnight);
+  useEffect(() => {
+    const id = window.setInterval(() => setClock(untilMidnight()), 1000);
+    return () => window.clearInterval(id);
+  }, []);
   useEffect(() => {
     if (!box.current || reducedMotion()) return;
-    animate(box.current, { scale: [0.92, 1], opacity: [0, 1], duration: 520, ease: "outBack(1.4)" });
+    animate(box.current, { opacity: [0, 1], y: [16, 0], duration: 420, ease: "outExpo" });
   }, []);
+  const Figure = ({ v, l }: { v: string | number; l: string }) => (
+    <div className="w-1/3 text-center">
+      <div className="tnum text-[24px] leading-none font-bold">{v}</div>
+      <div className="mt-1 text-[11px] text-muted">{l}</div>
+    </div>
+  );
+  const avg = (total: number, digits = 0) => (record.played ? (total / record.played).toFixed(digits) : "0");
   return (
-    <div ref={box} className="rounded-[10px] border border-border-strong bg-surface p-4 text-center">
-      <p className="text-[12px] font-bold tracking-[0.2em] text-faint">히트맵 #{day} 완성</p>
-      <p className="tnum mt-1 text-[30px] leading-none font-bold text-accent">{save.score}점</p>
-      <p className="tnum mt-1.5 text-[13px] text-muted">
-        열기 밀도 {density.toFixed(2)} · 시도 {save.guesses} · 최고 한 수 {save.best}점
-      </p>
-      <button
-        type="button"
-        data-press
-        onClick={onShare}
-        className="mt-3 rounded-[6px] border border-border-strong px-4 py-2 text-[13px] font-semibold text-text hover:bg-surface-2"
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" onClick={onClose}>
+      <div
+        ref={box}
+        role="dialog"
+        aria-modal="true"
+        aria-label={save.done ? "히트맵 완성" : "통계"}
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-[360px] rounded-[10px] border border-border-strong bg-surface p-5 text-text shadow-2xl"
       >
-        {copied ? "복사했습니다" : "결과 복사"}
-      </button>
-      <p className="mt-2 text-[12px] text-faint">새 판은 내일 자정(한국 시간)에 열립니다.</p>
+        <button type="button" onClick={onClose} aria-label="닫기" className="absolute top-3 right-3 text-muted hover:text-text">
+          <X className="size-5" />
+        </button>
+        <h2 className="text-center text-[15px] font-bold">{save.done ? `히트맵 #${day} 완성` : "통계"}</h2>
+        {save.done && (
+          <>
+            <div className="mt-3 text-center">
+              <div className="tnum text-[40px] leading-none font-bold text-accent">{save.score}</div>
+              <div className="mt-1 text-[11px] text-muted">점수</div>
+            </div>
+            <div className="mt-3 flex">
+              <Figure v={save.guesses} l="시도" />
+              <Figure v={save.best} l="최고 한 수" />
+              <Figure v={`${density.toFixed(2)}x`} l="열기 밀도" />
+            </div>
+            <div className="my-4 border-t border-border" />
+          </>
+        )}
+        <div className="flex">
+          <Figure v={record.played} l="판 수" />
+          <Figure v={avg(record.totalScore)} l="평균 점수" />
+          <Figure v={record.best} l="최고 점수" />
+        </div>
+        <div className="mt-3 flex">
+          <Figure v={record.fewest} l="최소 시도" />
+          <Figure v={record.bestMove} l="최고 한 수" />
+          <Figure v={`${avg(record.totalDensity, 2)}x`} l="평균 밀도" />
+        </div>
+        <p className="mt-4 text-center text-[12px] font-semibold text-muted">
+          다음 히트맵까지 <span className="tnum text-text">{clock}</span>
+        </p>
+        {save.done && (
+          <button
+            type="button"
+            data-press
+            onClick={onShare}
+            className="mt-3 w-full rounded-[6px] py-2.5 text-[14px] font-semibold text-accent-ink"
+            style={{ background: "var(--ribbon)" }}
+          >
+            {copied ? "복사했습니다" : "결과 공유"}
+          </button>
+        )}
+      </div>
     </div>
   );
 }
