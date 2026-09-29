@@ -149,8 +149,7 @@ export default function GamesHub() {
 
                 <div className="flex flex-1 flex-col border-t border-white/[0.06] p-4 pt-3.5">
                   <h2 className="text-[19px] font-bold tracking-tight text-text">{g.title}</h2>
-                  <p className="text-[12px] text-faint">{g.en}</p>
-                  <p className="mt-2 flex-1 text-[13px] leading-relaxed text-muted">{g.blurb}</p>
+                  <p className="flex-1 text-[12.5px] text-muted">{g.en}</p>
                   <span
                     className="mt-4 flex items-center justify-center gap-1.5 rounded-xl py-2.5 text-[14px] font-bold transition-[filter,transform] duration-200 group-hover:brightness-110 group-active:scale-[0.98]"
                     style={{ background: tone.hue, color: tone.ink }}

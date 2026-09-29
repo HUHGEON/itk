@@ -8,7 +8,7 @@ import { ArchiveNav, NextPuzzle } from "./ArchiveNav";
 import { PlayerPicker } from "./PlayerPicker";
 import { Toast } from "./Toast";
 import { useGrid, type GridPick } from "./useGrid";
-import { share, useDaily } from "./useDaily";
+import { useDaily } from "./useDaily";
 import { StatsModal, recordResult, useRecord } from "./Stats";
 
 type Level = "easy" | "normal" | "hard";
@@ -96,23 +96,8 @@ export function CareerGame() {
   const [record, setRecord] = useRecord("career");
   const [showStats, setShowStats] = useState(false);
   const [toast, setToast] = useState<{ text: string; good: boolean } | null>(null);
-  const [copied, setCopied] = useState(false);
   const [info, setInfo] = useState(false);
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem("itk:career:info")) setInfo(true);
-    } catch {
-      // no storage
-    }
-  }, []);
-  const closeInfo = () => {
-    setInfo(false);
-    try {
-      localStorage.setItem("itk:career:info", "1");
-    } catch {
-      // nothing
-    }
-  };
+  const closeInfo = () => setInfo(false);
 
   const total = answer?.clubs.length ?? 0;
   const shown = save.done ? total : Math.min(total, 1 + save.guesses.length);
@@ -150,10 +135,6 @@ export function CareerGame() {
   const intlOpen = save.done || shown >= total;
   const intlFresh = intlOpen && fresh < shown;
 
-  const shareText = () => {
-    const marks = save.guesses.map((g, i) => (save.won && i === save.guesses.length - 1 ? "🟩" : g ? "🟥" : "⬜")).join("");
-    return `#CareerPath #${day} (${LEVELS.find((l) => l.id === level)?.ko})\n${marks}\nhttps://itkplus.vercel.app/games/career`;
-  };
 
   return (
     <div className="mx-auto max-w-[520px]">
@@ -333,8 +314,6 @@ export function CareerGame() {
           buckets={["1", "2", "3", "4", "5", "6", "7+"]}
           highlight={save.won ? (save.guesses.length >= 7 ? "7+" : String(save.guesses.length)) : undefined}
           nextLabel="다음 문제까지"
-          shared={copied}
-          onShare={save.done ? async () => setCopied(await share(shareText())) : undefined}
           onClose={() => setShowStats(false)}
         />
       )}

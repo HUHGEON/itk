@@ -75,8 +75,6 @@ export function StatsModal({
   buckets,
   highlight,
   nextLabel,
-  onShare,
-  shared,
   onClose,
 }: {
   record: GameRecord;
@@ -84,9 +82,6 @@ export function StatsModal({
   buckets: string[];
   highlight?: string;
   nextLabel: string;
-  /** absent until the game is over: nothing to share yet */
-  onShare?: () => void;
-  shared: boolean;
   onClose: () => void;
 }) {
   const [clock, setClock] = useState(untilNext);
@@ -158,17 +153,6 @@ export function StatsModal({
         <p className="mt-4 text-center text-[12px] font-semibold tracking-wide text-muted">
           {nextLabel} <span className="tnum text-text">{clock}</span>
         </p>
-        {onShare && (
-          <button
-            type="button"
-            data-press
-            onClick={onShare}
-            className="mt-3 w-full rounded-[6px] py-2.5 text-[14px] font-semibold text-accent-ink"
-            style={{ background: "var(--ribbon)" }}
-          >
-            {shared ? "복사했습니다" : "결과 공유"}
-          </button>
-        )}
       </div>
     </div>
   );

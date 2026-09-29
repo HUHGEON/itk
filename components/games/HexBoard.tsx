@@ -262,7 +262,7 @@ export function HexBoard({
       anim.onfinish = () => done(id, t.nonce);
       running.current.set(id, { anim, nonce: t.nonce });
     }
-  }, [turning]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [turning]);
 
   const shakers = useRef(new Map<string, HTMLDivElement>());
   useEffect(() => {

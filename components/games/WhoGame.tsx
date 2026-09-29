@@ -14,7 +14,7 @@ import { loadWho, photoUrl, type WhoData } from "@/lib/games/data";
 import { daily, dayNumber } from "@/lib/games/seed";
 import { ArchiveNav, NextPuzzle } from "./ArchiveNav";
 import { PlayerPicker, type PickerItem } from "./PlayerPicker";
-import { share, useDaily } from "./useDaily";
+import { useDaily } from "./useDaily";
 import { StatsModal, recordResult, useRecord } from "./Stats";
 import { Toast } from "./Toast";
 
@@ -128,26 +128,10 @@ export function WhoGame() {
   const [record, setRecord] = useRecord(statsKey);
   const [showStats, setShowStats] = useState(false);
   const [info, setInfo] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [praise, setPraise] = useState("");
   const [revealing, setRevealing] = useState(false);
 
-  // First visit: the rules open by themselves.
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem("itk:who:info")) setInfo(true);
-    } catch {
-      // no storage
-    }
-  }, []);
-  const closeInfo = () => {
-    setInfo(false);
-    try {
-      localStorage.setItem("itk:who:info", "1");
-    } catch {
-      // nothing
-    }
-  };
+  const closeInfo = () => setInfo(false);
 
   const leagueOf = useMemo(() => new Map(data?.clubs.map((c) => [c.id, c.league]) ?? []), [data]);
   const clubName = useMemo(() => new Map(data?.clubs.map((c) => [c.id, c.ko]) ?? []), [data]);
@@ -222,21 +206,6 @@ export function WhoGame() {
   };
   const missing = (["pos", "nation", "club"] as const).filter((k) => !found[k]);
 
-  const shareText = () => {
-    const line = (id: number) => {
-      const g = byId.get(id)!;
-      const m = (ok: boolean) => (ok ? "🟩" : "⬜");
-      return [
-        m(g.nation === answer.nation),
-        ...(multi ? [m(g.league === answer.league)] : []),
-        m(g.club === answer.club),
-        m(g.pos === answer.pos),
-        m(g.age === answer.age),
-        m(g.shirt === answer.shirt),
-      ].join("");
-    };
-    return `#WhoAreYa ${quiz.name} #${game} ${save.won ? count : "X"}/${MAX}${save.photo === false ? " (사진 없이)" : ""}\n${save.guesses.map(line).join("\n")}\nhttps://itkplus.vercel.app/games/who`;
-  };
 
   const lost = save.done && !save.won;
 
@@ -394,7 +363,6 @@ export function WhoGame() {
         </div>
       )}
 
-      <Rules quiz={quiz} />
 
       <section className="mt-6">
         <h3 className="text-sm font-bold tracking-wide text-text uppercase">다른 리그도 하기</h3>
@@ -442,8 +410,6 @@ export function WhoGame() {
           buckets={["1", "2", "3", "4", "5", "6", "7", "8"]}
           highlight={save.won && isToday ? String(count) : undefined}
           nextLabel="다음 선수까지"
-          shared={copied}
-          onShare={save.done ? async () => setCopied(await share(shareText())) : undefined}
           onClose={() => setShowStats(false)}
         />
       )}

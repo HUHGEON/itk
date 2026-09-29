@@ -3,15 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
-  ArrowsInSimple,
   CaretRight,
   Check,
   Copy,
   DeviceMobile,
   Globe,
-  Hexagon,
-  Timer,
-  Trophy,
   User,
   Users,
   X as XIcon,
@@ -33,7 +29,6 @@ import {
 import { ACCENT, HexBoard, OWNER, over, type HexLook } from "./HexBoard";
 import { MobileSheet } from "./MobileSheet";
 import { PlayerPicker } from "./PlayerPicker";
-import { TechnicalArea } from "./TechnicalArea";
 import { HAPTIC, Toast, buzz, useToast } from "./Toast";
 import { useGrid, type GridPick } from "./useGrid";
 import {
@@ -267,7 +262,6 @@ export function PossessionGame() {
             </button>
           </section>
 
-          <HowTo />
         </div>
       )}
     </div>
@@ -919,7 +913,6 @@ function MatchView({
         )}
       </div>
 
-      <TechnicalArea grid={grid} board={board} />
 
       {endOpen && state.result && (
         <FullTime
@@ -1279,33 +1272,5 @@ function Notice({ title, body, onMenu }: { title: string; body: string; onMenu: 
         처음으로
       </button>
     </div>
-  );
-}
-
-function HowTo() {
-  const rules: { icon: React.ReactNode; tone: string; title: string; body: string }[] = [
-    { icon: <Hexagon weight="duotone" />, tone: "#60A5FA", title: "칸 고르고 선수 대기", body: "차례마다 중립 칸을 하나 고르고, 그 칸 조건에 맞는 선수를 댑니다." },
-    { icon: <ArrowsInSimple weight="duotone" />, tone: "#FB7185", title: "맞닿은 칸까지", body: "그 선수가 옆 칸 조건에도 맞으면 그 칸도 가져옵니다. 상대 칸이면 빼앗습니다." },
-    { icon: <Timer weight="duotone" />, tone: "#FBBF24", title: "시계는 내 차례에만", body: "시간이 다 된 쪽은 멈추고, 남은 쪽이 이어서 둡니다. 랜덤 매치는 한 수에 30초." },
-    { icon: <Trophy weight="duotone" />, tone: "#34D399", title: "칸이 많으면 승리", body: "31칸이 다 차거나 두 시계가 모두 끝나면 더 많이 가진 쪽이 이깁니다." },
-  ];
-  return (
-    <section className="rounded-2xl border border-white/[0.07] bg-surface p-5">
-      <h2 className="text-[15px] font-bold text-text">하는 법</h2>
-      <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
-        {rules.map((r) => (
-          <div key={r.title} className="flex gap-3 rounded-xl bg-surface-2/60 p-3.5">
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg text-[20px]" style={{ background: `${r.tone}1f`, color: r.tone }}>
-              {r.icon}
-            </span>
-            <span>
-              <span className="block text-[13.5px] font-bold text-text">{r.title}</span>
-              <span className="mt-0.5 block text-[12.5px] leading-relaxed text-muted">{r.body}</span>
-            </span>
-          </div>
-        ))}
-      </div>
-      <p className="mt-3 text-[12px] text-faint">한글, 영문, 초성으로 검색할 수 있습니다. 예: 손흥민, Son, ㅅㅎㅁ</p>
-    </section>
   );
 }

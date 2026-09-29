@@ -8,11 +8,10 @@ import { dayNumber } from "@/lib/games/seed";
 import { reducedMotion, rollNumber } from "@/lib/motion";
 import { ACCENT, FLIP_MS, FLIP_STAGGER, HEAT, HexBoard, type HexLook } from "./HexBoard";
 import { MobileSheet } from "./MobileSheet";
-import { TechnicalArea } from "./TechnicalArea";
 import { cellId, neighbours } from "@/lib/games/hex";
 import { PlayerPicker } from "./PlayerPicker";
 import { useGrid, type GridPick } from "./useGrid";
-import { share, useDaily } from "./useDaily";
+import { useDaily } from "./useDaily";
 import { ChartBar, Info, X } from "@phosphor-icons/react/dist/ssr";
 
 /** The score sits where the middle hex would be, as in the original. */
@@ -77,26 +76,6 @@ const untilMidnight = () => {
   return [s / 3600, (s % 3600) / 60, s % 60].map((n) => String(Math.floor(n)).padStart(2, "0")).join(":");
 };
 
-/** The original's share grid: one square per hex, black for the score slot. */
-const SQUARE = ["⬜", "🟨", "🟨", "🟧", "🟧", "🟥", "🟥", "🟫"];
-function shareGrid(board: BoardCell[], heat: Map<string, number>): string {
-  const rows = Math.max(...board.map((c) => c.r), SCORE_SLOT.r) + 1;
-  const out: string[] = [];
-  for (let r = 0; r < rows; r++) {
-    const n = r % 2 === 0 ? 4 : 5;
-    let line = "";
-    for (let q = 0; q < n; q++) {
-      if (r === SCORE_SLOT.r && q === SCORE_SLOT.q) line += "⬛";
-      else line += SQUARE[heatLevel(heat.get(`${r}-${q}`) ?? 0)];
-    }
-    // Short rows sit half a hex in, as on the board.
-    out.push(n === 4 ? ` ${line}` : line);
-  }
-  return out.join("\n");
-}
-
-const HOWTO_KEY = "itk:heatmap:howto";
-
 /**
  * The Heatmap: one board a day, filled by yourself.
  *
@@ -115,27 +94,11 @@ export function HeatmapGame() {
   const [flip, setFlip] = useState({ ids: [] as string[], nonce: 0 });
   const [reheat, setReheat] = useState({ ids: [] as string[], nonce: 0 });
   const [shake, setShake] = useState({ id: "", nonce: 0 });
-  const [copied, setCopied] = useState(false);
   const [modal, setModal] = useState(false);
   const [howto, setHowto] = useState(false);
   const [record, setRecord] = useState<HeatRecord>(NO_RECORD);
   useEffect(() => setRecord(readRecord()), []);
-  // First visit: the rules open by themselves, as in the original.
-  useEffect(() => {
-    try {
-      if (!localStorage.getItem(HOWTO_KEY)) setHowto(true);
-    } catch {
-      // no storage: no auto-open
-    }
-  }, []);
-  const closeHowto = () => {
-    setHowto(false);
-    try {
-      localStorage.setItem(HOWTO_KEY, "1");
-    } catch {
-      // nothing
-    }
-  };
+  const closeHowto = () => setHowto(false);
 
   const board = useMemo(
     () => (grid ? makeBoard(grid, day * 1009 + 17, SCORE_SLOT) : []),
@@ -274,7 +237,6 @@ export function HeatmapGame() {
         )}
       </div>
 
-      <TechnicalArea grid={grid} board={board} />
 
       {modal && (
         <HeatModal
@@ -282,14 +244,6 @@ export function HeatmapGame() {
           save={save}
           density={density}
           record={record}
-          copied={copied}
-          onShare={async () =>
-            setCopied(
-              await share(
-                `#TheHeatmap ${day}\n\n${shareGrid(board, heat)}\n\n점수: ${save.score}\n시도: ${save.guesses}\n최고 한 수: ${save.best}\n열기 밀도: ${density.toFixed(2)}x\n\nhttps://itkplus.vercel.app/games/heatmap`,
-              ),
-            )
-          }
           onClose={() => setModal(false)}
         />
       )}
@@ -349,16 +303,12 @@ function HeatModal({
   save,
   density,
   record,
-  copied,
-  onShare,
   onClose,
 }: {
   day: number;
   save: Save;
   density: number;
   record: HeatRecord;
-  copied: boolean;
-  onShare: () => void;
   onClose: () => void;
 }) {
   const box = useRef<HTMLDivElement>(null);
@@ -419,17 +369,6 @@ function HeatModal({
         <p className="mt-4 text-center text-[12px] font-semibold text-muted">
           다음 Heatmap까지 <span className="tnum text-text">{clock}</span>
         </p>
-        {save.done && (
-          <button
-            type="button"
-            data-press
-            onClick={onShare}
-            className="mt-3 w-full rounded-[6px] py-2.5 text-[14px] font-semibold text-accent-ink"
-            style={{ background: "var(--ribbon)" }}
-          >
-            {copied ? "복사했습니다" : "결과 공유"}
-          </button>
-        )}
       </div>
     </div>
   );
