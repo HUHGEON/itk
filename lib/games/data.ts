@@ -37,9 +37,12 @@ export interface Grid {
 
 export const pairKey = (a: number, b: number) => (a < b ? `${a}:${b}` : `${b}:${a}`);
 
+/** "t:9825" → a crest or flag; "l:47" → a league logo, the dark-ground cut. */
 export function imageUrl(img?: string): string | undefined {
-  if (!img?.startsWith("t:")) return undefined;
-  return `https://images.fotmob.com/image_resources/logo/teamlogo/${img.slice(2)}.png`;
+  const base = "https://images.fotmob.com/image_resources/logo";
+  if (img?.startsWith("t:")) return `${base}/teamlogo/${img.slice(2)}.png`;
+  if (img?.startsWith("l:")) return `${base}/leaguelogo/dark/${img.slice(2)}.png`;
+  return undefined;
 }
 
 export const photoUrl = (id: number) =>

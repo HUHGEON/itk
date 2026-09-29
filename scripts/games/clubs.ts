@@ -59,17 +59,24 @@ export const CLUBS: Club[] = [
  * "United Kingdom"), so for England the test is the club's league instead:
  * anything in the top five divisions of the English pyramid.
  */
-export const LEAGUES: { id: string; short: string; country?: string; leagues?: string[] }[] = [
-  { id: "lg-eng", short: "잉글랜드 리그", leagues: ["Q9448", "Q19510", "Q19565", "Q48837", "Q58916"] },
-  { id: "lg-esp", short: "스페인 리그", country: "Q29" },
-  { id: "lg-ita", short: "이탈리아 리그", country: "Q38" },
-  { id: "lg-ger", short: "독일 리그", country: "Q183" },
-  { id: "lg-fra", short: "프랑스 리그", country: "Q142" },
-  { id: "lg-ned", short: "네덜란드 리그", country: "Q55" },
-  { id: "lg-por", short: "포르투갈 리그", country: "Q45" },
-  { id: "lg-tur", short: "튀르키예 리그", country: "Q43" },
-  { id: "lg-ksa", short: "사우디 리그", country: "Q851" },
-  { id: "lg-usa", short: "미국 리그", country: "Q30" },
+export const LEAGUES: {
+  id: string;
+  short: string;
+  /** the country's top division on FotMob, whose logo marks the hex */
+  logo: number;
+  country?: string;
+  leagues?: string[];
+}[] = [
+  { id: "lg-eng", short: "잉글랜드 리그", logo: 47, leagues: ["Q9448", "Q19510", "Q19565", "Q48837", "Q58916"] },
+  { id: "lg-esp", short: "스페인 리그", logo: 87, country: "Q29" },
+  { id: "lg-ita", short: "이탈리아 리그", logo: 55, country: "Q38" },
+  { id: "lg-ger", short: "독일 리그", logo: 54, country: "Q183" },
+  { id: "lg-fra", short: "프랑스 리그", logo: 53, country: "Q142" },
+  { id: "lg-ned", short: "네덜란드 리그", logo: 57, country: "Q55" },
+  { id: "lg-por", short: "포르투갈 리그", logo: 61, country: "Q45" },
+  { id: "lg-tur", short: "튀르키예 리그", logo: 71, country: "Q43" },
+  { id: "lg-ksa", short: "사우디 리그", logo: 536, country: "Q851" },
+  { id: "lg-usa", short: "미국 리그", logo: 130, country: "Q30" },
 ];
 
 /** Individual honours that sit on the player's own item. */

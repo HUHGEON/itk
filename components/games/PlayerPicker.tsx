@@ -68,6 +68,15 @@ export function PlayerPicker<T extends PickerItem>({
         placeholder={placeholder}
         onChange={(e) => setQ(e.target.value)}
         onKeyDown={(e) => {
+          /*
+           * Korean IME: Enter pressed mid-composition arrives twice - once
+           * while the last syllable is still being composed, once after it is
+           * committed. Handling both picked twice: "네투" chose 페드루 네투,
+           * then the committed "투" chose "가브리에우 두스 산투스 마갈량이스".
+           * The composing one is ignored; the second carries the full word.
+           * (keyCode 229 is what some browsers send instead of isComposing.)
+           */
+          if (e.nativeEvent.isComposing || e.keyCode === 229) return;
           if (e.key === "ArrowDown") {
             e.preventDefault();
             setActive((a) => Math.min(a + 1, hits.length - 1));

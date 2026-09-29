@@ -290,7 +290,9 @@ async function main() {
     const crest = crests.get(c.q);
     cats.push({ id, short: c.short, kind: "club", img: crest ? `t:${crest}` : undefined });
   }
-  for (const l of LEAGUES) cats.push({ id: l.id, short: l.short, kind: "league" });
+  // A league hex shows the league's own logo, as the original's do, rather
+  // than a generic flag icon.
+  for (const l of LEAGUES) cats.push({ id: l.id, short: l.short, kind: "league", img: `l:${l.logo}` });
   for (const r of REGIONS) cats.push({ id: r.id, short: r.short, kind: "region" });
   for (const a of AWARDS) cats.push({ id: `aw-${a.q}`, short: a.short, kind: "award" });
   for (const d of [1970, 1980, 1990, 2000]) cats.push({ id: `dc-${d}`, short: `${String(d).slice(2)}년대생`, kind: "decade" });
