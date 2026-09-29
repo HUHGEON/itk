@@ -128,6 +128,7 @@ async function details(players: Map<string, Player>, clubs: Map<string, ClubInfo
         { ?p wdt:P1532 ?v BIND("s" AS ?k) } UNION { ?p wdt:P27 ?v BIND("c" AS ?k) }
         UNION { ?p wdt:P413 ?v BIND("p" AS ?k) } UNION { ?p wdt:P166 ?v BIND("a" AS ?k) }
         UNION { ?p skos:altLabel ?v FILTER(LANG(?v) = "ko") BIND("k" AS ?k) }
+        UNION { ?w schema:about ?p ; schema:isPartOf <https://ko.wikipedia.org/> ; schema:name ?v BIND("w" AS ?k) }
       }`),
     ]);
 
@@ -170,6 +171,25 @@ async function details(players: Map<string, Player>, clubs: Map<string, ClubInfo
       const k = val(r, "k");
       if (k === "k") {
         p.aliases.add(val(r, "v")!);
+        continue;
+      }
+      if (k === "w") {
+        /*
+         * The Korean Wikipedia article's title, less its disambiguator: the
+         * name the player is known by. Wikidata's Korean label is sometimes
+         * the legal name instead - Jorginho is labelled "조르지 루이스
+         * 프렐루" while his article is "조르지뉴 (1991년)", so typing 조르지뉴
+         * found only the 1964 Brazilian. The shorter of the two is shown
+         * (Rodri stays 로드리, not his article's 로드리 에르난데스); the other
+         * stays searchable.
+         */
+        const title = val(r, "v")!.replace(/\s*\([^)]*\)\s*$/, "").trim();
+        if (title && title !== p.ko && /[가-힣]/.test(title)) {
+          const [short, long] =
+            title.replace(/\s+/g, "").length < p.ko.replace(/\s+/g, "").length ? [title, p.ko] : [p.ko, title];
+          p.ko = short;
+          p.aliases.add(long);
+        }
         continue;
       }
       const v = qid(val(r, "v"));
