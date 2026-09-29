@@ -46,3 +46,6 @@ next-env.d.ts
 
 # Playwright MCP 가 검증 중 남기는 스냅샷·콘솔 로그
 /.playwright-mcp/
+
+# game data build cache (Wikidata / FotMob responses)
+/.cache/

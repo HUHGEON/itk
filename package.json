@@ -23,7 +23,8 @@
     "retag": "tsx scripts/retag.ts",
     "lang:bench": "tsx scripts/lang-bench.ts",
     "crests:cache": "tsx scripts/cache-crests.ts",
-    "ball:bake": "tsx scripts/bake-ball.ts"
+    "ball:bake": "tsx scripts/bake-ball.ts",
+    "games:build": "tsx scripts/build-games.ts && tsx scripts/build-whoareya.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.115.0",
