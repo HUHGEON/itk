@@ -43,7 +43,7 @@ function HexFlower({ fills }: { fills: string[] }) {
     [0.5, 0.75],
   ];
   return (
-    <div className="relative size-40 xl:size-44">
+    <div className="relative size-32 sm:size-40 xl:size-44">
       {at.map(([x, y], i) => (
         <span
           key={i}
@@ -125,7 +125,7 @@ export default function GamesHub() {
               >
                 {/* The picture: the game's own pieces, lit in its colour. */}
                 <div
-                  className="relative flex aspect-[16/10] items-center pt-6 xl:aspect-[4/5] justify-center overflow-hidden"
+                  className="relative flex aspect-[2/1] items-center pt-6 sm:aspect-[16/10] xl:aspect-[4/5] justify-center overflow-hidden"
                   style={{
                     background: `radial-gradient(120% 90% at 50% 45%, ${tone.glow}, transparent 70%), linear-gradient(180deg, rgba(255,255,255,0.03), transparent)`,
                   }}
