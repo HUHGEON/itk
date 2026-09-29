@@ -59,7 +59,7 @@ export function CategoryFace({ cat, ink, fill }: { cat: Category; ink: string; f
           <img
             src={src}
             alt=""
-            loading="lazy"
+            decoding="async"
             className="absolute top-1/2 left-1/2 h-auto max-h-full w-auto max-w-full -translate-x-1/2 -translate-y-1/2 object-contain drop-shadow-[0_0_4px_rgba(0,0,0,0.25)]"
           />
         ) : (

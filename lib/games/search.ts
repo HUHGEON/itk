@@ -59,7 +59,7 @@ export interface Searchable {
 
 export interface Index<T extends Searchable> {
   items: T[];
-  keys: { ko: string[]; en: string; ini: string[]; words: string[] }[];
+  keys: { ko: string[]; en: string; ini: string[]; words: string[]; koWords: string[] }[];
 }
 
 export function buildIndex<T extends Searchable>(items: T[]): Index<T> {
@@ -75,6 +75,8 @@ export function buildIndex<T extends Searchable>(items: T[]): Index<T> {
         .split(/[\s]+/)
         .map(fold)
         .filter(Boolean),
+      // "웨인 루니" → ["웨인", "루니"]: a surname typed on its own.
+      koWords: [p.ko, ...(p.alt ?? [])].flatMap((n) => n.split(/\s+/).map(fold)).filter(Boolean),
     })),
   };
 }
@@ -92,10 +94,14 @@ export function search<T extends Searchable>(index: Index<T>, raw: string, limit
       else if (k.ini.some((i) => i.includes(q))) s = 30;
     } else if (k.ko.some((n) => n === q)) s = 100;
     else if (k.en === q) s = 100;
+    // A whole word of the name beats a name that merely starts the same way:
+    // with 40,000 players, "루니" put 루니 바르다지 above 웨인 루니.
+    else if (k.koWords.includes(q) || k.words.includes(q)) s = 90;
     else if (k.ko.some((n) => n.startsWith(q)) || k.en.startsWith(q)) s = 80;
     else if (k.words.some((w) => w.startsWith(q))) s = 70;
     else if (k.ko.some((n) => n.includes(q)) || k.en.includes(q)) s = 40;
-    if (s) scored.push({ i, s });
+    // Fame nudges within a band (up to 8 points), never across a whole one.
+    if (s) scored.push({ i, s: s + Math.min(8, index.items[i].fame / 12) });
   });
 
   scored.sort((a, b) => b.s - a.s || index.items[b.i].fame - index.items[a.i].fame);

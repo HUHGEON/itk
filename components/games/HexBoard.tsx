@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { BOARD_H_PER_W, place } from "@/lib/games/hex";
 import type { BoardCell } from "@/lib/games/board";
 import type { Category } from "@/lib/games/data";
@@ -122,6 +122,10 @@ function Face({ cat, look, back }: { cat: Category; look: HexLook; back?: boolea
         transform: back ? "rotateY(180deg)" : undefined,
       }}
     >
+      {/* The Heatmap's shadow sits here, inside the face, not on the cell:
+          a filter on an ancestor flattens the 3D turn, and then the hidden
+          back face shows through mirrored halfway round. */}
+      <div className="h-full w-full" style={look.shadow ? { filter: `drop-shadow(${look.shadow})` } : undefined}>
       <svg viewBox={`0 0 ${W} ${H}`} className={lift} aria-hidden>
         <polygon points={hex(1.6)} fill={look.fill} style={{ transition: "fill 220ms ease" }} />
         {look.open && a && look.selected && <polygon points={hex(2.4)} fill={a.overlay} />}
@@ -130,6 +134,7 @@ function Face({ cat, look, back }: { cat: Category; look: HexLook; back?: boolea
           <polygon points={hex(1.5)} fill="none" stroke={a.stroke} strokeWidth="4" vectorEffect="non-scaling-stroke" />
         )}
       </svg>
+      </div>
       <div className={`pointer-events-none absolute inset-0 ${look.selected && look.open ? "scale-[1.12]" : ""}`}>
         {/* The crest's fade runs into the colour the hex actually shows,
             highlight included, or it reads as a pale box. */}
@@ -226,6 +231,49 @@ export function HexBoard({
       return next;
     });
 
+  /*
+   * The turn runs on elements that stay put. It used to swap a plain face for
+   * a two-faced one when a flip began and back when it ended, and each swap
+   * built the crest's <img> afresh - measured: a different node on the first
+   * frame of the flip - so the hex showed empty while it decoded, then popped
+   * in. Now both faces are always there, the front shows the old look while
+   * the cell waits and turns, and only a transform is animated.
+   */
+  const flippers = useRef(new Map<string, HTMLDivElement>());
+  const running = useRef(new Map<string, { anim: Animation; nonce: number }>());
+  useLayoutEffect(() => {
+    for (const [id, r] of running.current) {
+      if (turning[id]?.nonce === r.nonce) continue;
+      // Finished (or superseded): drop the transform in the same frame that
+      // the front takes the new look, so nothing old shows in between.
+      r.anim.cancel();
+      running.current.delete(id);
+    }
+    for (const [id, t] of Object.entries(turning)) {
+      if (running.current.has(id)) continue;
+      const el = flippers.current.get(id);
+      if (!el) continue;
+      const anim = el.animate([{ transform: "rotateY(0deg)" }, { transform: "rotateY(180deg)" }], {
+        duration: FLIP_MS,
+        delay: t.delay,
+        easing: EASE,
+        fill: "both",
+      });
+      anim.onfinish = () => done(id, t.nonce);
+      running.current.set(id, { anim, nonce: t.nonce });
+    }
+  }, [turning]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const shakers = useRef(new Map<string, HTMLDivElement>());
+  useEffect(() => {
+    if (!shake?.nonce || reducedMotion()) return;
+    const x = [0, -6, 6, -5, 5, -2, 2, 0];
+    shakers.current.get(shake.id)?.animate(
+      x.map((v) => ({ transform: `translateX(${v}px)` })),
+      { duration: 360, easing: "ease-in-out" },
+    );
+  }, [shake?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+
   const box = (c: { q: number; r: number }) => {
     const b = place(c);
     return {
@@ -245,7 +293,6 @@ export function HexBoard({
         const l = looks.get(cell.id)!;
         const cat = cats[cell.cat];
         const t = turning[cell.id];
-        const shaking = shake && shake.id === cell.id && shake.nonce > 0;
         const reheatAt = reheat && reheat.nonce ? reheat.ids.indexOf(cell.id) : -1;
         return (
           <div
@@ -255,7 +302,6 @@ export function HexBoard({
             style={{
               ...box(cell),
               perspective: "1200px",
-              filter: l.shadow ? `drop-shadow(${l.shadow})` : undefined,
             }}
           >
             <button
@@ -274,29 +320,24 @@ export function HexBoard({
               style={{ transformStyle: "preserve-3d" }}
             >
               <div
-                key={shaking ? `shake-${shake!.nonce}` : "still"}
-                className="relative h-full w-full"
-                style={{
-                  transformStyle: "preserve-3d",
-                  animation: shaking ? "hex-shake 360ms ease-in-out" : undefined,
+                ref={(el) => {
+                  if (el) shakers.current.set(cell.id, el);
+                  else shakers.current.delete(cell.id);
                 }}
+                className="relative h-full w-full"
+                style={{ transformStyle: "preserve-3d" }}
               >
-                {t ? (
-                  <div
-                    key={`flip-${t.nonce}`}
-                    className="absolute inset-0"
-                    style={{
-                      transformStyle: "preserve-3d",
-                      animation: `hex-flip ${FLIP_MS}ms ${EASE} ${t.delay}ms both`,
-                    }}
-                    onAnimationEnd={(e) => e.animationName === "hex-flip" && done(cell.id, t.nonce)}
-                  >
-                    <Face cat={cat} look={t.from} />
-                    <Face cat={cat} look={l} back />
-                  </div>
-                ) : (
-                  <Face cat={cat} look={l} />
-                )}
+                <div
+                  ref={(el) => {
+                    if (el) flippers.current.set(cell.id, el);
+                    else flippers.current.delete(cell.id);
+                  }}
+                  className="absolute inset-0"
+                  style={{ transformStyle: "preserve-3d", willChange: "transform" }}
+                >
+                  <Face cat={cat} look={t ? t.from : l} />
+                  <Face cat={cat} look={l} back />
+                </div>
               </div>
 
               {reveal && reveal.id === cell.id && (

@@ -177,7 +177,7 @@ export function PossessionGame() {
             <Globe className="size-7 shrink-0 text-emerald-400" weight="duotone" />
             <span>
               <span className="block text-[15px] font-semibold text-text">온라인 상대 찾기</span>
-              <span className="block text-[12.5px] text-muted">기다리는 사람과 바로 붙습니다 · 한 수에 30초</span>
+              <span className="block text-[12.5px] text-muted">기다리는 사람과 바로 붙습니다. 한 수에 30초입니다.</span>
             </span>
           </button>
           <button type="button" disabled={!ready} onClick={() => join(roomCode(), "host")} className={card}>
@@ -203,7 +203,7 @@ export function PossessionGame() {
           </Link>
 
           <section className="rounded-[10px] border border-border bg-surface p-4">
-            <h2 className="text-[13px] font-semibold text-text">방 설정 (친구와 · 한 화면)</h2>
+            <h2 className="text-[13px] font-semibold text-text">방 설정 (친구와 하기, 한 화면에서 둘이)</h2>
             <p className="mt-2 text-[12px] font-semibold text-muted">시간</p>
             <div className="mt-1 grid grid-cols-3 gap-1.5">
               {LENGTHS.map((l) => (
@@ -430,7 +430,7 @@ function OnlineMatch({
         online={{ me: room.connected, opponent: room.opponentHere }}
         canMove={s.status === "live" && s.kickoff === 0 && mine}
         names={{ p1: room.mySide === "p1" ? "나" : "상대", p2: room.mySide === "p2" ? "나" : "상대" }}
-        banner={gone !== null && s.status === "live" ? `상대 연결이 끊겼습니다 — ${gone}초 안에 돌아오지 않으면 기권승` : undefined}
+        banner={gone !== null && s.status === "live" ? `상대 연결이 끊겼습니다. ${gone}초 안에 돌아오지 않으면 기권승입니다.` : undefined}
         onAnswer={room.answer}
         actions={{
           again: canClean ? () => setSolo(cleanUp(s, room.mySide)) : result?.reason === "forfeit" ? undefined : room.rematch,
@@ -564,10 +564,10 @@ function MatchView({
     if (l?.flagged) {
       toast.show(
         !mySide
-          ? `${names[l.by]} 시간 종료 — ${names[l.by === "p1" ? "p2" : "p1"]} 혼자 남은 칸을 둡니다`
+          ? `${names[l.by]} 시간이 끝났습니다. 남은 칸은 ${names[l.by === "p1" ? "p2" : "p1"]} 혼자 둡니다.`
           : theirs
-            ? "상대 시간이 끝났습니다 — 남은 칸을 계속 채우세요"
-            : "시간이 끝났습니다 — 상대가 남은 칸을 둡니다",
+            ? "상대 시간이 끝났습니다. 남은 칸을 계속 채우세요."
+            : "시간이 끝났습니다. 남은 칸은 상대가 둡니다.",
       );
     }
     if (l?.missed && !theirs) {
@@ -576,7 +576,7 @@ function MatchView({
           ? "두 번째로 시간을 넘겨 기권패했습니다."
           : mySide
             ? "시간 초과로 차례를 놓쳤습니다. 한 번 더 놓치면 기권패입니다."
-            : `${names[l.by]} 시간 초과 — 차례가 넘어갑니다.`,
+            : `${names[l.by]} 시간 초과로 차례가 넘어갑니다.`,
       );
     }
     if (mySide && state.status === "live" && state.turn === mySide && theirs) buzz(HAPTIC.nudge);
@@ -643,7 +643,7 @@ function MatchView({
   const placeholder = (mobile: boolean) =>
     !canMove
       ? state.flagged === mySide
-        ? "시간이 끝났습니다 — 상대가 남은 칸을 둡니다"
+        ? "시간이 끝났습니다. 남은 칸은 상대가 둡니다"
         : "상대 차례를 기다리세요…"
       : selected
         ? `${cat!.short}에 맞는 선수를 찾으세요…`
@@ -951,10 +951,10 @@ function FullTime({
     message =
       r.reason === "time" && state.turnMs
         ? won
-          ? "승리 — 상대가 두 번 시간을 넘겼습니다."
-          : "패배 — 두 번 시간을 넘겼습니다."
+          ? "상대가 두 번 시간을 넘겨 이겼습니다."
+          : "두 번 시간을 넘겨 기권패했습니다."
         : r.reason === "time"
-          ? `두 시계가 모두 끝났습니다 · ${byBoard}`
+          ? `두 시계가 모두 끝났습니다. ${byBoard}`
           : r.reason === "forfeit"
             ? won
               ? "상대가 나가 기권승했습니다."
@@ -963,7 +963,7 @@ function FullTime({
   } else {
     const loser = w === "p1" ? "p2" : "p1";
     const byBoard = !w ? `무승부 ${count.p1}-${count.p2}` : `${names[w]} 승리 ${count[w]}-${count[loser]}`;
-    message = r.reason === "time" ? `두 시계가 모두 끝났습니다 · ${byBoard}` : byBoard;
+    message = r.reason === "time" ? `두 시계가 모두 끝났습니다. ${byBoard}` : byBoard;
   }
   const pct = { p1: count.share, p2: 100 - count.share };
 
@@ -1014,7 +1014,7 @@ function FullTime({
 
           {top && top.length > 0 && (
             <div className="mt-4 rounded-lg bg-black/20 p-4 text-left">
-              <div className="text-[11px] font-black tracking-[0.18em] text-white/50 uppercase">최선의 수 5</div>
+              <div className="text-[11px] font-black tracking-[0.18em] text-white/50 uppercase">최선의 수 5개</div>
               <div className="mt-3 space-y-2">
                 {top.map((m, i) => {
                   const first = top.findIndex((x) => x.count === m.count);
@@ -1095,7 +1095,7 @@ function HowTo() {
       </p>
       <p className="mt-1.5">랜덤 매치는 한 수에 30초입니다. 두 번 시간을 넘기면 기권패입니다.</p>
       <p className="mt-1.5">31칸이 모두 차면 더 많이 가진 쪽이 이깁니다.</p>
-      <p className="mt-2 text-[12px] text-faint">한글·영문·초성으로 검색할 수 있습니다 (손흥민 · Son · ㅅㅎㅁ).</p>
+      <p className="mt-2 text-[12px] text-faint">한글, 영문, 초성으로 검색할 수 있습니다. 예: 손흥민, Son, ㅅㅎㅁ</p>
     </section>
   );
 }

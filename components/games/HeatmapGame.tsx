@@ -257,7 +257,7 @@ export function HeatmapGame() {
             onClick={() => setModal(true)}
             className="w-full rounded-[10px] border border-border-strong py-3 text-[14px] font-semibold text-text hover:bg-surface-2"
           >
-            히트맵 완성 · {save.score}점 — 결과 보기
+            결과 보기 ({save.score}점)
           </button>
         ) : (
           <>

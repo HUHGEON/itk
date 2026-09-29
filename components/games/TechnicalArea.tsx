@@ -41,7 +41,7 @@ export function TechnicalArea({ grid, board }: { grid: Grid; board: BoardCell[] 
           </li>
         ))}
         {onBoard.some((c) => c.kind === "club") && (
-          <li className="text-muted">클럽 칸은 1군에 오른 선수만 칩니다 — 유스·2군 경력은 해당하지 않습니다.</li>
+          <li className="text-muted">클럽 칸은 1군 경력만 인정합니다. 유스나 2군에서만 뛰었다면 해당하지 않습니다.</li>
         )}
         {onBoard.some((c) => c.kind === "nation") && (
           <li className="text-muted">
