@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { ChartBar, Info, X } from "@phosphor-icons/react/dist/ssr";
 import { loadCareer, type CareerAnswer } from "@/lib/games/data";
 import { daily, dayNumber } from "@/lib/games/seed";
-import { ArchiveNav } from "./ArchiveNav";
+import { ArchiveNav, NextPuzzle } from "./ArchiveNav";
 import { PlayerPicker } from "./PlayerPicker";
 import { Toast } from "./Toast";
 import { useGrid, type GridPick } from "./useGrid";
@@ -275,6 +275,7 @@ export function CareerGame() {
                 {answer.en}
                 {answer.born ? ` · ${answer.born}년생` : ""}
               </p>
+              <NextPuzzle storageKey="career" game={day} today={today} onGo={go} />
             </div>
           ) : (
             <div className="flex gap-2">

@@ -49,3 +49,34 @@ export function ArchiveNav({ game, today, onGo }: { game: number; today: number;
     </nav>
   );
 }
+
+/**
+ * After a puzzle: straight on to another. Picks a past puzzle this browser
+ * has not finished, newest first, so a run of "one more" walks back through
+ * the archive rather than landing on ones already solved.
+ */
+export function NextPuzzle({ storageKey, game, today, onGo }: { storageKey: string; game: number; today: number; onGo: (g: number) => void }) {
+  const next = () => {
+    for (let n = today; n >= 1; n--) {
+      if (n === game) continue;
+      try {
+        const raw = localStorage.getItem(`itk:${storageKey}:${n}`);
+        if (raw && JSON.parse(raw).done) continue;
+      } catch {
+        // unreadable: treat as unplayed
+      }
+      onGo(n);
+      return;
+    }
+  };
+  return (
+    <button
+      type="button"
+      onClick={next}
+      className="mx-auto mt-3 flex items-center justify-center gap-1.5 rounded-xl bg-indigo-600 px-5 py-2.5 text-[14px] font-bold text-white shadow-sm transition-colors hover:bg-indigo-700 active:scale-[0.98]"
+    >
+      다른 문제 풀기
+      <CaretRight className="size-4" weight="bold" />
+    </button>
+  );
+}

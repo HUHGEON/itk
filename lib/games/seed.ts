@@ -5,7 +5,14 @@
  * reader's clock happens to be, and it is numbered from the day the games
  * launched so a result can say "#12".
  */
-const LAUNCH = Date.UTC(2026, 8, 29); // 2026-09-29, Seoul
+/*
+ * Numbered from a year before the games went live (2026-09-29), so there is a
+ * back catalogue from the first day: someone who has finished today's puzzle
+ * can go on to the one before, as the original's archive allows. Every day's
+ * answer is still fixed by its number, so an archive game is the same for
+ * everyone.
+ */
+const LAUNCH = Date.UTC(2025, 8, 29); // numbering starts 2025-09-29, Seoul
 
 /** Days since launch, counted on the Korean calendar. */
 export function dayNumber(now = Date.now()): number {

@@ -12,7 +12,7 @@ import {
 } from "@phosphor-icons/react/dist/ssr";
 import { loadWho, photoUrl, type WhoData } from "@/lib/games/data";
 import { daily, dayNumber } from "@/lib/games/seed";
-import { ArchiveNav } from "./ArchiveNav";
+import { ArchiveNav, NextPuzzle } from "./ArchiveNav";
 import { PlayerPicker, type PickerItem } from "./PlayerPicker";
 import { share, useDaily } from "./useDaily";
 import { StatsModal, recordResult, useRecord } from "./Stats";
@@ -354,6 +354,7 @@ export function WhoGame() {
       </div>
 
       <ArchiveNav game={game} today={today} onGo={(g) => go(g)} />
+      {save.done && <NextPuzzle storageKey={statsKey} game={game} today={today} onGo={(g) => go(g)} />}
 
       {count > 0 && (
         <div className="mt-2 w-full">
