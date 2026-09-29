@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { RealtimeChannel } from "@supabase/supabase-js";
 import { supabaseBrowser } from "@/lib/supabase-browser";
-import { makeBoard, type BoardCell } from "@/lib/games/board";
+import { makeBoard, poolGrid, type BoardCell, type Pool } from "@/lib/games/board";
 import type { Grid, GridPlayer } from "@/lib/games/data";
 import { forfeit, newMatch, play, tick, type MatchState, type Side } from "@/lib/games/possession";
 
@@ -24,6 +24,9 @@ export type Role = "host" | "guest";
 export interface RoomSettings {
   lengthMs: number;
   chaining: boolean;
+  /** per-turn clock; random matches use 30 seconds */
+  turnMs?: number;
+  pool?: Pool;
 }
 
 type Phase = "connecting" | "waiting" | "live" | "over" | "full" | "error";
@@ -39,6 +42,30 @@ export function roomCode(): string {
 
 const clientId = () => crypto.randomUUID().slice(0, 8);
 
+/*
+ * A reload is the same player coming back, not a stranger. The original keeps
+ * a room across a refresh; here the tab remembers its id and side for the
+ * room (sessionStorage, so a second tab is still a second player), and the
+ * host - who holds the match - also keeps the match itself.
+ */
+function session<T>(key: string): T | null {
+  try {
+    const v = sessionStorage.getItem(key);
+    return v ? (JSON.parse(v) as T) : null;
+  } catch {
+    return null;
+  }
+}
+function keep(key: string, v: unknown) {
+  try {
+    sessionStorage.setItem(key, JSON.stringify(v));
+  } catch {
+    // private mode: a reload starts over
+  }
+}
+export const rememberRole = (code: string, role: Role) => keep(`pp:role:${code}`, role);
+export const rememberedRole = (code: string) => session<Role>(`pp:role:${code}`);
+
 /** How long a vanished opponent has to come back before the game is theirs to lose. */
 const GRACE_MS = 20_000;
 
@@ -52,24 +79,36 @@ export function useRoom({
   role: Role;
   grid: Grid | null;
   settings: RoomSettings;
+  pool?: Pool;
 }) {
-  const me = useMemo(clientId, []);
+  const me = useMemo(() => {
+    const id = session<string>(`pp:id:${code}`) ?? clientId();
+    keep(`pp:id:${code}`, id);
+    return id;
+  }, [code]);
   const mySide: Side = role === "host" ? "p1" : "p2";
-  const [state, setState] = useState<MatchState | null>(null);
-  const [phase, setPhase] = useState<Phase>("connecting");
+  const saved = useMemo(
+    () => (role === "host" ? session<{ state: MatchState; guest: string | null }>(`pp:match:${code}`) : null),
+    [code, role],
+  );
+  const [state, setState] = useState<MatchState | null>(saved?.state ?? null);
+  const [phase, setPhase] = useState<Phase>(
+    saved?.state ? (saved.state.status === "over" ? "over" : "live") : "connecting",
+  );
+  const [connected, setConnected] = useState(false);
   const [opponentHere, setOpponentHere] = useState(false);
   const [goneSince, setGoneSince] = useState<number | null>(null);
   // For the guest: when the last snapshot arrived, so its clock can run on.
   const [receivedAt, setReceivedAt] = useState(0);
 
   const channel = useRef<RealtimeChannel | null>(null);
-  const stateRef = useRef<MatchState | null>(null);
+  const stateRef = useRef<MatchState | null>(saved?.state ?? null);
   stateRef.current = state;
-  const guestId = useRef<string | null>(null);
+  const guestId = useRef<string | null>(saved?.guest ?? null);
 
   const board: BoardCell[] = useMemo(
-    () => (grid && state ? makeBoard(grid, state.seed) : []),
-    [grid, state?.seed], // eslint-disable-line react-hooks/exhaustive-deps
+    () => (grid && state ? makeBoard(poolGrid(grid, state.pool ?? "all"), state.seed) : []),
+    [grid, state?.seed, state?.pool], // eslint-disable-line react-hooks/exhaustive-deps
   );
   const byId = useMemo(() => new Map(board.map((c) => [c.id, c])), [board]);
   const players = useMemo(() => grid?.players ?? [], [grid]);
@@ -79,18 +118,22 @@ export function useRoom({
     stateRef.current = next;
     setState(next);
     setPhase(next.status === "over" ? "over" : "live");
+    keep(`pp:match:${code}`, { state: next, guest: guestId.current });
     channel.current?.send({
       type: "broadcast",
       event: "state",
       payload: { state: next, guest: guestId.current },
     });
-  }, []);
+  }, [code]);
 
   const start = useCallback(() => {
     if (!grid) return;
     const seed = (Math.random() * 2 ** 31) | 0;
-    commit(newMatch(makeBoard(grid, seed), seed, settings.lengthMs, settings.chaining));
-  }, [grid, settings.lengthMs, settings.chaining, commit]);
+    const pool = settings.pool ?? "all";
+    commit(
+      newMatch(makeBoard(poolGrid(grid, pool), seed), seed, settings.lengthMs, settings.chaining, settings.turnMs ?? 0, pool),
+    );
+  }, [grid, settings.lengthMs, settings.chaining, settings.turnMs, settings.pool, commit]);
 
   useEffect(() => {
     const sb = supabaseBrowser();
@@ -143,7 +186,7 @@ export function useRoom({
       if (!s || from !== guestId.current || s.turn !== "p2") return;
       const p = grid.players[pid];
       if (!p) return;
-      const b = new Map(makeBoard(grid, s.seed).map((c) => [c.id, c]));
+      const b = new Map(makeBoard(poolGrid(grid, s.pool ?? "all"), s.seed).map((c) => [c.id, c]));
       commit(play(s, b, cell, p));
     });
 
@@ -153,14 +196,19 @@ export function useRoom({
 
     ch.subscribe(async (status) => {
       if (status === "SUBSCRIBED") {
+        setConnected(true);
         await ch.track({ role, id: me });
         setPhase((p) => (p === "connecting" ? "waiting" : p));
       } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        setConnected(false);
         setPhase("error");
+      } else if (status === "CLOSED") {
+        setConnected(false);
       }
     });
 
     return () => {
+      setConnected(false);
       sb.removeChannel(ch);
       channel.current = null;
     };
@@ -233,7 +281,30 @@ export function useRoom({
     else channel.current?.send({ type: "broadcast", event: "rematch", payload: {} });
   }, [role, start]);
 
-  return { state, phase, board, byId, players, mySide, opponentHere, goneSince, receivedAt, answer, rematch };
+  const leave = useCallback(() => {
+    try {
+      sessionStorage.removeItem(`pp:match:${code}`);
+      sessionStorage.removeItem(`pp:role:${code}`);
+    } catch {
+      // nothing kept
+    }
+  }, [code]);
+
+  return {
+    state,
+    phase,
+    board,
+    byId,
+    players,
+    mySide,
+    connected,
+    opponentHere,
+    goneSince,
+    receivedAt,
+    answer,
+    rematch,
+    leave,
+  };
 }
 
 /**

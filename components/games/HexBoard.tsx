@@ -1,41 +1,162 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
-import { animate, stagger } from "animejs";
+import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { BOARD_H_PER_W, place } from "@/lib/games/hex";
 import type { BoardCell } from "@/lib/games/board";
 import type { Category } from "@/lib/games/data";
 import { reducedMotion } from "@/lib/motion";
 import { CategoryFace } from "./CategoryFace";
 
+/*
+ * Every number in this file is the original's, read out of its board module
+ * (playfootball.games, chunk "core"): the palettes, the 72px hex, the 1.6-unit
+ * inset, the 1100ms flip with a 170ms stagger, the 1.12 hover and selection
+ * scale, the 4px selection stroke, the shake keyframes, the reveal and the
+ * chain-preview pulse.
+ */
+
+/** Possession Play: neutral, blue, red. */
+export const OWNER = {
+  none: { fill: "#DCE6F2", ink: "#1E293B" },
+  p1: { fill: "#2563EB", ink: "#DBEAFE" },
+  p2: { fill: "#EF4444", ink: "#FFE4E6" },
+} as const;
+
+/** The mover's colour, laid over what they can pick. */
+export const ACCENT = {
+  p1: {
+    overlay: "rgba(96, 165, 250, 0.26)",
+    highlight: "rgba(96, 165, 250, 0.18)",
+    stroke: "#60A5FA",
+    tint: "rgba(37, 99, 235, 0.1)",
+  },
+  p2: {
+    overlay: "rgba(251, 113, 133, 0.26)",
+    highlight: "rgba(251, 113, 133, 0.18)",
+    stroke: "#FB7185",
+    tint: "rgba(239, 68, 68, 0.1)",
+  },
+  /** The Heatmap has one player and picks in blue. */
+  heat: {
+    overlay: "rgba(96, 165, 250, 0.24)",
+    highlight: "rgba(96, 165, 250, 0.16)",
+    stroke: "#60A5FA",
+    tint: "",
+  },
+} as const;
+export type Accent = (typeof ACCENT)[keyof typeof ACCENT];
+
+/** The Heatmap's eight levels, cold to white-hot. */
+export const HEAT = [
+  { fill: "#E2E8F0", ink: "#0F172A" },
+  { fill: "#FEF9C3", ink: "#713F12" },
+  { fill: "#FDE047", ink: "#713F12" },
+  { fill: "#F59E0B", ink: "#78350F" },
+  { fill: "#F97316", ink: "#7C2D12" },
+  { fill: "#EF4444", ink: "#FEF2F2" },
+  { fill: "#991B1B", ink: "#FEF2F2" },
+  { fill: "#450A0A", ink: "#FFF7ED" },
+] as const;
+
+/** `base` (hex or rgb) with a translucent `over` composited on top, as one opaque colour. */
+export function over(base: string, rgba: string): string {
+  const parse = (c: string) => {
+    const h = c.trim().match(/^#([0-9a-f]{6})$/i);
+    if (h) return [0, 2, 4].map((i) => parseInt(h[1].slice(i, i + 2), 16)).concat(1);
+    const m = c.match(/rgba?\(\s*([\d.]+)[,\s]+([\d.]+)[,\s]+([\d.]+)(?:[,\s/]+([\d.]+))?/);
+    return m ? [+m[1], +m[2], +m[3], m[4] === undefined ? 1 : +m[4]] : null;
+  };
+  const b = parse(base);
+  const o = parse(rgba);
+  if (!b || !o) return base;
+  const mix = (i: number) => Math.round(b[i] * (1 - o[3]) + o[i] * o[3]);
+  return `rgb(${mix(0)} ${mix(1)} ${mix(2)})`;
+}
+
 export interface HexLook {
-  /** CSS colour for the hex's fill */
   fill: string;
-  /** text colour on that fill */
   ink: string;
+  /** can be picked: hover lift, pointer, and the selection and highlight layers */
+  open?: boolean;
   selected?: boolean;
-  /** touching the selected hex: the cells an answer could also take */
-  preview?: boolean;
-  disabled?: boolean;
+  /** touching the selected hex */
+  highlighted?: boolean;
+  accent?: Accent;
+  /** CSS drop-shadow() argument, for the Heatmap's claimed and unclaimed cells */
+  shadow?: string;
   label?: string;
 }
 
-const HEX = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+/** A pointy-top hex in the original's 86.6 × 100 box, pulled in by `inset`. */
+const W = 86.6025403784;
+const H = 100;
+const CORNERS: [number, number][] = [
+  [W / 2, 0],
+  [W, 25],
+  [W, 75],
+  [W / 2, 100],
+  [0, 75],
+  [0, 25],
+];
+function hex(inset: number): string {
+  const sx = (W - inset * 2) / W;
+  const sy = (H - inset * 2) / H;
+  return CORNERS.map(([x, y]) => `${W / 2 + (x - W / 2) * sx},${H / 2 + (y - H / 2) * sy}`).join(" ");
+}
+const CLIP = "polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)";
+const EASE = "cubic-bezier(0.22, 0.61, 0.36, 1)";
+export const FLIP_MS = 1100;
+export const FLIP_STAGGER = 170;
+
+function Face({ cat, look, back }: { cat: Category; look: HexLook; back?: boolean }) {
+  const lift = `h-full w-full origin-center transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+    look.open ? "group-hover:scale-[1.12] group-hover:drop-shadow-[0_16px_24px_rgba(15,23,42,0.22)]" : ""
+  } ${look.selected && look.open ? "scale-[1.12]" : ""}`;
+  const a = look.accent;
+  return (
+    <div
+      className="absolute inset-0"
+      style={{
+        backfaceVisibility: "hidden",
+        WebkitBackfaceVisibility: "hidden",
+        transform: back ? "rotateY(180deg)" : undefined,
+      }}
+    >
+      <svg viewBox={`0 0 ${W} ${H}`} className={lift} aria-hidden>
+        <polygon points={hex(1.6)} fill={look.fill} style={{ transition: "fill 220ms ease" }} />
+        {look.open && a && look.selected && <polygon points={hex(2.4)} fill={a.overlay} />}
+        {look.open && a && look.highlighted && !look.selected && <polygon points={hex(2.4)} fill={a.highlight} />}
+        {look.open && a && look.selected && (
+          <polygon points={hex(1.5)} fill="none" stroke={a.stroke} strokeWidth="4" vectorEffect="non-scaling-stroke" />
+        )}
+      </svg>
+      <div className={`pointer-events-none absolute inset-0 ${look.selected && look.open ? "scale-[1.12]" : ""}`}>
+        {/* The crest's fade runs into the colour the hex actually shows,
+            highlight included, or it reads as a pale box. */}
+        <CategoryFace
+          cat={cat}
+          ink={look.ink}
+          fill={
+            look.open && a && (look.selected || look.highlighted)
+              ? over(look.fill, look.selected ? a.overlay : a.highlight)
+              : look.fill
+          }
+        />
+      </div>
+    </div>
+  );
+}
 
 /**
  * The hex board both hex games are played on.
  *
- * Sized by its container and drawn in container units, so a hex's crest and
- * label scale with the board rather than with the viewport - the same board is
- * 340px wide on a phone and 520px on a laptop and reads the same on both.
+ * Laid out in fractions of its own width, so it is the original's 360px (405px
+ * from `md`) where there is room and shrinks with a phone.
  *
- * Two animations, both fired by a nonce rather than by state, because they
- * mark events and not conditions:
- *
- *  - `flip`: cells turn over in the order a claim spread to them, the new
- *    colour arriving edge-on. The original does this, and it is what makes a
- *    four-hex answer feel like four things happened rather than one repaint.
- *  - `shake`: a wrong answer, on the hex it was aimed at.
+ * A claimed hex turns over: the old colour on its front, the new one on its
+ * back, a half turn about the vertical axis. The front keeps the colour the
+ * cell had before the move until its own turn comes, so a four-hex answer
+ * spreads outward one hex at a time rather than repainting and then spinning.
  */
 export function HexBoard({
   board,
@@ -44,6 +165,9 @@ export function HexBoard({
   onSelect,
   flip,
   shake,
+  reveal,
+  pulse,
+  reheat,
   centre,
   centreSlot,
 }: {
@@ -51,118 +175,179 @@ export function HexBoard({
   cats: Category[];
   look: (cell: BoardCell) => HexLook;
   onSelect?: (id: string) => void;
-  flip?: { ids: string[]; nonce: number };
+  /** cells that change hands, in the order they turn; `delays` overrides the stagger */
+  flip?: { ids: string[]; nonce: number; delays?: Record<string, number> };
   shake?: { id: string; nonce: number };
-  /** something drawn in a hex-sized slot that holds no category */
+  /** the answer's name over the hex it was played on, for an opponent's move */
+  reveal?: { id: string; text: string; nonce: number } | null;
+  /** chain mode: every cell pulses, later the further it is from the selection */
+  pulse?: { delays: Record<string, number>; accent: Accent; key: string } | null;
+  /** Heatmap: a dark ring over cells that got hotter */
+  reheat?: { ids: string[]; nonce: number };
   centre?: ReactNode;
   centreSlot?: { q: number; r: number };
 }) {
-  const root = useRef<HTMLDivElement>(null);
+  const looks = new Map(board.map((c) => [c.id, look(c)]));
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || !flip || flip.ids.length === 0 || reducedMotion()) return;
-    const targets = flip.ids
-      .map((id) => el.querySelector<HTMLElement>(`[data-hex="${id}"] [data-face]`))
-      .filter((x): x is HTMLElement => !!x);
-    const anim = animate(targets, {
-      rotateY: [-90, 0],
-      scale: [0.92, 1],
-      duration: 520,
-      ease: "outBack(1.6)",
-      delay: stagger(110),
+  // What each cell looked like at the last commit: the front of a flip.
+  const shown = useRef(new Map<string, HexLook>());
+  const seenFlip = useRef(flip?.nonce);
+  const [turning, setTurning] = useState<Record<string, { from: HexLook; delay: number; nonce: number }>>({});
+
+  useLayoutEffect(() => {
+    if (!flip || flip.nonce === seenFlip.current) return;
+    seenFlip.current = flip.nonce;
+    if (reducedMotion() || flip.ids.length === 0) return;
+    setTurning((t) => {
+      const next = { ...t };
+      flip.ids.forEach((id, i) => {
+        const from = t[id]?.from ?? shown.current.get(id);
+        if (!from) return;
+        next[id] = {
+          from: { ...from, selected: false, highlighted: false, open: false },
+          delay: flip.delays?.[id] ?? i * FLIP_STAGGER,
+          nonce: flip.nonce,
+        };
+      });
+      return next;
     });
-    return () => {
-      anim.revert();
-    };
   }, [flip?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  useEffect(() => {
-    const el = root.current;
-    if (!el || !shake || reducedMotion()) return;
-    const target = el.querySelector<HTMLElement>(`[data-hex="${shake.id}"]`);
-    if (!target) return;
-    const anim = animate(target, {
-      x: [0, -7, 7, -5, 5, -2, 0],
-      duration: 460,
-      ease: "inOutSine",
+  // After the flip effect, so a flip reads the looks from before this render.
+  useLayoutEffect(() => {
+    shown.current = looks;
+  });
+
+  const done = (id: string, nonce: number) =>
+    setTurning((t) => {
+      if (t[id]?.nonce !== nonce) return t;
+      const next = { ...t };
+      delete next[id];
+      return next;
     });
-    return () => {
-      anim.revert();
+
+  const box = (c: { q: number; r: number }) => {
+    const b = place(c);
+    return {
+      left: `${b.left * 100}%`,
+      top: `${b.top * 100}%`,
+      width: `${b.width * 100}%`,
+      height: `${b.height * 100}%`,
     };
-  }, [shake?.nonce]); // eslint-disable-line react-hooks/exhaustive-deps
+  };
 
   return (
     <div
-      ref={root}
-      className="@container relative mx-auto w-full max-w-[520px] select-none [perspective:900px]"
+      className="relative mx-auto w-full max-w-[360px] select-none md:max-w-[405px]"
       style={{ aspectRatio: `1 / ${BOARD_H_PER_W}` }}
     >
       {board.map((cell) => {
-        const box = place(cell);
-        const l = look(cell);
+        const l = looks.get(cell.id)!;
         const cat = cats[cell.cat];
+        const t = turning[cell.id];
+        const shaking = shake && shake.id === cell.id && shake.nonce > 0;
+        const reheatAt = reheat && reheat.nonce ? reheat.ids.indexOf(cell.id) : -1;
         return (
           <div
             key={cell.id}
             data-hex={cell.id}
-            className="absolute"
+            className={`group absolute ${l.selected && l.open ? "z-10" : l.open ? "z-0 hover:z-10" : "z-0"}`}
             style={{
-              left: `${box.left * 100}%`,
-              top: `${box.top * 100}%`,
-              width: `${box.width * 100}%`,
-              height: `${box.height * 100}%`,
+              ...box(cell),
+              perspective: "1200px",
+              filter: l.shadow ? `drop-shadow(${l.shadow})` : undefined,
             }}
           >
             <button
               type="button"
-              data-face
-              disabled={l.disabled}
-              onClick={() => onSelect?.(cell.id)}
+              disabled={!l.open}
+              aria-pressed={l.open ? !!l.selected : undefined}
               aria-label={`${cat.short}${l.label ? `, ${l.label}` : ""}`}
-              aria-pressed={l.selected}
-              className="group absolute inset-[3%] transition-transform duration-150 enabled:hover:-translate-y-[0.4cqw] enabled:active:translate-y-0 disabled:cursor-default"
-              style={{ clipPath: HEX }}
+              onClick={l.open ? () => onSelect?.(cell.id) : undefined}
+              className="absolute inset-0 z-20 cursor-pointer bg-transparent p-0 outline-none focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#60A5FA] disabled:cursor-default"
+              style={{ clipPath: CLIP }}
+            />
+            <div
+              className={`pointer-events-none relative h-full w-full transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+                l.open ? "group-active:scale-[0.98]" : ""
+              }`}
+              style={{ transformStyle: "preserve-3d" }}
             >
-              {/* The rim: accent when selected, a faint accent on the cells an
-                  answer would also reach, otherwise a hairline. */}
-              <span
-                aria-hidden
-                className="absolute inset-0 transition-colors duration-200"
+              <div
+                key={shaking ? `shake-${shake!.nonce}` : "still"}
+                className="relative h-full w-full"
                 style={{
-                  clipPath: HEX,
-                  background: l.selected
-                    ? "var(--accent)"
-                    : l.preview
-                      ? "color-mix(in oklab, var(--accent) 45%, var(--border-strong))"
-                      : "var(--border-strong)",
+                  transformStyle: "preserve-3d",
+                  animation: shaking ? "hex-shake 360ms ease-in-out" : undefined,
                 }}
-              />
-              <span
-                aria-hidden
-                className="absolute inset-[4.5%] transition-colors duration-300"
-                style={{ clipPath: HEX, background: l.fill, color: l.ink }}
               >
-                <CategoryFace cat={cat} />
-              </span>
-            </button>
+                {t ? (
+                  <div
+                    key={`flip-${t.nonce}`}
+                    className="absolute inset-0"
+                    style={{
+                      transformStyle: "preserve-3d",
+                      animation: `hex-flip ${FLIP_MS}ms ${EASE} ${t.delay}ms both`,
+                    }}
+                    onAnimationEnd={(e) => e.animationName === "hex-flip" && done(cell.id, t.nonce)}
+                  >
+                    <Face cat={cat} look={t.from} />
+                    <Face cat={cat} look={l} back />
+                  </div>
+                ) : (
+                  <Face cat={cat} look={l} />
+                )}
+              </div>
+
+              {reveal && reveal.id === cell.id && (
+                <div
+                  key={`reveal-${reveal.nonce}`}
+                  className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center px-[14%] text-center"
+                  style={{ animation: "hex-reveal 3100ms ease-in-out both" }}
+                >
+                  <div className="absolute inset-0" style={{ clipPath: CLIP, background: "rgba(15, 23, 42, 0.94)" }} />
+                  <span className="relative z-10 line-clamp-3 text-[8px] leading-tight font-black break-keep text-white uppercase sm:text-[9px]">
+                    {reveal.text}
+                  </span>
+                </div>
+              )}
+
+              {pulse && pulse.delays[cell.id] !== undefined && (
+                <svg
+                  key={`pulse-${pulse.key}`}
+                  viewBox={`0 0 ${W} ${H}`}
+                  className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+                  style={{
+                    transformOrigin: "center",
+                    animation: `hex-pulse 2700ms ${EASE} ${pulse.delays[cell.id]}ms infinite both`,
+                  }}
+                  aria-hidden
+                >
+                  <polygon points={hex(3.6)} fill={pulse.accent.overlay} />
+                </svg>
+              )}
+
+              {reheatAt >= 0 && (
+                <svg
+                  key={`reheat-${reheat!.nonce}`}
+                  viewBox={`0 0 ${W} ${H}`}
+                  className="pointer-events-none absolute inset-0 z-10 h-full w-full"
+                  style={{
+                    transformOrigin: "center",
+                    animation: `hex-reheat 620ms ${EASE} ${reheatAt * 90}ms both`,
+                  }}
+                  aria-hidden
+                >
+                  <polygon points={hex(2.8)} fill="rgba(69, 10, 10, 0.34)" />
+                </svg>
+              )}
+            </div>
           </div>
         );
       })}
 
       {centre && centreSlot && (
-        <div
-          className="absolute flex items-center justify-center"
-          style={(() => {
-            const b = place(centreSlot);
-            return {
-              left: `${b.left * 100}%`,
-              top: `${b.top * 100}%`,
-              width: `${b.width * 100}%`,
-              height: `${b.height * 100}%`,
-            };
-          })()}
-        >
+        <div className="pointer-events-none absolute flex items-center justify-center" style={box(centreSlot)}>
           {centre}
         </div>
       )}

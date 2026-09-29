@@ -4,7 +4,8 @@
  *   npm run games:build
  *
  * Wikidata (CC0) supplies every player's Korean name, full club career with
- * years, appearances and goals, national team, position and individual awards.
+ * years, appearances and goals, national team, position, and every season's
+ * trophy winners.
  * FotMob supplies crests, flags and — in build-whoareya — current squads.
  *
  * Nothing here is taken from playfootball.games: its game rules were studied,
@@ -15,7 +16,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
-import { CLUBS, LEAGUES, AWARDS, YOUTH } from "./games/clubs";
+import { CLUBS, LEAGUES, TROPHIES, YOUTH } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
 
 const OUT = join(process.cwd(), "public", "games");
@@ -245,12 +246,116 @@ async function crestIds(): Promise<Map<string, number>> {
   return out;
 }
 
-const REGIONS: { id: string; short: string; continents: string[] }[] = [
+/**
+ * Regions, as the original groups them: four continents and four clusters of
+ * nations (its helper texts list the members). A region is read off the
+ * player's nation - by continent, or by FIFA code for the clusters.
+ */
+const REGIONS: { id: string; short: string; continents?: string[]; fifa?: string[] }[] = [
   { id: "rg-afr", short: "아프리카", continents: ["Q15"] },
   { id: "rg-sam", short: "남미", continents: ["Q18"] },
   { id: "rg-asia", short: "아시아·오세아니아", continents: ["Q48", "Q538", "Q3960", "Q55643"] },
   { id: "rg-nca", short: "북중미", continents: ["Q49"] },
+  { id: "rg-nor", short: "북유럽", fifa: ["NOR", "SWE", "DEN", "FIN", "ISL"] },
+  { id: "rg-celt", short: "켈트 국가", fifa: ["SCO", "WAL", "NIR", "IRL"] },
+  { id: "rg-balk", short: "발칸", fifa: ["ALB", "BIH", "BUL", "CRO", "GRE", "KVX", "MNE", "MKD", "ROU", "SRB", "SVN"] },
+  { id: "rg-naf", short: "북아프리카", fifa: ["ALG", "EGY", "LBY", "MAR", "SDN", "TUN"] },
 ];
+
+/** A season: who won it and the calendar years it spans. */
+interface Season {
+  /** the season or edition item */
+  q?: string;
+  comp: string;
+  winner: string;
+  from: number;
+  to: number;
+}
+
+/**
+ * Every season's winner for the trophy competitions, and every Champions
+ * League final's two sides. Measured: 13 competitions, 800-odd seasons with a
+ * winner; 51 seasons carry no date, only a label like "1965–66 FA Cup", so the
+ * years come from the label when the dates are missing.
+ */
+async function winners(): Promise<{ seasons: Season[]; finals: Season[]; squads: Map<string, Set<string>> }> {
+  const comps = [...new Set(TROPHIES.flatMap((t) => t.comps))].map((q) => `wd:${q}`).join(" ");
+  const span = (label: string, s?: string, e?: string, d?: string) => {
+    const m = label.match(/(\d{4})(?:\s*[–-]\s*(\d{2,4}))?/);
+    const a = year(s) ?? year(d) ?? (m ? Number(m[1]) : null);
+    if (!a) return null;
+    let b = year(e) ?? year(d);
+    if (!b && m?.[2]) b = m[2].length === 2 ? Math.floor(a / 100) * 100 + Number(m[2]) : Number(m[2]);
+    return { from: a, to: Math.max(a, b ?? a) };
+  };
+  const rows = await sparql(`SELECT ?season ?comp ?w ?l ?s ?e ?d WHERE {
+    VALUES ?comp { ${comps} }
+    ?season wdt:P3450 ?comp ; wdt:P1346 ?w ; rdfs:label ?l FILTER(LANG(?l) = "en")
+    OPTIONAL { ?season wdt:P580 ?s } OPTIONAL { ?season wdt:P582 ?e } OPTIONAL { ?season wdt:P585 ?d }
+  }`);
+  const seasons: Season[] = [];
+  for (const r of rows) {
+    const y = span(val(r, "l")!, val(r, "s"), val(r, "e"), val(r, "d"));
+    if (y) seasons.push({ q: qid(val(r, "season")), comp: qid(val(r, "comp")), winner: qid(val(r, "w")), ...y });
+  }
+  // Only the final itself: a season's other matches (semi-finals, the
+  // super cup) are "part of" it too, and counting them put 3,222 players in
+  // "UCL 결승".
+  const fin = await sparql(`SELECT ?team ?d WHERE {
+    ?season wdt:P3450 wd:Q18756 . ?final wdt:P361 ?season ; wdt:P1923 ?team ; wdt:P585 ?d ;
+      rdfs:label ?fl FILTER(LANG(?fl) = "en" && REGEX(?fl, "^[0-9]{4} (European Cup|UEFA Champions League) Final$"))
+  }`);
+  // A final in May closes the season that began the summer before.
+  const finals = fin.map((r) => {
+    const y = year(val(r, "d"))!;
+    return { comp: "final", winner: qid(val(r, "team")), from: y - 1, to: y };
+  });
+
+  /*
+   * Tournament squads. Players carry "participant in" (P1344) for the
+   * tournaments they were picked for - measured complete for recent World
+   * Cups (2014: 734 players, 32 squads of 23) - so a national trophy is read
+   * exactly where the edition is covered: in that squad, and a player of the
+   * side that won it. Thinly covered editions fall back to the years.
+   */
+  const national = new Set(TROPHIES.filter((t) => t.national).flatMap((t) => t.comps));
+  const editions = seasons.filter((x) => national.has(x.comp) && x.q).map((x) => `wd:${x.q}`);
+  const squads = new Map<string, Set<string>>();
+  for (const batch of chunks(editions, 40)) {
+    const got = await sparql(`SELECT ?e ?p WHERE { VALUES ?e { ${batch.join(" ")} } ?p wdt:P1344 ?e }`);
+    for (const r of got) {
+      const e = qid(val(r, "e"));
+      (squads.get(e) ?? squads.set(e, new Set()).get(e)!).add(qid(val(r, "p")));
+    }
+  }
+  return { seasons, finals, squads };
+}
+
+/** An edition counts as covered when about a squad per team is listed. */
+const SQUAD_COVERED = 150;
+
+/**
+ * Was the player with this side for this season?
+ *
+ * Spells are in whole years, and most moves happen in the summer, so a
+ * season that runs August Y1 to May Y2 is read as needing the spell to begin
+ * by Y1 and end no earlier than Y2. Measured against FotMob's trophy lists
+ * for 60 players: the looser "any overlap" rule found every real winner but
+ * a third of its matches were wrong - a spell ending in the summer of 2014
+ * was being credited with 2014-15.
+ *
+ * A season spent out on loan is not the parent club's: Lukaku and Mount were
+ * at West Brom and Derby the year Chelsea won the Europa League, and the
+ * parent-club spell covering those years had credited them with it.
+ */
+function wasThere(stints: Stint[], team: string, from: number, to: number): boolean {
+  const covers = (st: Stint) => st.start !== null && st.start <= from && (st.end ?? 9999) >= to;
+  if (stints.some((st) => st.loan && st.club !== team && covers(st))) return false;
+  return stints.some((st) => st.club === team && covers(st));
+}
+
+/** The big five leagues, for "played in three or more of them". */
+const BIG5 = ["lg-eng", "lg-esp", "lg-ita", "lg-ger", "lg-fra"];
 
 async function main() {
   mkdirSync(OUT, { recursive: true });
@@ -294,9 +399,16 @@ async function main() {
   // than a generic flag icon.
   for (const l of LEAGUES) cats.push({ id: l.id, short: l.short, kind: "league", img: `l:${l.logo}` });
   for (const r of REGIONS) cats.push({ id: r.id, short: r.short, kind: "region" });
-  for (const a of AWARDS) cats.push({ id: `aw-${a.q}`, short: a.short, kind: "award" });
-  for (const d of [1970, 1980, 1990, 2000]) cats.push({ id: `dc-${d}`, short: `${String(d).slice(2)}년대생`, kind: "decade" });
-  cats.push({ id: "ps-gk", short: "골키퍼", kind: "position" });
+  for (const t of TROPHIES) cats.push({ id: t.id, short: t.short, kind: "trophy", img: `l:${t.logo}` });
+  for (const d of [1970, 1980, 1990, 2000]) cats.push({ id: `dc-${d}`, short: `${String(d).slice(2)}년대생`, kind: "group" });
+  cats.push({ id: "ps-gk", short: "골키퍼", kind: "group" });
+  cats.push({ id: "gr-big5", short: "5대 리그 3곳+", kind: "group" });
+  cats.push({ id: "gr-uclf", short: "UCL 결승", kind: "group", img: "l:42" });
+
+  const { seasons, finals, squads } = await winners();
+  console.log(`seasons with a winner: ${seasons.length}, UCL finalists: ${finals.length}`);
+  const byComp = new Map<string, Season[]>();
+  for (const x of seasons) (byComp.get(x.comp) ?? byComp.set(x.comp, []).get(x.comp)!).push(x);
 
   const nationOf = (p: Player): string | null => {
     // The most recent senior side, for the few who switched allegiance.
@@ -322,15 +434,30 @@ async function main() {
     if (nation) {
       add(`nt-${nation}`, p.q);
       const cont = teams.get(nation)?.continent;
-      for (const r of REGIONS) if (cont && r.continents.includes(cont)) add(r.id, p.q);
+      const fifa = teams.get(nation)?.fifa;
+      for (const r of REGIONS)
+        if ((cont && r.continents?.includes(cont)) || (fifa && r.fifa?.includes(fifa))) add(r.id, p.q);
     }
-    for (const a of AWARDS) if (p.awards.has(a.q)) add(`aw-${a.q}`, p.q);
+    for (const t of TROPHIES) {
+      const won = t.comps.some((c) =>
+        (byComp.get(c) ?? []).some((x) => {
+          if (!t.national) return wasThere(seniorStints, x.winner, x.from, x.to);
+          const squad = x.q ? squads.get(x.q) : undefined;
+          if (squad && squad.size >= SQUAD_COVERED)
+            return squad.has(p.q) && p.stints.some((st) => st.club === x.winner);
+          return wasThere(p.stints, x.winner, x.from, x.to);
+        }),
+      );
+      if (won) add(t.id, p.q);
+    }
+    if (finals.some((x) => wasThere(seniorStints, x.winner, x.from, x.to))) add("gr-uclf", p.q);
     if (p.born) {
       const d = Math.floor(p.born / 10) * 10;
       if (d >= 1970 && d <= 2000) add(`dc-${d}`, p.q);
     }
     if (p.positions.has(GOALKEEPER)) add("ps-gk", p.q);
   }
+  for (const p of players.values()) if (BIG5.filter((l) => members.get(l)?.has(p.q)).length >= 3) add("gr-big5", p.q);
 
   // Nations: only the ones with enough players to make a fair hex.
   const named = new Set<string>();

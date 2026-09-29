@@ -6,7 +6,7 @@
  * browser against these lists, the same way the original checks its own.
  */
 
-export type CatKind = "club" | "nation" | "league" | "region" | "award" | "decade" | "position";
+export type CatKind = "club" | "nation" | "league" | "region" | "trophy" | "group";
 
 export interface Category {
   id: string;
@@ -29,6 +29,8 @@ export interface GridPlayer {
 }
 
 export interface Grid {
+  /** when the data was built, for the "last updated" line */
+  built?: string;
   cats: Category[];
   /** pairs of category indexes that share at least two players */
   pairs: Set<string>;
@@ -37,11 +39,11 @@ export interface Grid {
 
 export const pairKey = (a: number, b: number) => (a < b ? `${a}:${b}` : `${b}:${a}`);
 
-/** "t:9825" → a crest or flag; "l:47" → a league logo, the dark-ground cut. */
+/** "t:9825" → a crest or flag; "l:47" → a league logo. */
 export function imageUrl(img?: string): string | undefined {
   const base = "https://images.fotmob.com/image_resources/logo";
   if (img?.startsWith("t:")) return `${base}/teamlogo/${img.slice(2)}.png`;
-  if (img?.startsWith("l:")) return `${base}/leaguelogo/dark/${img.slice(2)}.png`;
+  if (img?.startsWith("l:")) return `${base}/leaguelogo/${img.slice(2)}.png`;
   return undefined;
 }
 
@@ -64,11 +66,13 @@ function load<T>(file: string): Promise<T> {
 
 export async function loadGrid(): Promise<Grid> {
   const raw = await load<{
+    built?: string;
     cats: Category[];
     pairs: [number, number, number][];
     players: [string, string, number, number, number[], string?][];
   }>("grid.json");
   return {
+    built: raw.built,
     cats: raw.cats,
     pairs: new Set(raw.pairs.map(([a, b]) => pairKey(a, b))),
     players: raw.players.map(([ko, en, born, fame, v, alt], id) => ({

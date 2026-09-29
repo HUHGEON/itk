@@ -77,6 +77,35 @@ export const LEAGUES: {
   { id: "lg-tur", short: "튀르키예 리그", logo: 71, country: "Q43" },
   { id: "lg-ksa", short: "사우디 리그", logo: 536, country: "Q851" },
   { id: "lg-usa", short: "미국 리그", logo: 130, country: "Q30" },
+  // The original's other four: Scotland (filed under the UK like England, so
+  // by league), Belgium, Brazil and Argentina.
+  { id: "lg-sco", short: "스코틀랜드 리그", logo: 64, leagues: ["Q14377162", "Q187304", "Q177138"] },
+  { id: "lg-bel", short: "벨기에 리그", logo: 40, country: "Q31" },
+  { id: "lg-bra", short: "브라질 리그", logo: 268, country: "Q155" },
+  { id: "lg-arg", short: "아르헨티나 리그", logo: 112, country: "Q414" },
+];
+
+/**
+ * Trophies won - the original's biggest category family after clubs (4 to 9
+ * of every 30 hexes across twelve of its boards). Wikidata names each
+ * season's winner (P1346 on the season item); a player counts if he was at
+ * that club, or with that national side, across the season's years. Years are
+ * all Wikidata gives for a spell, so a season boundary is read generously:
+ * someone at the club in either of its calendar years is counted.
+ */
+export const TROPHIES: { id: string; short: string; comps: string[]; logo: number; national?: boolean }[] = [
+  { id: "tr-ucl", short: "UCL 우승", comps: ["Q18756"], logo: 42 },
+  { id: "tr-uel", short: "UEL 우승", comps: ["Q18760", "Q715496"], logo: 73 },
+  { id: "tr-uecl", short: "UECL 우승", comps: ["Q59365764"], logo: 10216 },
+  { id: "tr-epl", short: "EPL 우승", comps: ["Q9448"], logo: 47 },
+  { id: "tr-fac", short: "FA컵 우승", comps: ["Q11151"], logo: 132 },
+  { id: "tr-lal", short: "라리가 우승", comps: ["Q324867"], logo: 87 },
+  { id: "tr-cdr", short: "코파 델 레이 우승", comps: ["Q483794"], logo: 138 },
+  { id: "tr-sea", short: "세리에 A 우승", comps: ["Q15804"], logo: 55 },
+  { id: "tr-coi", short: "코파 이탈리아 우승", comps: ["Q169918"], logo: 141 },
+  { id: "tr-wc", short: "월드컵 우승", comps: ["Q19317"], logo: 77, national: true },
+  { id: "tr-euro", short: "유로 우승", comps: ["Q260858"], logo: 50, national: true },
+  { id: "tr-copa", short: "코파 아메리카 우승", comps: ["Q178750"], logo: 44, national: true },
 ];
 
 /** Individual honours that sit on the player's own item. */

@@ -300,3 +300,60 @@ html {
       border-color 150ms;
   }
 }
+
+/* The hex board's animations, keyed to the original's framer-motion values. */
+@keyframes hex-flip {
+  from { transform: rotateY(0deg); }
+  to { transform: rotateY(180deg); }
+}
+@keyframes hex-shake {
+  0% { transform: translateX(0); }
+  14.3% { transform: translateX(-6px); }
+  28.6% { transform: translateX(6px); }
+  42.9% { transform: translateX(-5px); }
+  57.1% { transform: translateX(5px); }
+  71.4% { transform: translateX(-2px); }
+  85.7% { transform: translateX(2px); }
+  100% { transform: translateX(0); }
+}
+/* 0.9s of pulse, then 1.8s of rest, repeating. */
+@keyframes hex-pulse {
+  0% { opacity: 0; transform: scale(0.96); }
+  11.1% { opacity: 0.54; transform: scale(1); }
+  22.2% { opacity: 0.54; transform: scale(1); }
+  33.3% { opacity: 0; transform: scale(1.04); }
+  100% { opacity: 0; transform: scale(1.04); }
+}
+@keyframes hex-reveal {
+  0% { opacity: 0; transform: scale(0.92); }
+  8% { opacity: 1; transform: scale(1); }
+  82% { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.98); }
+}
+@keyframes hex-reheat {
+  0% { opacity: 0; transform: scale(0.96); }
+  50% { opacity: 0.9; transform: scale(1.08); }
+  100% { opacity: 0; transform: scale(1.14); }
+}
+@keyframes toast-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes sheet-up {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+@keyframes kickoff-in {
+  0% { opacity: 0; transform: translateY(14px) scale(0.82); }
+  60% { opacity: 1; transform: translateY(-2px) scale(1.04); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes kickoff-num {
+  from { opacity: 0; transform: translateY(8px) scale(0.84); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes kickoff-go {
+  0% { opacity: 0; transform: translateY(8px) scale(0.96); }
+  55% { opacity: 1; transform: translateY(0) scale(1.08); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}

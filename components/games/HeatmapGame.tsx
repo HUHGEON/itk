@@ -6,11 +6,14 @@ import { makeBoard, type BoardCell } from "@/lib/games/board";
 import { heatMove, heatLevel } from "@/lib/games/rules";
 import { dayNumber } from "@/lib/games/seed";
 import { reducedMotion, rollNumber } from "@/lib/motion";
-import { HexBoard, type HexLook } from "./HexBoard";
+import { ACCENT, FLIP_MS, FLIP_STAGGER, HEAT, HexBoard, type HexLook } from "./HexBoard";
+import { MobileSheet } from "./MobileSheet";
+import { TechnicalArea } from "./TechnicalArea";
+import { cellId, neighbours } from "@/lib/games/hex";
 import { PlayerPicker } from "./PlayerPicker";
 import { useGrid, type GridPick } from "./useGrid";
 import { share, useDaily } from "./useDaily";
-import { ChartBar, X } from "@phosphor-icons/react/dist/ssr";
+import { ChartBar, Info, X } from "@phosphor-icons/react/dist/ssr";
 
 /** The score sits where the middle hex would be, as in the original. */
 const SCORE_SLOT = { q: 2, r: 3 };
@@ -74,18 +77,25 @@ const untilMidnight = () => {
   return [s / 3600, (s % 3600) / 60, s % 60].map((n) => String(Math.floor(n)).padStart(2, "0")).join(":");
 };
 
-/** Hotter hexes, more of the accent: seven steps from a warm tint to full orange. */
-function heatFill(h: number): { fill: string; ink: string } {
-  if (h <= 0) return { fill: "var(--surface-3)", ink: "var(--text)" };
-  // Starts at 45%, not a faint tint: measured on a phone, a first-level hex at
-  // a quarter of the accent read as muddy brown and was hard to tell from an
-  // empty one, which is the one distinction the board exists to show.
-  const pct = [0, 45, 55, 65, 74, 83, 92, 100][heatLevel(h)];
-  return {
-    fill: `color-mix(in oklab, var(--accent) ${pct}%, var(--surface-3))`,
-    ink: pct >= 65 ? "var(--accent-ink)" : "var(--text)",
-  };
+/** The original's share grid: one square per hex, black for the score slot. */
+const SQUARE = ["⬜", "🟨", "🟨", "🟧", "🟧", "🟥", "🟥", "🟫"];
+function shareGrid(board: BoardCell[], heat: Map<string, number>): string {
+  const rows = Math.max(...board.map((c) => c.r), SCORE_SLOT.r) + 1;
+  const out: string[] = [];
+  for (let r = 0; r < rows; r++) {
+    const n = r % 2 === 0 ? 4 : 5;
+    let line = "";
+    for (let q = 0; q < n; q++) {
+      if (r === SCORE_SLOT.r && q === SCORE_SLOT.q) line += "⬛";
+      else line += SQUARE[heatLevel(heat.get(`${r}-${q}`) ?? 0)];
+    }
+    // Short rows sit half a hex in, as on the board.
+    out.push(n === 4 ? ` ${line}` : line);
+  }
+  return out.join("\n");
 }
+
+const HOWTO_KEY = "itk:heatmap:howto";
 
 /**
  * The Heatmap: one board a day, filled by yourself.
@@ -103,12 +113,29 @@ export function HeatmapGame() {
   const [save, setSave] = useDaily<Save>("heatmap", day, EMPTY);
   const [selected, setSelected] = useState<string | null>(null);
   const [flip, setFlip] = useState({ ids: [] as string[], nonce: 0 });
+  const [reheat, setReheat] = useState({ ids: [] as string[], nonce: 0 });
   const [shake, setShake] = useState({ id: "", nonce: 0 });
-  const [log, setLog] = useState("");
   const [copied, setCopied] = useState(false);
   const [modal, setModal] = useState(false);
+  const [howto, setHowto] = useState(false);
   const [record, setRecord] = useState<HeatRecord>(NO_RECORD);
   useEffect(() => setRecord(readRecord()), []);
+  // First visit: the rules open by themselves, as in the original.
+  useEffect(() => {
+    try {
+      if (!localStorage.getItem(HOWTO_KEY)) setHowto(true);
+    } catch {
+      // no storage: no auto-open
+    }
+  }, []);
+  const closeHowto = () => {
+    setHowto(false);
+    try {
+      localStorage.setItem(HOWTO_KEY, "1");
+    } catch {
+      // nothing
+    }
+  };
 
   const board = useMemo(
     () => (grid ? makeBoard(grid, day * 1009 + 17, SCORE_SLOT) : []),
@@ -128,12 +155,10 @@ export function HeatmapGame() {
 
   const answer = (p: GridPick) => {
     if (!selected || save.done) return;
-    const cat = grid!.cats[byId.get(selected)!.cat];
     const move = heatMove(byId, heat, selected, p);
     if (!move.valid) {
       setShake({ id: selected, nonce: Date.now() });
       setSave((s) => ({ ...s, score: Math.max(0, s.score - 1), guesses: s.guesses + 1 }));
-      setLog(`${p.ko} — ${cat.short} 조건에 맞지 않습니다. −1점`);
       return;
     }
     const next = { ...save.heat };
@@ -151,43 +176,57 @@ export function HeatmapGame() {
     if (done) {
       const d = board.reduce((a, c) => a + (next[c.id] ?? 0), 0) / board.length;
       setRecord(saveRecord(day, after, d));
-      // After the last cells have turned over.
-      window.setTimeout(() => setModal(true), 1400);
+      // After the last new hex has turned over, as the original waits.
+      window.setTimeout(() => setModal(true), FLIP_MS + Math.max(0, move.fresh.length - 1) * FLIP_STAGGER);
     }
-    setFlip({ ids: [...move.fresh, ...move.reheated], nonce: Date.now() });
-    setLog(
-      `${p.ko} — 새로 ${move.fresh.length}칸` +
-        (move.reheated.length ? ` · 달굼 ${move.reheated.length}칸` : "") +
-        ` → +${move.points}점`,
-    );
+    const nonce = Date.now();
+    setFlip({ ids: move.fresh, nonce });
+    setReheat({ ids: move.reheated, nonce });
     setSelected(null);
   };
 
+  const around = useMemo(() => {
+    const cell = selected ? byId.get(selected) : undefined;
+    return new Set(cell ? neighbours(cell).map(cellId) : []);
+  }, [selected, byId]);
+
   const look = (cell: BoardCell): HexLook => {
     const h = heat.get(cell.id) ?? 0;
+    const claimed = h > 0;
+    const tone = HEAT[claimed ? heatLevel(h) : 0];
     return {
-      ...heatFill(h),
+      fill: tone.fill,
+      ink: claimed ? tone.ink : "#0F172A",
+      open: !claimed && !save.done,
       selected: selected === cell.id,
-      disabled: h > 0 || save.done,
-      label: h > 0 ? `열기 ${h}` : undefined,
+      highlighted: around.has(cell.id),
+      accent: ACCENT.heat,
+      shadow: selected === cell.id && !claimed ? undefined : claimed ? "0 10px 22px rgba(15, 23, 42, 0.18)" : "0 8px 18px rgba(148, 163, 184, 0.14)",
+      label: claimed ? `열기 ${h}` : "빈 칸",
     };
   };
 
   if (error) return <p className="py-16 text-center text-muted">게임 데이터를 불러오지 못했습니다.</p>;
   if (!grid) return <p className="py-16 text-center text-muted">선수 데이터 불러오는 중…</p>;
 
-  const claimed = board.filter((c) => (heat.get(c.id) ?? 0) > 0).length;
   const density = board.reduce((a, c) => a + (heat.get(c.id) ?? 0), 0) / board.length;
+  const cat = selected ? grid.cats[byId.get(selected)!.cat] : null;
+  const placeholder = selected ? `${cat!.short}에 맞는 선수를 찾으세요…` : "칸을 골라 시작하세요…";
+  const badges = selected
+    ? [selected, ...around]
+        .filter((id) => byId.has(id) && (id === selected || !(heat.get(id) ?? 0)))
+        .map((id) => ({ id, label: grid.cats[byId.get(id)!.cat].short, on: id === selected }))
+    : [];
 
   return (
-    <div className="mx-auto max-w-[520px]">
-      <div className="mb-3 flex items-center justify-between text-[12.5px] text-muted">
-        <span className="font-semibold text-text">#{day}</span>
-        <span className="tnum">
-          {claimed}/{board.length}칸 · 시도 {save.guesses} · 최고 한 수 {save.best}점
-        </span>
-        <button type="button" onClick={() => setModal(true)} aria-label="통계" className="rounded-[6px] p-1 text-muted hover:text-text">
-          <ChartBar className="size-5" />
+    <div className="mx-auto max-w-[405px]">
+      <div className="mb-3 flex items-center justify-between text-muted">
+        <button type="button" onClick={() => setHowto(true)} aria-label="하는 법" className="rounded-[6px] p-1 hover:text-text">
+          <Info className="size-6" />
+        </button>
+        <span className="tnum text-[13px] font-semibold text-text">#{day}</span>
+        <button type="button" onClick={() => setModal(true)} aria-label="통계" className="rounded-[6px] p-1 hover:text-text">
+          <ChartBar className="size-6" />
         </button>
       </div>
 
@@ -197,19 +236,20 @@ export function HeatmapGame() {
         look={look}
         onSelect={(id) => !save.done && !(heat.get(id) ?? 0) && setSelected((s) => (s === id ? null : id))}
         flip={flip}
+        reheat={reheat}
         shake={shake}
         centreSlot={SCORE_SLOT}
         centre={
-          <span className="flex flex-col items-center leading-none">
-            <span className="text-[2.3cqw] font-bold tracking-[0.18em] text-faint">SCORE</span>
-            <span ref={scoreEl} className="tnum mt-[0.8cqw] text-[7cqw] font-bold text-text">
+          <span className="flex flex-col items-center text-center">
+            <span className="mt-1 -mb-2 text-[10px] font-semibold text-text uppercase sm:text-[11px]">점수</span>
+            <span ref={scoreEl} className="tnum mt-2 inline-block min-w-[2ch] text-3xl leading-none font-black text-text">
               {save.score}
             </span>
           </span>
         }
       />
 
-      <div className="mt-4">
+      <div className="mt-3">
         {save.done ? (
           <button
             type="button"
@@ -220,20 +260,21 @@ export function HeatmapGame() {
             히트맵 완성 · {save.score}점 — 결과 보기
           </button>
         ) : (
-          <PlayerPicker
-            items={items}
-            onPick={answer}
-            disabled={!selected}
-            autoFocus
-            placeholder={
-              selected ? `${grid.cats[byId.get(selected)!.cat].short}에 맞는 선수` : "칸을 먼저 고르세요"
-            }
-          />
+          <>
+            <div className="hidden sm:block">
+              <PlayerPicker items={items} onPick={answer} disabled={!selected} autoFocus={!!selected} placeholder={placeholder} />
+            </div>
+            {selected && (
+              <MobileSheet onClose={() => setSelected(null)} badges={badges}>
+                <PlayerPicker items={items} onPick={answer} autoFocus placeholder={placeholder} />
+              </MobileSheet>
+            )}
+            <p className="mt-2 text-center text-[12.5px] text-muted sm:hidden">{placeholder}</p>
+          </>
         )}
-        <p className="mt-2 min-h-[1.4em] text-[13px] text-muted" aria-live="polite">
-          {log}
-        </p>
       </div>
+
+      <TechnicalArea grid={grid} board={board} />
 
       {modal && (
         <HeatModal
@@ -245,7 +286,7 @@ export function HeatmapGame() {
           onShare={async () =>
             setCopied(
               await share(
-                `ITK+ 히트맵 #${day}\n점수 ${save.score} · 열기 ${density.toFixed(2)}x · 시도 ${save.guesses}\nhttps://itkplus.vercel.app/games/heatmap`,
+                `#ITK히트맵 ${day}\n\n${shareGrid(board, heat)}\n\n점수: ${save.score}\n시도: ${save.guesses}\n최고 한 수: ${save.best}\n열기 밀도: ${density.toFixed(2)}x\n\nhttps://itkplus.vercel.app/games/heatmap`,
               ),
             )
           }
@@ -253,18 +294,46 @@ export function HeatmapGame() {
         />
       )}
 
-      {!save.done && save.guesses === 0 && (
-        <section className="mt-2 rounded-[10px] border border-border p-4 text-[13.5px] leading-relaxed text-muted">
-          <h2 className="mb-1.5 text-[14px] font-semibold text-text">하는 법</h2>
-          <ol className="list-decimal space-y-1 pl-4">
-            <li>빈 칸을 고르고 그 조건에 맞는 선수를 댑니다.</li>
-            <li>그 선수가 <b className="text-text">맞닿은 칸</b>에도 맞으면 한 번에 같이 채워집니다.</li>
-            <li>새로 채운 칸은 콤보로 계산됩니다: 1칸 1점, 2칸 3점, 3칸 6점, 4칸 10점…</li>
-            <li>이미 채운 칸에 또 맞으면 1점씩 더하고 칸이 더 뜨거워집니다.</li>
-            <li>틀리면 1점이 깎입니다. 30칸을 다 채우면 끝.</li>
-          </ol>
-        </section>
-      )}
+      {howto && <HowTo onClose={closeHowto} />}
+    </div>
+  );
+}
+
+/** The original's "How to play" modal, word for word in Korean. */
+function HowTo({ onClose }: { onClose: () => void }) {
+  const steps: [string, string][] = [
+    ["칸 고르기", "보드에서 아직 비어 있는 칸을 하나 고릅니다. 칸마다 축구 조건이 하나씩 있습니다."],
+    ["선수 입력", "고른 칸 조건에 맞는 선수를 찾습니다. 맞으면 그 칸을 차지합니다."],
+    ["더 큰 수 만들기", "맞는 선수는 맞닿은 칸도 확인합니다. 이웃 칸 조건에도 맞으면 같은 수에 함께 차지합니다."],
+    ["콤보로 점수 올리기", "새로 차지한 칸은 콤보로 계산됩니다: 1칸 = 1점, 2칸 = 3점, 3칸 = 6점, 4칸 = 10점…"],
+    ["다시 달구기", "이미 차지한 이웃 칸도 선수가 맞으면 1점씩 더하고 보드가 더 뜨거워집니다."],
+    ["히트맵 완성", "칸을 모두 채우면 끝납니다. 열기 밀도는 완성된 보드의 평균 열기입니다. 틀리면 1점이 깎입니다."],
+  ];
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/75 p-4" onClick={onClose}>
+      <div
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="heat-howto"
+        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-sm rounded-lg bg-gray-800 px-4 pt-5 pb-6 text-left text-white shadow-xl sm:px-6"
+        style={{ animation: "kickoff-num 300ms ease-out both" }}
+      >
+        <button type="button" onClick={onClose} aria-label="닫기" className="absolute top-4 right-4 text-white/80 hover:text-white">
+          <X className="size-6" />
+        </button>
+        <h3 id="heat-howto" className="mb-4 text-center text-lg leading-6 font-medium text-gray-100">
+          하는 법
+        </h3>
+        <ol className="mt-2 text-sm">
+          {steps.map(([t, d]) => (
+            <li key={t} className="mb-2">
+              <strong>{t}</strong>
+              <p className="text-white/80">{d}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
     </div>
   );
 }
