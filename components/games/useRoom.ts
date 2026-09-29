@@ -96,6 +96,14 @@ export function useRoom({
     saved?.state ? (saved.state.status === "over" ? "over" : "live") : "connecting",
   );
   const [connected, setConnected] = useState(false);
+  /*
+   * A rematch needs both players, as in the original ("Rematch" →
+   * "Waiting..." on one side, "Accept Rematch" on the other). Each side's
+   * request is its own flag; the host starts the new match once both are up.
+   */
+  const [rematchAsk, setRematchAsk] = useState({ me: false, them: false });
+  const askRef = useRef(rematchAsk);
+  askRef.current = rematchAsk;
   const [opponentHere, setOpponentHere] = useState(false);
   const [goneSince, setGoneSince] = useState<number | null>(null);
   // For the guest: when the last snapshot arrived, so its clock can run on.
@@ -191,7 +199,9 @@ export function useRoom({
     });
 
     ch.on("broadcast", { event: "rematch" }, () => {
-      if (role === "host" && stateRef.current?.status === "over") start();
+      if (stateRef.current?.status !== "over") return;
+      if (role === "host" && askRef.current.me) start();
+      else setRematchAsk((a) => ({ ...a, them: true }));
     });
 
     ch.subscribe(async (status) => {
@@ -277,9 +287,17 @@ export function useRoom({
   );
 
   const rematch = useCallback(() => {
-    if (role === "host") start();
+    if (askRef.current.me) return;
+    setRematchAsk((a) => ({ ...a, me: true }));
+    if (role === "host" && askRef.current.them) start();
     else channel.current?.send({ type: "broadcast", event: "rematch", payload: {} });
   }, [role, start]);
+
+  // A new match clears both requests; an opponent who leaves takes theirs.
+  useEffect(() => setRematchAsk({ me: false, them: false }), [state?.seed]);
+  useEffect(() => {
+    if (!opponentHere) setRematchAsk((a) => ({ ...a, them: false }));
+  }, [opponentHere]);
 
   const leave = useCallback(() => {
     try {
@@ -303,6 +321,7 @@ export function useRoom({
     receivedAt,
     answer,
     rematch,
+    rematchAsk,
     leave,
   };
 }

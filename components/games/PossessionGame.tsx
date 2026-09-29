@@ -323,6 +323,10 @@ function OnlineMatch({
 }) {
   // The pool is the host's to choose; the guest reads it off the match.
   const room = useRoom({ code, role, grid: all, settings, pool: settings.pool });
+  const asked = useToast();
+  useEffect(() => {
+    if (room.rematchAsk.them && !room.rematchAsk.me) asked.show("상대가 재대결을 원합니다");
+  }, [room.rematchAsk.them]); // eslint-disable-line react-hooks/exhaustive-deps
   const grid = useMemo(() => poolGrid(all, room.state?.pool ?? settings.pool), [all, room.state?.pool, settings.pool]);
   const [copied, setCopied] = useState(false);
   const [solo, setSolo] = useState<MatchState | null>(null);
@@ -416,23 +420,35 @@ function OnlineMatch({
     Object.values(s.owners).some((o) => o === "none");
 
   return (
-    <MatchView
-      grid={grid}
-      board={room.board}
-      state={s}
-      mySide={room.mySide}
-      online={{ me: room.connected, opponent: room.opponentHere }}
-      canMove={s.status === "live" && s.kickoff === 0 && mine}
-      names={{ p1: room.mySide === "p1" ? "나" : "상대", p2: room.mySide === "p2" ? "나" : "상대" }}
-      banner={gone !== null && s.status === "live" ? `상대 연결이 끊겼습니다 — ${gone}초 안에 돌아오지 않으면 기권승` : undefined}
-      onAnswer={room.answer}
-      actions={{
-        again: canClean ? () => setSolo(cleanUp(s, room.mySide)) : result?.reason === "forfeit" ? undefined : room.rematch,
-        againLabel: canClean ? "정리하기" : "재대결",
-        leave,
-        leaveLabel: random ? "새 상대" : "나가기",
-      }}
-    />
+    <>
+      <Toast message={asked.message} variant="success" />
+      <MatchView
+        grid={grid}
+        board={room.board}
+        state={s}
+        mySide={room.mySide}
+        online={{ me: room.connected, opponent: room.opponentHere }}
+        canMove={s.status === "live" && s.kickoff === 0 && mine}
+        names={{ p1: room.mySide === "p1" ? "나" : "상대", p2: room.mySide === "p2" ? "나" : "상대" }}
+        banner={gone !== null && s.status === "live" ? `상대 연결이 끊겼습니다 — ${gone}초 안에 돌아오지 않으면 기권승` : undefined}
+        onAnswer={room.answer}
+        actions={{
+          again: canClean ? () => setSolo(cleanUp(s, room.mySide)) : result?.reason === "forfeit" ? undefined : room.rematch,
+          againLabel: canClean
+            ? "정리하기"
+            : !room.opponentHere
+              ? "상대가 나감"
+              : room.rematchAsk.me
+                ? "기다리는 중…"
+                : room.rematchAsk.them
+                  ? "재대결 수락"
+                  : "재대결",
+          againDisabled: !canClean && (!room.opponentHere || room.rematchAsk.me),
+          leave,
+          leaveLabel: random ? "새 상대" : "나가기",
+        }}
+      />
+    </>
   );
 }
 
@@ -493,7 +509,7 @@ function MatchView({
   names: Record<Side, string>;
   banner?: string;
   onAnswer: (cell: string, p: GridPick) => void;
-  actions: { again?: () => void; againLabel?: string; leave: () => void; leaveLabel: string };
+  actions: { again?: () => void; againLabel?: string; againDisabled?: boolean; leave: () => void; leaveLabel: string };
 }) {
   const items = useMemo<GridPick[]>(
     () => grid.players.map((p) => ({ ...p, key: p.id, sub: p.born ? `${p.born}년생` : undefined })),
@@ -902,7 +918,7 @@ function FullTime({
   board: BoardCell[];
   grid: Grid;
   onClose: () => void;
-  actions: { again?: () => void; againLabel?: string; leave: () => void; leaveLabel: string };
+  actions: { again?: () => void; againLabel?: string; againDisabled?: boolean; leave: () => void; leaveLabel: string };
 }) {
   const [top, setTop] = useState<{ name: string; count: number }[] | null>(null);
   const r = state.result!;
@@ -1020,7 +1036,8 @@ function FullTime({
               <button
                 type="button"
                 onClick={actions.again}
-                className="flex items-center justify-center rounded-md bg-indigo-600 py-2 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 sm:text-base"
+                disabled={actions.againDisabled}
+                className="flex items-center justify-center rounded-md bg-indigo-600 py-2 text-sm font-bold text-white shadow-sm hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-60 sm:text-base"
               >
                 {actions.againLabel}
               </button>
