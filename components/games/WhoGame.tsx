@@ -14,6 +14,12 @@ const MAX = 8;
 const POOL = 300;
 
 const POS_KO: Record<string, string> = { GK: "골키퍼", DF: "수비수", MF: "미드필더", FW: "공격수" };
+
+/**
+ * What fits in a tile a sixth of a phone wide. "프리미어리그" did not - it ran
+ * off both edges at 390px - and these are the names Korean fans say anyway.
+ */
+const LEAGUE_TILE: Record<number, string> = { 47: "EPL", 87: "라리가", 55: "세리에A", 54: "분데스", 53: "리그1" };
 const flag = (code: string) => `https://images.fotmob.com/image_resources/logo/teamlogo/${code.toLowerCase()}.png`;
 const crest = (id: number) => `https://images.fotmob.com/image_resources/logo/teamlogo/${id}.png`;
 
@@ -271,7 +277,7 @@ export function WhoGame() {
                     </span>
                   </div>
                   <div data-tile className={`${tile} ${TILE[g.league === answer.league ? "hit" : "miss"]} text-[10.5px]`}>
-                    {leagueName.get(g.league)}
+                    {LEAGUE_TILE[g.league] ?? leagueName.get(g.league)}
                   </div>
                   <div data-tile className={`${tile} ${TILE[g.club === answer.club ? "hit" : "miss"]}`}>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
