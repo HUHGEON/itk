@@ -14,6 +14,7 @@ import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
 import { clubScore, sameClub, samePlayer } from "../lib/names";
 import { CLUBS } from "./games/clubs";
+import { familiarNames } from "./games/namuwiki";
 
 const OUT = join(process.cwd(), "public", "games");
 
@@ -39,6 +40,7 @@ const HOME_NATIONS: Record<string, string> = {
   NIR: "북아일랜드",
   // Not a FIFA member, so it has no FIFA code on Wikidata to be found by.
   GLP: "과들루프",
+  KVX: "코소보",
 };
 
 /** Clubs Wikidata has no Korean label for yet. */
@@ -142,17 +144,24 @@ async function main() {
   }
 
   // --- nations -------------------------------------------------------------------
+  /*
+   * FIFA codes live on national-team items, not on countries - measured: with
+   * the team items filtered out, every nation came back as its bare code. So
+   * the code is read off the team and the name and continent off the country
+   * the team belongs to.
+   */
   const nationRows = await sparql(`SELECT ?code ?ko ?cont WHERE {
-    ?c wdt:P3441 ?code .
-    OPTIONAL { ?c rdfs:label ?ko FILTER(LANG(?ko) = "ko") }
+    ?t wdt:P3441 ?code ; wdt:P17 ?c .
+    ?c rdfs:label ?ko FILTER(LANG(?ko) = "ko")
     OPTIONAL { ?c wdt:P30 ?cont }
   }`);
   const nations: Record<string, { ko: string; cont: string }> = {};
   for (const r of nationRows) {
     const code = val(r, "code")!.toUpperCase();
+    const ko = val(r, "ko");
     const prev = nations[code];
     nations[code] = {
-      ko: HOME_NATIONS[code] ?? prev?.ko ?? val(r, "ko") ?? code,
+      ko: HOME_NATIONS[code] ?? prev?.ko ?? ko ?? code,
       cont: prev?.cont || CONTINENT[qid(val(r, "cont"))] || "",
     };
   }
@@ -160,13 +169,20 @@ async function main() {
 
   // --- join -------------------------------------------------------------------------
   let named = 0;
-  const players = squads.map(({ team, m }) => {
+  const hits = squads.map(({ m }) => {
     const cands = m.dateOfBirth ? (byDate.get(m.dateOfBirth) ?? []) : [];
-    const hit = cands.find((c) => samePlayer(c.en, m.name));
+    return cands.find((c) => samePlayer(c.en, m.name)) ?? null;
+  });
+  // The name fans use, as on the grid (see games/namuwiki); the Wikipedia
+  // spelling stays searchable.
+  const familiar = await familiarNames(hits.filter(Boolean).map((h) => h!.ko));
+  const players = squads.map(({ team, m }, i) => {
+    const hit = hits[i];
     if (hit) named++;
+    const ko = hit ? (familiar.get(hit.ko) ?? hit.ko) : null;
     return [
       m.id,
-      hit?.ko ?? null,
+      ko,
       m.name,
       m.shirtNumber ?? null,
       (m.ccode ?? "").toUpperCase(),
@@ -174,6 +190,7 @@ async function main() {
       m.dateOfBirth ?? null,
       team.id,
       m.transferValue ?? 0,
+      hit && ko !== hit.ko ? hit.ko : "",
     ];
   });
   const usedCodes = new Set(players.map((p) => p[4] as string));

@@ -147,11 +147,17 @@ export function Shell({
           nobody could find them. Top of the rail, full width, reading as tabs.
         */}
         <nav className="flex shrink-0 border-b border-border">
-          <RailTab href="/feed" on={!pathname.startsWith("/matches")}>
+          <RailTab
+            href="/feed"
+            on={!pathname.startsWith("/matches") && !pathname.startsWith("/games")}
+          >
             이적 소식
           </RailTab>
           <RailTab href="/matches" on={pathname.startsWith("/matches")}>
             경기 일정
+          </RailTab>
+          <RailTab href="/games" on={pathname.startsWith("/games")}>
+            미니게임
           </RailTab>
         </nav>
 

@@ -78,6 +78,12 @@
      outside the ladder and takes a hue none of the tiers use. */
   --official: #b39dff;
 
+  /* The two sides of a two-player game. Blue and red because that is the
+     oldest shorthand in football for "us and them", and because the accent is
+     already the heat in The Heatmap. */
+  --p1: #3d7cf2;
+  --p2: #e5484d;
+
   color-scheme: dark;
 }
 

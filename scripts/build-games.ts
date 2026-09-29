@@ -13,9 +13,10 @@
  */
 import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
-import { sparql, qid, val, chunks, type Row } from "./games/wikidata";
+import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
 import { CLUBS, LEAGUES, AWARDS, YOUTH } from "./games/clubs";
+import { familiarNames } from "./games/namuwiki";
 
 const OUT = join(process.cwd(), "public", "games");
 /*
@@ -52,6 +53,8 @@ interface Player {
   citizen: Set<string>;
   positions: Set<string>;
   awards: Set<string>;
+  /** other Korean spellings people search by */
+  aliases: Set<string>;
 }
 
 interface ClubInfo {
@@ -95,6 +98,7 @@ async function pool(): Promise<Map<string, Player>> {
       citizen: new Set(),
       positions: new Set(),
       awards: new Set(),
+      aliases: new Set(),
     });
   }
   return out;
@@ -122,6 +126,7 @@ async function details(players: Map<string, Player>, clubs: Map<string, ClubInfo
         VALUES ?p { ${values} }
         { ?p wdt:P1532 ?v BIND("s" AS ?k) } UNION { ?p wdt:P27 ?v BIND("c" AS ?k) }
         UNION { ?p wdt:P413 ?v BIND("p" AS ?k) } UNION { ?p wdt:P166 ?v BIND("a" AS ?k) }
+        UNION { ?p skos:altLabel ?v FILTER(LANG(?v) = "ko") BIND("k" AS ?k) }
       }`),
     ]);
 
@@ -161,8 +166,12 @@ async function details(players: Map<string, Player>, clubs: Map<string, ClubInfo
     }
     for (const r of props) {
       const p = players.get(qid(val(r, "p")))!;
-      const v = qid(val(r, "v"));
       const k = val(r, "k");
+      if (k === "k") {
+        p.aliases.add(val(r, "v")!);
+        continue;
+      }
+      const v = qid(val(r, "v"));
       if (k === "s") p.sport.add(v);
       else if (k === "c") p.citizen.add(v);
       else if (k === "p") p.positions.add(v);
@@ -346,7 +355,6 @@ async function main() {
 
   // Only categories that can actually be answered stay on the board.
   const usable = cats.filter((c) => (members.get(c.id)?.size ?? 0) >= 8);
-  const index = new Map(usable.map((c, i) => [c.id, i]));
 
   const list = [...players.values()]
     .map((p) => ({
@@ -369,12 +377,28 @@ async function main() {
     }
   }
 
+  /*
+   * Show the name fans use, search by every name.
+   *
+   * The familiar name comes from Namuwiki's redirects (see games/namuwiki) for
+   * the best-known players - the ones people will actually type. Every other
+   * spelling stays searchable: the Wikipedia form, and Wikidata's own Korean
+   * aliases ("버질 반 다이크", "엘링 홀란드").
+   */
+  // The best-known 3,000, plus everyone famous enough to be a Career Path answer.
+  const famous = list.filter((x, i) => i < 3000 || x.p.links >= 45).map(({ p }) => p.ko);
+  const familiar = await familiarNames(famous);
+  const display = (p: Player) => familiar.get(p.ko) ?? p.ko;
+  const alts = (p: Player) =>
+    [...new Set([p.ko, ...p.aliases])].filter((a) => a !== display(p) && /[가-힣]/.test(a));
+  console.log(`familiar names: ${familiar.size} of ${famous.length} differ from Wikipedia's`);
+
   const grid = {
     built: new Date().toISOString().slice(0, 10),
     source: "Wikidata (CC0)",
     cats: usable.map((c) => ({ ...c, n: members.get(c.id)!.size })),
     pairs,
-    players: list.map(({ p, v }) => [p.ko, p.en, p.born ?? 0, p.links, v]),
+    players: list.map(({ p, v }) => [display(p), p.en, p.born ?? 0, p.links, v, alts(p).join("|")]),
   };
   writeFileSync(join(OUT, "grid.json"), JSON.stringify(grid));
 
@@ -386,16 +410,30 @@ async function main() {
         .filter((s) => senior(s) && s.start)
         .sort((a, b) => a.start! - b.start! || (a.end ?? 9999) - (b.end ?? 9999))
         .map((s) => [s.start, s.end, clubs.get(s.club)!.ko || clubs.get(s.club)!.en, s.apps, s.goals, s.loan ? 1 : 0]);
-      const intl = p.stints
-        .filter((s) => seniorNational(s.club) && s.start)
-        .map((s) => [s.start, s.end, teams.get(s.club)?.ko ?? "", s.apps, s.goals]);
+      /*
+       * One row per country, the one with the most caps.
+       *
+       * A switch of allegiance is two real rows (Thiago Motta: Brazil, then
+       * Italy). But 22 of 600 answers had the same country twice, and the
+       * smaller row was an under-21 spell typed as the senior side — David
+       * Villa's "Spain 2001–2002, 32 caps, 27 goals".
+       */
+      const byNation = new Map<string, (string | number | null)[]>();
+      for (const s of p.stints) {
+        if (!seniorNational(s.club) || !s.start) continue;
+        const name = teams.get(s.club)?.ko ?? "";
+        const row = [s.start, s.end, name, s.apps, s.goals];
+        const prev = byNation.get(name);
+        if (!prev || (s.apps ?? 0) > ((prev[3] as number | null) ?? 0)) byNation.set(name, row);
+      }
+      const intl = [...byNation.values()].sort((a, b) => (a[0] as number) - (b[0] as number));
       return { p, rows, intl };
     })
     // Enough rows to make a puzzle, and every row readable in Korean.
     .filter((c) => c.rows.length >= 4 && c.rows.every((r) => /[가-힣]/.test(String(r[2]))))
     .sort((a, b) => b.p.links - a.p.links)
     .slice(0, 600)
-    .map((c) => ({ ko: c.p.ko, en: c.p.en, born: c.p.born, clubs: c.rows, intl: c.intl }));
+    .map((c) => ({ ko: display(c.p), en: c.p.en, born: c.p.born, clubs: c.rows, intl: c.intl }));
   writeFileSync(join(OUT, "career.json"), JSON.stringify(career));
 
   console.log(
