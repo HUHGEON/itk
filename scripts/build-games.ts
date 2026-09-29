@@ -71,37 +71,59 @@ interface ClubInfo {
 const year = (v?: string) => (v ? Number(v.slice(0, 4)) || null : null);
 const num = (v?: string) => (v === undefined ? null : Math.round(Number(v)));
 
+/*
+ * Who can be an answer.
+ *
+ * This used to be "played for one of the 37 club hexes", which was fine while
+ * the board was mostly clubs. With trophies, leagues and nations on it, it
+ * left out right answers: Vardy (an EPL winner with Leicester), and Lee
+ * Chung-yong, Koo Ja-cheol and Hwang Ui-jo (all Korea hexes) were nowhere in
+ * the search box. Now it is every men's footballer with a Korean name
+ * (33,213 measured) plus the well-known ones without one (15+ Wikipedia
+ * editions, 8,106 measured; they are searched and shown in English), and the
+ * build keeps whoever can answer at least one real hex.
+ */
 async function pool(): Promise<Map<string, Player>> {
-  const values = CLUBS.map((c) => `wd:${c.q}`).join(" ");
-  const rows = await sparql(`SELECT ?p ?ko ?en ?born ?links WHERE {
-    VALUES ?club { ${values} }
-    ?p p:P54/ps:P54 ?club ; wdt:P106 wd:Q937857 ; wikibase:sitelinks ?links ;
-       rdfs:label ?ko . FILTER(LANG(?ko) = "ko")
-    # Men's football only, as everywhere else on the site. A club's women's
-    # side is a separate item, but the player can still reach the pool through
-    # another club — Ji So-yun came through as a Korea hex answer.
-    FILTER NOT EXISTS { ?p wdt:P21 wd:Q6581072 }
-    OPTIONAL { ?p rdfs:label ?en FILTER(LANG(?en) = "en") }
-    OPTIONAL { ?p wdt:P569 ?born }
-  }`);
   const out = new Map<string, Player>();
-  for (const r of rows) {
-    const q = qid(val(r, "p"));
-    if (out.has(q)) continue;
-    out.set(q, {
-      q,
-      ko: val(r, "ko")!,
-      en: val(r, "en") ?? "",
-      born: year(val(r, "born")),
-      links: Number(val(r, "links")),
-      stints: [],
-      sport: new Set(),
-      citizen: new Set(),
-      positions: new Set(),
-      awards: new Set(),
-      aliases: new Set(),
-    });
-  }
+  const add = (rows: Awaited<ReturnType<typeof sparql>>) => {
+    for (const r of rows) {
+      const q = qid(val(r, "p"));
+      if (out.has(q)) continue;
+      out.set(q, {
+        q,
+        ko: val(r, "ko") ?? "",
+        en: val(r, "en") ?? "",
+        born: year(val(r, "born")),
+        links: Number(val(r, "links")),
+        stints: [],
+        sport: new Set(),
+        citizen: new Set(),
+        positions: new Set(),
+        awards: new Set(),
+        aliases: new Set(),
+      });
+    }
+  };
+  // Men's football only, as everywhere else on the site - Ji So-yun once came
+  // through as a Korea hex answer.
+  add(
+    await sparql(`SELECT ?p ?ko ?en ?born ?links WHERE {
+      ?p wdt:P106 wd:Q937857 ; wikibase:sitelinks ?links ;
+         rdfs:label ?ko . FILTER(LANG(?ko) = "ko")
+      FILTER NOT EXISTS { ?p wdt:P21 wd:Q6581072 }
+      OPTIONAL { ?p rdfs:label ?en FILTER(LANG(?en) = "en") }
+      OPTIONAL { ?p wdt:P569 ?born }
+    }`),
+  );
+  add(
+    await sparql(`SELECT ?p ?en ?born ?links WHERE {
+      ?p wdt:P106 wd:Q937857 ; wikibase:sitelinks ?links FILTER(?links >= 15)
+      FILTER NOT EXISTS { ?p rdfs:label ?ko FILTER(LANG(?ko) = "ko") }
+      FILTER NOT EXISTS { ?p wdt:P21 wd:Q6581072 }
+      ?p rdfs:label ?en FILTER(LANG(?en) = "en")
+      OPTIONAL { ?p wdt:P569 ?born }
+    }`),
+  );
   return out;
 }
 
@@ -184,7 +206,8 @@ async function details(players: Map<string, Player>, clubs: Map<string, ClubInfo
          * stays searchable.
          */
         const title = val(r, "v")!.replace(/\s*\([^)]*\)\s*$/, "").trim();
-        if (title && title !== p.ko && /[가-힣]/.test(title)) {
+        if (title && !p.ko && /[가-힣]/.test(title)) p.ko = title;
+        else if (title && title !== p.ko && /[가-힣]/.test(title)) {
           const [short, long] =
             title.replace(/\s+/g, "").length < p.ko.replace(/\s+/g, "").length ? [title, p.ko] : [p.ko, title];
           p.ko = short;
@@ -510,8 +533,9 @@ async function main() {
       p,
       v: usable.map((c, i) => (members.get(c.id)?.has(p.q) ? i : -1)).filter((i) => i >= 0),
     }))
-    // A player who ticks nothing on any board is only noise in the search box.
-    .filter((x) => x.v.length > 0)
+    // A player who can answer no real hex is only noise in the search box -
+    // a birth decade alone does not count, or every footballer ever would.
+    .filter((x) => x.v.some((i) => usable[i].kind !== "group"))
     .sort((a, b) => b.p.links - a.p.links);
 
   // Pairs of categories that share enough players to sit side by side.
@@ -535,9 +559,10 @@ async function main() {
    * aliases ("버질 반 다이크", "엘링 홀란드").
    */
   // The best-known 3,000, plus everyone famous enough to be a Career Path answer.
-  const famous = list.filter((x, i) => i < 3000 || x.p.links >= 45).map(({ p }) => p.ko);
+  const famous = list.filter((x, i) => x.p.ko && (i < 3000 || x.p.links >= 45)).map(({ p }) => p.ko);
   const familiar = await familiarNames(famous);
-  const display = (p: Player) => familiar.get(p.ko) ?? p.ko;
+  // No Korean name anywhere: shown and searched in English.
+  const display = (p: Player) => (p.ko ? (familiar.get(p.ko) ?? p.ko) : p.en);
   const alts = (p: Player) =>
     [...new Set([p.ko, ...p.aliases])].filter((a) => a !== display(p) && /[가-힣]/.test(a));
   console.log(`familiar names: ${familiar.size} of ${famous.length} differ from Wikipedia's`);
