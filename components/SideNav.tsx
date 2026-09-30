@@ -69,7 +69,7 @@ export function SideNav({
   const onFeed = pathname === "/feed";
   const league = onFeed ? params.get("league") : null;
   const team = onFeed ? params.get("team") : null;
-  const clubs = mine.length ? mine : allClubs ? TEAMS : TEAMS.slice(0, 5);
+  const clubs = mine.length ? mine : allClubs ? TEAMS : TEAMS.slice(0, 4);
 
   return (
     <div className="flex min-h-full flex-col px-3 pb-6">
@@ -165,7 +165,7 @@ export function SideNav({
           onClick={() => setAllClubs((v) => !v)}
           className="mx-3 mt-1.5 self-start text-[13px] text-faint transition-colors hover:text-text"
         >
-          {allClubs ? "접기" : `${TEAMS.length - 5}개 더 보기`}
+          {allClubs ? "접기" : `${TEAMS.length - 4}개 더 보기`}
         </button>
       )}
 

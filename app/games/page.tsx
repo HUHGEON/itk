@@ -114,8 +114,8 @@ function Art({ slug }: { slug: GameSlug }) {
  */
 export default function GamesHub() {
   return (
-    <GamePage title="미니게임" en="축구 지식으로 푸는 한글 게임" wide>
-      <ul className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+    <GamePage title="Football Quiz" en="축구 게임" wide>
+      <ul className="mx-auto grid w-full max-w-[1100px] grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {GAMES.map((g, i) => {
           const tone = TONE[g.slug];
           return (
@@ -165,7 +165,7 @@ export default function GamesHub() {
           );
         })}
       </ul>
-      <p className="mt-8 max-w-[62ch] text-[12px] leading-relaxed text-faint">
+      <p className="mx-auto mt-8 max-w-[62ch] text-center text-[12px] leading-relaxed text-faint">
         선수·구단·경력 데이터는 위키데이터(CC0)에서, 스쿼드와 엠블럼은 FotMob에서 가져옵니다. 데일리 게임은 한국
         시간 자정에 바뀝니다.
       </p>

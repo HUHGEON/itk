@@ -37,7 +37,13 @@ async function logo(): Promise<string> {
 const BG = "#09090b";
 const ACCENT = "#f1800b";
 
-/** The site's card: the wordmark, a line, and the tier ladder as a strip of colour. */
+/**
+ * The site's card: the wordmark, a line, and the tier ladder as a strip.
+ *
+ * Everything that matters sits in the middle 630px. A link preview is not
+ * always the full card: Slack and KakaoTalk often show a square thumbnail cut
+ * from the centre, and a left-aligned card lost its wordmark to that crop.
+ */
 export async function siteImage(title: string, sub: string) {
   const [f, src] = await Promise.all([loadFonts(), logo()]);
   const tiers = ["#f1800b", "#5fd68a", "#54c8e8", "#9aa4b5", "#7f8794"];
@@ -49,25 +55,27 @@ export async function siteImage(title: string, sub: string) {
           height: "100%",
           display: "flex",
           flexDirection: "column",
-          justifyContent: "space-between",
-          padding: "72px 80px",
+          alignItems: "center",
+          justifyContent: "center",
+          gap: 34,
+          backgroundColor: BG,
           // Two properties: satori rejects a gradient and a colour in one
           // background shorthand ("Invalid background image").
-          backgroundColor: BG,
-          backgroundImage: "radial-gradient(circle at 85% 20%, rgba(241,128,11,0.28), transparent 55%)",
+          backgroundImage: "radial-gradient(circle at 50% 38%, rgba(241,128,11,0.22), transparent 60%)",
           color: "#f4f4f5",
           fontFamily: "Pretendard",
+          textAlign: "center",
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={src} width={346} height={120} alt="" />
-        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-          <div style={{ fontSize: 68, fontWeight: 800, letterSpacing: -2, lineHeight: 1.15, whiteSpace: "pre-wrap" }}>{title}</div>
-          <div style={{ fontSize: 32, fontWeight: 500, color: "#bcbcc4" }}>{sub}</div>
+        <img src={src} width={288} height={100} alt="" />
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 16 }}>
+          <div style={{ fontSize: 60, fontWeight: 800, letterSpacing: -2, lineHeight: 1.18, whiteSpace: "pre-wrap" }}>{title}</div>
+          <div style={{ fontSize: 28, fontWeight: 500, color: "#bcbcc4" }}>{sub}</div>
         </div>
-        <div style={{ display: "flex", gap: 10 }}>
+        <div style={{ display: "flex", gap: 8, width: 520 }}>
           {tiers.map((c, i) => (
-            <div key={i} style={{ display: "flex", height: 10, flex: [3, 2, 4, 2, 2][i], background: c, borderRadius: 5 }} />
+            <div key={i} style={{ display: "flex", height: 8, flex: [3, 2, 4, 2, 2][i], background: c, borderRadius: 4 }} />
           ))}
         </div>
       </div>
@@ -93,13 +101,13 @@ function hexPath(cx: number, cy: number, r: number) {
 }
 
 function HexFlower({ fills }: { fills: string[] }) {
-  const r = 70;
+  const r = 52;
   const w = r * Math.sqrt(3);
   const at: [number, number][] = [
     [0, 0], [-w, 0], [w, 0], [-w / 2, -1.5 * r], [w / 2, -1.5 * r], [-w / 2, 1.5 * r], [w / 2, 1.5 * r],
   ];
   return (
-    <svg width="440" height="440" viewBox="-220 -220 440 440">
+    <svg width="330" height="300" viewBox="-165 -150 330 300">
       {at.map(([x, y], i) => (
         <path key={i} d={hexPath(x, y, r - 4)} fill={fills[i]} />
       ))}
@@ -114,7 +122,7 @@ function Art({ slug }: { slug: GameSlug }) {
     return <HexFlower fills={["#EF4444", "#F97316", "#FDE047", "#F59E0B", "#E2E8F0", "#FEF9C3", "#991B1B"]} />;
   if (slug === "career")
     return (
-      <div style={{ display: "flex", flexDirection: "column", width: 420, borderRadius: 14, overflow: "hidden", background: "#f8f9fa", color: "#111", fontSize: 26 }}>
+      <div style={{ display: "flex", flexDirection: "column", width: 400, borderRadius: 14, overflow: "hidden", background: "#f8f9fa", color: "#111", fontSize: 24 }}>
         <div style={{ display: "flex", justifyContent: "center", background: "#b0c4de", padding: "14px 0", fontWeight: 800 }}>선수 경력</div>
         {[["2009–2013", "토트넘", "178"], ["2013–2015", "????", "??"], ["2015–2020", "????", "??"]].map((r, i) => (
           <div key={i} style={{ display: "flex", gap: 18, padding: "12px 20px", color: i ? "#8c959f" : "#111" }}>
@@ -126,13 +134,13 @@ function Art({ slug }: { slug: GameSlug }) {
       </div>
     );
   return (
-    <div style={{ display: "flex", flexWrap: "wrap", width: 390, gap: 18 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "center", width: 330, gap: 16 }}>
       {([["KOR", 1], ["FW", 0], ["27↓", 0], ["#7", 1], ["MF", 1], ["?", 0]] as const).map(([t, ok], i) => (
         <div
           key={i}
           style={{
-            display: "flex", alignItems: "center", justifyContent: "center", width: 114, height: 114, borderRadius: 57,
-            background: ok ? "#22C55E" : "#94a3b8", color: "#fff", fontSize: 34, fontWeight: 800,
+            display: "flex", alignItems: "center", justifyContent: "center", width: 96, height: 96, borderRadius: 48,
+            background: ok ? "#22C55E" : "#94a3b8", color: "#fff", fontSize: 30, fontWeight: 800,
           }}
         >
           {t}
@@ -142,7 +150,10 @@ function Art({ slug }: { slug: GameSlug }) {
   );
 }
 
-/** A game's card: its picture on the right, its name and what it is on the left. */
+/**
+ * A game's card: its picture, its name and what it is, stacked in the middle
+ * so a square crop from the centre (Slack, KakaoTalk) still shows all three.
+ */
 export async function gameImage(slug: GameSlug) {
   const game = GAMES.find((g) => g.slug === slug)!;
   const [f, src] = await Promise.all([loadFonts(), logo()]);
@@ -154,26 +165,27 @@ export async function gameImage(slug: GameSlug) {
           width: "100%",
           height: "100%",
           display: "flex",
+          flexDirection: "column",
           alignItems: "center",
-          justifyContent: "space-between",
-          padding: "0 80px",
+          justifyContent: "center",
+          gap: 26,
           backgroundColor: BG,
-          backgroundImage: `radial-gradient(circle at 78% 50%, ${tone}55, transparent 55%)`,
+          backgroundImage: `radial-gradient(circle at 50% 36%, ${tone}55, transparent 58%)`,
           color: "#f4f4f5",
           fontFamily: "Pretendard",
         }}
       >
-        <div style={{ display: "flex", flexDirection: "column", gap: 20, maxWidth: 560 }}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={src} width={173} height={60} alt="" />
-          <div style={{ display: "flex", fontSize: 30, fontWeight: 800, color: ACCENT, marginTop: 36 }}>
-            ITK+ 미니게임 · {game.tag}
-          </div>
-          <div style={{ fontSize: 84, fontWeight: 800, letterSpacing: -3, lineHeight: 1.05 }}>{game.title}</div>
-          <div style={{ fontSize: 34, fontWeight: 500, color: "#bcbcc4" }}>{game.en}</div>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 460, height: 460 }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: 300 }}>
           <Art slug={slug} />
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 10 }}>
+          <div style={{ fontSize: 74, fontWeight: 800, letterSpacing: -3, lineHeight: 1 }}>{game.title}</div>
+          <div style={{ display: "flex", alignItems: "center", gap: 14, fontSize: 28, fontWeight: 500, color: "#bcbcc4" }}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={src} width={86} height={30} alt="" />
+            <span style={{ color: ACCENT, fontWeight: 800 }}>·</span>
+            {game.en}
+          </div>
         </div>
       </div>
     ),
