@@ -77,7 +77,7 @@ export function ArticleList({
 
     // Children are the cards followed by the sentinel, so an index into the
     // row array is an index into the DOM.
-    const fresh = Array.from(root.children).slice(
+    const fresh = (Array.from(root.children) as HTMLElement[]).slice(
       from,
       Math.min(rows.length, from + ENTER_CAP),
     );
@@ -91,8 +91,17 @@ export function ArticleList({
       ease: "outExpo",
       delay: stagger(30),
     });
+    // Torn down to the resting state, not revert()ed: revert returns to what
+    // was there before animate(), which is the utils.set() above - opacity 0.
+    // A filter change runs this cleanup, and the rows the old and new lists
+    // share keep their DOM nodes, so they sat invisible as a blank stretch at
+    // the top of the column (3 of 40 measured on 프리미어리그).
     return () => {
       anim.revert();
+      for (const el of fresh) {
+        el.style.opacity = "";
+        el.style.transform = "";
+      }
     };
   }, [rows]);
 
