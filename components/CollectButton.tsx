@@ -6,6 +6,7 @@ import { animate } from "animejs";
 import { Refresh } from "./icons";
 import { timeAgo } from "@/lib/format";
 import { reducedMotion } from "@/lib/motion";
+import { usePlacement } from "./Placement";
 
 /**
  * Collect now, without waiting for the next scheduled pass.
@@ -127,6 +128,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
     settle(await startCollect());
   };
 
+  const block = usePlacement() === "block";
   const title = due
     ? "지금 수집 (약 15초)"
     : lastCollect
@@ -136,11 +138,13 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
   return (
     // Sits in the header now, so the result drops below the button instead of
     // pushing the bar taller.
-    <div className="relative flex items-center">
+    <div className={block ? "flex flex-col gap-1.5" : "relative flex items-center"}>
       {note && (
         <span
           role="status"
-          className={`absolute top-full right-0 z-10 mt-1.5 rounded-[6px] border border-border bg-surface px-2 py-1 text-[12px] whitespace-nowrap shadow-lg ${state === "error" ? "text-red-400" : "text-muted"}`}
+          className={`${
+            block ? "order-last px-1 text-center" : "absolute top-full right-0 z-10 mt-1.5 rounded-[6px] border border-border bg-surface px-2 py-1 shadow-lg"
+          } text-[12px] whitespace-nowrap ${state === "error" ? "text-red-400" : "text-muted"}`}
         >
           {note}
         </span>
@@ -150,7 +154,9 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         onClick={() => void run()}
         disabled={state === "running"}
         title={title}
-        className={`relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
+        className={`relative inline-flex items-center justify-center gap-1.5 overflow-hidden font-semibold transition-colors disabled:opacity-50 ${
+          block ? "h-11 w-full rounded-full text-[15px]" : "rounded-[10px] px-3 py-2 text-[13px]"
+        } ${
           due
             ? "text-accent-ink hover:opacity-90"
             : "border border-border text-muted hover:border-border-strong hover:text-text"
@@ -165,8 +171,11 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
           />
         )}
         <Refresh className={state === "running" ? "animate-spin" : ""} />
-        {state === "running" ? "수집 중" : "수집"}
+        {state === "running" ? "수집 중" : block ? "지금 수집" : "수집"}
       </button>
+      {block && lastCollect && !note && (
+        <span className="text-center text-[12px] text-faint">마지막 수집 {timeAgo(lastCollect, now)}</span>
+      )}
     </div>
   );
 }

@@ -51,16 +51,16 @@ export default async function PlayerPage({ params }: { params: Params }) {
   return (
     <Shell
       rail={<MatchRail />}
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox
               state={{ tiers: [], teams: [], league: "", who: "", q: "" }}
             />
           </Suspense>
-          <CollectButton lastCollect={null} />
         </>
       }
+      collect={<CollectButton lastCollect={null} />}
     >
       <header className="border-b border-border">
         <div

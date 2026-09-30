@@ -3,16 +3,16 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { SidebarSimple } from "@phosphor-icons/react";
 import { Close, Menu } from "./icons";
 import { Logo } from "./Logo";
 import { SECTIONS, SideNav } from "./SideNav";
+import { PlacementProvider } from "./Placement";
 
 /**
  * The app shell: three columns, as a sports dashboard lays itself out.
  *
  *   left    where you are, and the leagues and clubs (SideNav)
- *   middle  a toolbar with the page's name, search and collect; the page
+ *   middle  the page
  *   right   the page's widgets, each on its own card
  *
  * The left column came back after a spell as a top header. It left as a
@@ -28,14 +28,20 @@ import { SECTIONS, SideNav } from "./SideNav";
  */
 export function Shell({
   rail,
-  actions,
+  search,
+  collect,
   bare = false,
   children,
 }: {
   /** the page's widgets: a column on the right, a drawer on smaller screens */
   rail: ReactNode;
-  /** search and collect */
-  actions: ReactNode;
+  /**
+   * The search box and the collect button. Placed as Bluesky and X place
+   * theirs: search at the top of the widget column, the main button under
+   * the menu in the left one. On a phone both sit in the compact header.
+   */
+  search: ReactNode;
+  collect: ReactNode;
   /**
    * The page lays out its own cards (the feed, the reporters, the games)
    * rather than sitting in the one the shell gives it.
@@ -93,7 +99,8 @@ export function Shell({
           <Link href="/feed" aria-label="ITK plus 이적 소식" className="mr-auto shrink-0">
             <Logo height={28} />
           </Link>
-          {actions}
+          {search}
+          {collect}
           <button
             type="button"
             onClick={() => setOpen(true)}
@@ -139,45 +146,22 @@ export function Shell({
       >
         {/* The left column, from 1024px up. Below that it is in the drawer. */}
         <aside className="hidden border-r border-border lg:sticky lg:top-0 lg:block lg:h-screen lg:overflow-y-auto">
-          <SideNav />
+          <PlacementProvider value="block">
+            <SideNav
+              collect={collect}
+              // Without a widget column the search has nowhere else to go.
+              search={search}
+              searchUntilXl={hasRail}
+              onWidgets={hasRail ? () => setOpen(true) : undefined}
+            />
+          </PlacementProvider>
         </aside>
 
         <main className="min-w-0">
-          {/*
-            The toolbar: search wide at the start of the page's column, and
-            collect at the far end, over the widget column - the bar spans
-            both, as a dashboard's top bar does. It used to be the page's name,
-            then search and collect packed together, which left the search
-            floating mid-screen and nothing over the widgets. The page's name
-            went with it: the left column already marks where you are.
-
-            It stays inside <main> so it can stick (a grid item's sticky range
-            is its own grid area) and reaches over the widget column with a
-            negative margin: 320px of column plus the 24px gap.
-          */}
-          <div
-            className={`sticky top-0 z-30 hidden h-16 items-center gap-3 bg-bg/85 backdrop-blur-xl lg:flex ${
-              hasRail ? "xl:-mr-[344px]" : ""
-            }`}
-          >
-            <div className="flex min-w-0 flex-1 items-center gap-3 [&>*:last-child]:ml-auto">{actions}</div>
-            {hasRail && (
-              <button
-                type="button"
-                onClick={() => setOpen(true)}
-                aria-label="현황 열기"
-                aria-expanded={open}
-                className="shrink-0 rounded-[10px] border border-border p-2 text-muted transition-colors hover:border-border-strong hover:text-text xl:hidden"
-              >
-                <SidebarSimple size={18} mirrored />
-              </button>
-            )}
-          </div>
-
           {bare ? (
             children
           ) : (
-            <div className="py-2 sm:px-[var(--gutter)] sm:py-4 lg:px-0 lg:pt-1">
+            <div className="py-2 sm:px-[var(--gutter)] sm:py-4 lg:px-0 lg:pt-6">
               <div className="min-h-[60vh] overflow-clip bg-surface sm:rounded-[20px]">{children}</div>
             </div>
           )}
@@ -204,10 +188,14 @@ export function Shell({
               </button>
             </div>
             {narrow && <SideNav />}
-            {/* Each widget on its own card, 16px apart, level with the toolbar. */}
+            {/* The search first, as Bluesky and X head their right column;
+                then each widget on its own card, 16px apart. */}
             {hasRail && (
-              <div className="flex flex-col gap-4 px-[var(--gutter)] pb-6 xl:px-0 xl:pt-[4.25rem] *:overflow-hidden *:rounded-[20px] *:border-0 *:bg-surface">
-                {rail}
+              <div className="flex flex-col gap-4 px-[var(--gutter)] pb-6 xl:px-0 xl:pt-6">
+                <div className="hidden xl:block">
+                  <PlacementProvider value="block">{search}</PlacementProvider>
+                </div>
+                <div className="flex flex-col gap-4 *:overflow-hidden *:rounded-[20px] *:border-0 *:bg-surface">{rail}</div>
               </div>
             )}
           </aside>

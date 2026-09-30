@@ -47,16 +47,16 @@ export default async function JournalistsPage({ searchParams }: { searchParams: 
     <Shell
         bare
       rail={pulse ? <PulsePanel pulse={pulse} now={Date.now()} /> : null}
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox state={{ tiers: [], teams: [], league: "", who: "", q: "" }} />
           </Suspense>
-          <CollectButton lastCollect={pulse?.lastCollect ?? null} />
         </>
       }
+      collect={<CollectButton lastCollect={pulse?.lastCollect ?? null} />}
     >
-      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0">
+      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0 lg:pt-6">
         {/* The toolbar already says 기자; the heading stays for screen readers. */}
         <h1 className="sr-only">기자</h1>
         <p className="text-[15px] text-muted">

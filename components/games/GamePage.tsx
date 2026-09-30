@@ -27,16 +27,16 @@ export function GamePage({
     <Shell
         bare
       rail={null}
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox state={{ tiers: [], teams: [], league: "", who: "", q: "" }} />
           </Suspense>
-          <CollectButton lastCollect={null} />
         </>
       }
+      collect={<CollectButton lastCollect={null} />}
     >
-      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0">
+      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0 lg:pt-6">
         <div>
           <header className={wide ? "mb-6" : "mx-auto mb-5"} style={wide ? undefined : { maxWidth: width }}>
             {/* The hub's name is already in the toolbar; a game's is not. */}

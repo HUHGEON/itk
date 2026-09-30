@@ -62,16 +62,16 @@ export default async function League({ params }: { params: Params }) {
   return (
     <Shell
       rail={<MatchRail active={code} day={ymd(today)} />}
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox
               state={{ tiers: [], teams: [], league: "", who: "", q: "" }}
             />
           </Suspense>
-          <CollectButton lastCollect={null} />
         </>
       }
+      collect={<CollectButton lastCollect={null} />}
     >
       <header className="border-b border-border">
         <div className={`${MEASURE} px-[var(--gutter)] py-5`}>

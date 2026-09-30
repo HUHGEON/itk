@@ -129,14 +129,14 @@ export default async function Matches({
   return (
     <Shell
       rail={<MatchRail active={picked?.code} day={ymd(date)} counts={counts} />}
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox state={{ tiers: [], teams: [], league: "", who: "", q: "" }} />
           </Suspense>
-          <CollectButton lastCollect={null} />
         </>
       }
+      collect={<CollectButton lastCollect={null} />}
     >
       {/* Date and scope sit together: they are the two things that change what
           is on screen, and splitting them across the page would mean hunting

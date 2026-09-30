@@ -387,8 +387,10 @@ html {
   to { transform: translateY(0); opacity: 1; }
 }
 
+/* From 1024px there is no bar across the top at all: search and collect
+   live in the side columns, so sticky things pin to the very top. */
 @media (min-width: 1024px) {
   :root {
-    --headerh: 4rem;
+    --headerh: 0px;
   }
 }

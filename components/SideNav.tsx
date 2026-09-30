@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
-import { CalendarDots, GameController, IdentificationBadge, Newspaper } from "@phosphor-icons/react";
+import { CalendarDots, ChartDonut, GameController, IdentificationBadge, Newspaper } from "@phosphor-icons/react";
+import type { ReactNode } from "react";
 import registry from "@/data/teams.json";
 import { LEAGUE_LABEL, type League, type Team } from "@/lib/types";
 import { LeagueMark } from "./LeagueMark";
@@ -47,7 +48,20 @@ function useMyClubs(): Team[] {
  * menu. Clubs are the ones the reader set alerts for, or the best-followed
  * few until they have.
  */
-export function SideNav() {
+export function SideNav({
+  collect,
+  search,
+  searchUntilXl = false,
+  onWidgets,
+}: {
+  /** the page's main button, under the menu as X and Bluesky place theirs */
+  collect?: ReactNode;
+  search?: ReactNode;
+  /** the widget column takes the search from 1280px up */
+  searchUntilXl?: boolean;
+  /** opens the widgets, while there is no column for them */
+  onWidgets?: () => void;
+} = {}) {
   const pathname = usePathname();
   const params = useSearchParams();
   const mine = useMyClubs();
@@ -62,10 +76,12 @@ export function SideNav() {
       <Link
         href="/feed"
         aria-label="ITK plus 이적 소식"
-        className="mx-2 mt-5 mb-5 hidden self-start rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:block"
+        className="mx-2 mt-5 mb-4 hidden self-start rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:block"
       >
         <Logo height={32} />
       </Link>
+
+      {search && <div className={`mb-4 ${searchUntilXl ? "xl:hidden" : ""}`}>{search}</div>}
 
       <nav aria-label="섹션" className="space-y-0.5">
         {SECTIONS.map(({ href, label, Icon, match }) => {
@@ -85,6 +101,18 @@ export function SideNav() {
           );
         })}
       </nav>
+
+      {collect && <div className="mt-3">{collect}</div>}
+      {onWidgets && (
+        <button
+          type="button"
+          onClick={onWidgets}
+          className="mt-2 flex h-10 items-center justify-center gap-2 rounded-full border border-border text-[14px] text-muted transition-colors hover:border-border-strong hover:text-text xl:hidden"
+        >
+          <ChartDonut size={18} />
+          현황 보기
+        </button>
+      )}
 
       <Heading>리그</Heading>
       <ul className="space-y-0.5">
@@ -153,5 +181,5 @@ export function SideNav() {
 }
 
 function Heading({ children }: { children: React.ReactNode }) {
-  return <p className="mx-3 mt-5 mb-1.5 text-[12px] font-semibold tracking-wide text-faint">{children}</p>;
+  return <p className="mx-3 mt-4 mb-1.5 text-[12px] font-semibold tracking-wide text-faint">{children}</p>;
 }

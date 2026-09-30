@@ -25,7 +25,7 @@ export function StickyFilters({ className = "", children }: { className?: string
     };
   }, []);
   return (
-    <div ref={ref} className={`sticky top-[var(--headerh)] z-20 -mt-1 bg-bg pt-1 pb-2 ${className}`}>
+    <div ref={ref} className={`sticky top-[var(--headerh)] z-20 -mt-1 bg-bg pt-1 pb-2 lg:-mt-3 lg:pt-3 ${className}`}>
       {children}
     </div>
   );

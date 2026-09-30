@@ -134,12 +134,12 @@ export default async function Home({
             <AlertPanel teams={teams} />
           </>
         }
-        actions={
-          <>
-            <SearchBox state={filterState} />
-            <CollectButton lastCollect={pulse.lastCollect} />
-          </>
-        }
+        search={
+        <>
+          <SearchBox state={filterState} />
+        </>
+      }
+      collect={<CollectButton lastCollect={pulse.lastCollect} />}
       >
         {/* The feed had no first-level heading at all: its first was an h2
             inside a filter panel, which leaves a screen reader with no title
@@ -148,7 +148,7 @@ export default async function Home({
 
         {/* The featured stories, then the list under its own heading and
             filters, every part on its own card over the page. */}
-        <div className="flex flex-col gap-3 px-3 py-3 sm:px-[var(--gutter)] lg:px-0 lg:pt-1 lg:pb-10">
+        <div className="flex flex-col gap-3 px-3 py-3 sm:px-[var(--gutter)] lg:px-0 lg:pt-6 lg:pb-10">
           {/* On a phone there is no left column, so the league filter would
               sit under the whole hero; there it comes first instead. */}
           {picks.length >= 4 && (

@@ -8,6 +8,7 @@ import type { Team } from "@/lib/types";
 import type { FilterState } from "./Filters";
 import { TeamCrest } from "./TeamCrest";
 import { Close, Search } from "./icons";
+import { usePlacement } from "./Placement";
 
 const RECENT_KEY = "itk:recent-searches";
 const RECENT_MAX = 8;
@@ -42,6 +43,7 @@ export function SearchBox({ state }: { state: FilterState }) {
   const [query, setQuery] = useState(state.q);
   const [recent, setRecent] = useState<string[]>([]);
   const input = useRef<HTMLInputElement>(null);
+  const block = usePlacement() === "block";
 
   // Back/forward has to move the box, not just the results.
   useEffect(() => setQuery(state.q), [state.q]);
@@ -95,14 +97,16 @@ export function SearchBox({ state }: { state: FilterState }) {
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
         aria-label="기사 검색"
-        // An icon on a phone, a field-shaped button in the header above that.
-        className={`flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 p-2 text-left transition-colors hover:border-border-strong md:w-[220px] md:px-3 lg:w-[380px] xl:w-[440px] ${
-          pending ? "opacity-60" : ""
-        }`}
+        // An icon in the phone's header; a full-width field at the top of a column.
+        className={`flex items-center gap-2 border border-border text-left transition-colors hover:border-border-strong ${
+          block ? "h-11 w-full rounded-xl bg-surface px-3.5" : "rounded-[10px] bg-surface-2 p-2 md:w-[220px] md:px-3"
+        } ${pending ? "opacity-60" : ""}`}
       >
         <Search className="shrink-0 text-muted" />
-        <span className={`hidden min-w-0 flex-1 truncate text-[13px] md:block ${state.q ? "text-text" : "text-faint"}`}>
-          {state.q || "선수·팀·키워드"}
+        <span
+          className={`min-w-0 flex-1 truncate ${block ? "block text-[14px]" : "hidden text-[13px] md:block"} ${state.q ? "text-text" : "text-faint"}`}
+        >
+          {state.q || "선수·팀·키워드 검색"}
         </span>
       </button>
 

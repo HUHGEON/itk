@@ -94,16 +94,16 @@ export default async function Game({ params }: { params: Params }) {
           <MatchRail active={code} day={ymd(new Date(detail.match.kickoff))} />
         )
       }
-      actions={
+      search={
         <>
           <Suspense fallback={null}>
             <SearchBox
               state={{ tiers: [], teams: [], league: "", who: "", q: "" }}
             />
           </Suspense>
-          <CollectButton lastCollect={null} />
         </>
       }
+      collect={<CollectButton lastCollect={null} />}
     >
       <MatchReport initial={detail} fm={fm} faces={faces} />
     </Shell>
