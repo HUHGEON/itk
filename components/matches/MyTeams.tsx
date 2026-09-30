@@ -77,13 +77,13 @@ function Card({ slug, match }: { slug: string; match: Match }) {
     <Link
       href={`/matches/game/${match.code}/${match.id}`}
       title={`${match.home.name} 대 ${match.away.name}`}
-      className={`flex shrink-0 snap-start flex-col gap-1 rounded-[10px] border px-3 py-2 transition-colors ${
+      className={`flex shrink-0 snap-start flex-col gap-1 rounded-[16px] border px-3 py-2 transition-colors ${
         live
           ? "border-accent/40 bg-accent/[0.07] hover:bg-accent/[0.11]"
           : "border-border bg-surface-2/40 hover:border-border-strong"
       }`}
     >
-      <div className="flex items-center justify-between gap-3 text-[10.5px]">
+      <div className="flex items-center justify-between gap-3 text-[12px]">
         {/* The state word goes with the competition, so it never sits against
             the kick-off time and turns into "finished at 04:00". */}
         <span className="flex min-w-0 items-baseline gap-1.5">
@@ -91,7 +91,7 @@ function Card({ slug, match }: { slug: string; match: Match }) {
           {done && <span className="shrink-0 text-faint">종료</span>}
         </span>
         {live ? (
-          <span className="live-badge tnum shrink-0 rounded-[4px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
+          <span className="live-badge tnum shrink-0 rounded-[6px] bg-accent px-1.5 py-[1px] font-bold text-accent-ink">
             {match.clock ?? "LIVE"}
           </span>
         ) : (
@@ -123,7 +123,7 @@ function Card({ slug, match }: { slug: string; match: Match }) {
             {us.score ?? 0} : {them.score ?? 0}
           </span>
         ) : (
-          <span className="px-1 text-[11.5px] text-faint">vs</span>
+          <span className="px-1 text-[12.5px] text-faint">vs</span>
         )}
         <span className="text-[13px] text-muted">{them.name}</span>
         {crest(them, true)}
@@ -232,7 +232,7 @@ export function MyTeams() {
       <div className="flex items-baseline justify-center gap-3 px-[var(--gutter)] pt-3 pb-1.5">
         <h2 className="text-[12px] font-semibold text-muted">내 팀</h2>
         {cards.length === 0 && !loading && (
-          <span className="text-[11.5px] text-faint">
+          <span className="text-[12.5px] text-faint">
             2주 안에 예정된 경기가 없습니다
           </span>
         )}
@@ -270,7 +270,7 @@ export function MyTeams() {
           {teams.slice(0, 3).map((s) => (
             <span
               key={s}
-              className="h-[52px] w-[14rem] shrink-0 animate-pulse rounded-[10px] bg-surface-2"
+              className="h-[52px] w-[14rem] shrink-0 animate-pulse rounded-[16px] bg-surface-2"
             />
           ))}
         </div>

@@ -75,7 +75,7 @@ function Block({
       <h2 className="flex items-center gap-2 px-[var(--gutter)] pt-5 pb-2 text-[12px] font-semibold text-muted">
         {title}
         {highlight && (
-          <span className="live-badge rounded-[4px] bg-accent px-1.5 py-[1px] text-[10px] font-bold text-accent-ink">
+          <span className="live-badge rounded-[6px] bg-accent px-1.5 py-[1px] text-[11.5px] font-bold text-accent-ink">
             LIVE
           </span>
         )}
@@ -115,27 +115,27 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
       href={`/matches/game/${match.code}/${match.id}`}
       data-season-row
       title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
-      className="-mx-2 grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[6px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
+      className="-mx-2 grid grid-cols-[auto_1fr_auto] items-center gap-3 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
     >
       {/* Date, weekday and hour. A result without a time reads as something
           that happened on a day rather than at a moment. */}
-      <div className="tnum w-[62px] shrink-0 text-[11.5px] leading-tight text-faint">
+      <div className="tnum w-[62px] shrink-0 text-[12.5px] leading-tight text-faint">
         <div>
           {d.month}.{d.day}
-          <span className="ml-1 text-[10.5px]">({WEEKDAY[d.weekday]})</span>
+          <span className="ml-1 text-[12px]">({WEEKDAY[d.weekday]})</span>
         </div>
-        <div className="text-[10.5px]">{d.hm}</div>
+        <div className="text-[12px]">{d.hm}</div>
       </div>
 
       <div className="flex min-w-0 items-center gap-2.5">
         <span
-          className={`w-[5.5rem] shrink-0 truncate text-[11px] ${
+          className={`w-[5.5rem] shrink-0 truncate text-[12px] ${
             live ? "text-accent" : "text-faint"
           }`}
         >
           {match.competitionShort}
         </span>
-        <span className="shrink-0 text-[11.5px] text-faint">
+        <span className="shrink-0 text-[12.5px] text-faint">
           {home ? "홈" : "원정"}
         </span>
         {them.crest ? (
@@ -170,13 +170,13 @@ function SeasonRow({ match, slug }: { match: Match; slug: string }) {
             </span>
             {outcome && (
               <span
-                className={`rounded-[4px] px-1.5 py-[1px] text-[10.5px] font-bold ${outcomeTone}`}
+                className={`rounded-[6px] px-1.5 py-[1px] text-[12px] font-bold ${outcomeTone}`}
               >
                 {outcome}
               </span>
             )}
             {live && match.clock && (
-              <span className="tnum text-[10.5px] font-semibold text-accent">
+              <span className="tnum text-[12px] font-semibold text-accent">
                 {match.clock}
               </span>
             )}

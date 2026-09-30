@@ -186,7 +186,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
         <button
           type="button"
           onClick={requestPermission}
-          className="mt-2.5 w-full rounded-[4px] border border-accent/45 px-3 py-1.5 text-[12px] font-semibold text-accent transition-colors hover:bg-accent/10"
+          className="mt-2.5 w-full rounded-[6px] border border-accent/45 px-3 py-1.5 text-[12px] font-semibold text-accent transition-colors hover:bg-accent/10"
         >
           {permission === "denied"
             ? "브라우저 설정에서 알림 허용 필요"
@@ -195,7 +195,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
       )}
 
       <div className="mt-2.5">
-        <label className="text-[11px] font-semibold text-muted">
+        <label className="text-[12px] font-semibold text-muted">
           최소 신뢰도
         </label>
         <div className="mt-1.5 flex gap-1">
@@ -204,7 +204,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
               key={t}
               type="button"
               onClick={() => save({ ...prefs, maxTier: t })}
-              className={`flex-1 rounded-[6px] border py-1 text-[11px] font-semibold transition-colors ${
+              className={`flex-1 rounded-[10px] border py-1 text-[12px] font-semibold transition-colors ${
                 prefs.maxTier === t
                   ? "border-accent bg-accent/15 text-accent"
                   : "border-border text-muted hover:text-text"
@@ -214,7 +214,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
             </button>
           ))}
         </div>
-        <p className="mt-1.5 text-[10.5px] text-muted">
+        <p className="mt-1.5 text-[12px] text-muted">
           {tierLabel(prefs.maxTier)}까지 알림을 받습니다.
         </p>
       </div>
@@ -226,7 +226,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
               key={t.slug}
               type="button"
               onClick={() => toggleTeam(t.slug)}
-              className={`flex w-full items-center gap-2 rounded-[6px] px-2 py-1.5 text-[12px] transition-colors ${
+              className={`flex w-full items-center gap-2 rounded-[10px] px-2 py-1.5 text-[12px] transition-colors ${
                 prefs.teams.includes(t.slug)
                   ? "bg-accent/15 font-semibold text-accent"
                   : "text-muted hover:bg-surface-2"
@@ -243,13 +243,13 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
       ) : (
         <div className="mt-2.5 border-t border-border pt-2.5">
           {selected.length === 0 ? (
-            <p className="text-[11px] text-muted">구독한 팀이 없습니다.</p>
+            <p className="text-[12px] text-muted">구독한 팀이 없습니다.</p>
           ) : (
             <div className="flex flex-wrap gap-1.5">
               {selected.map((t) => (
                 <span
                   key={t.slug}
-                  className="inline-flex items-center gap-1 rounded-full bg-surface-3 py-0.5 pr-2 pl-1 text-[11px]"
+                  className="inline-flex items-center gap-1 rounded-full bg-surface-3 py-0.5 pr-2 pl-1 text-[12px]"
                 >
                   <TeamCrest team={t} size={14} />
                   {t.ko}
@@ -258,7 +258,7 @@ export function AlertPanel({ teams }: { teams: Team[] }) {
             </div>
           )}
           {lastCheck && (
-            <p className="mt-2 text-[10px] text-muted">
+            <p className="mt-2 text-[11.5px] text-muted">
               {new Date(lastCheck).toLocaleTimeString("ko-KR")} 확인됨 ·{" "}
               {live ? "새 기사 들어오면 즉시" : "5분마다 확인"}
             </p>

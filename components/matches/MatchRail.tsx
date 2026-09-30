@@ -110,7 +110,7 @@ function Section({
 }) {
   return (
     <section className="border-b border-border py-3 last:border-b-0">
-      <h2 className="px-[var(--gutter)] pb-1.5 text-[11px] font-semibold text-faint">
+      <h2 className="px-[var(--gutter)] pb-1.5 text-[12px] font-semibold text-faint">
         {title}
       </h2>
       <nav className="flex flex-col">{children}</nav>
@@ -121,7 +121,7 @@ function Section({
 /** How many matches a competition has today. Absent means none. */
 function Count({ n }: { n?: number }) {
   if (!n) return null;
-  return <span className="tnum ml-1.5 text-[11px] opacity-60">{n}</span>;
+  return <span className="tnum ml-1.5 text-[12px] opacity-60">{n}</span>;
 }
 
 function Row({

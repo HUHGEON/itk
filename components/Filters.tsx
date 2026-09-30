@@ -15,6 +15,7 @@ import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
+import { FunnelSimple } from "@phosphor-icons/react/dist/ssr";
 import { pressPop, rollNumber, useBeforePaint } from "@/lib/motion";
 
 /**
@@ -66,6 +67,21 @@ export function Filters({
 }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  /*
+   * Tiers, reporters and clubs live behind one button.
+   *
+   * They used to stand as three stacked rows over the feed - 278px measured on
+   * a laptop, a quarter of a phone screen - before the first story. 요즘IT
+   * keeps one row of category tabs over its lists; the league tabs are that
+   * row here, and the finer filters open on demand.
+   */
+  const [panel, setPanel] = useState(false);
+  useEffect(() => {
+    if (!panel) return;
+    const k = (e: KeyboardEvent) => e.key === "Escape" && setPanel(false);
+    window.addEventListener("keydown", k);
+    return () => window.removeEventListener("keydown", k);
+  }, [panel]);
 
   // Handed down rather than read with useSearchParams. That hook opts its
   // subtree out of server rendering, so the whole bar shipped as a Suspense
@@ -144,6 +160,7 @@ export function Filters({
 
   const selected = teams.filter((t) => selectedTeams.includes(t.slug));
   const openGroup = grouped.find((g) => g.league === league) ?? null;
+  const activeCount = selectedTiers.length + selectedTeams.length + (who ? 1 : 0);
   const hasAnyFilter =
     selectedTiers.length > 0 ||
     selectedTeams.length > 0 ||
@@ -178,7 +195,7 @@ export function Filters({
             onClick={() =>
               startTransition(() => router.push("/feed", { scroll: false }))
             }
-            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[11px] text-muted transition-colors hover:border-border-strong hover:text-text"
+            className="inline-flex shrink-0 items-center gap-1 rounded-full border border-border px-2 py-0.5 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
           >
             <Close size={10} />
             초기화
@@ -186,11 +203,72 @@ export function Filters({
         </div>
       )}
 
+      {/* League tabs, and beside them the way into everything else. */}
+      <div className="flex items-stretch">
+        <div className="min-w-0 flex-1">
+        <ScrollRail className="flex gap-0.5 px-[var(--gutter)]">
+          <LeagueTab
+            active={!league}
+            onClick={() => push((p) => p.delete("league"))}
+          >
+            전체
+          </LeagueTab>
+          {grouped.map((g) => (
+            <LeagueTab
+              key={g.league}
+              active={league === g.league}
+              badge={g.count > 0 ? g.count : undefined}
+              badgeTier={g.best}
+              onClick={() =>
+                push((p) =>
+                  league === g.league
+                    ? p.delete("league")
+                    : p.set("league", g.league),
+                )
+              }
+            >
+              {LEAGUE_LABEL[g.league]}
+            </LeagueTab>
+          ))}
+        </ScrollRail>
+        </div>
+        <button
+          type="button"
+          onClick={() => setPanel((v) => !v)}
+          aria-expanded={panel}
+          aria-controls="feed-filters"
+          className={`my-1.5 mr-[var(--gutter)] flex shrink-0 items-center gap-1.5 rounded-[10px] border px-3 text-[13px] font-semibold transition-colors ${
+            panel || activeCount > 0
+              ? "border-accent/50 bg-accent/10 text-accent"
+              : "border-border text-muted hover:border-border-strong hover:text-text"
+          }`}
+        >
+          <FunnelSimple className="size-4" weight="bold" />
+          필터
+          {activeCount > 0 && <span className="tnum rounded-full bg-accent px-1.5 text-[11.5px] text-accent-ink">{activeCount}</span>}
+        </button>
+      </div>
+
+      {panel && (
+        <>
+          {/* On a phone the panel is a sheet from the bottom, over a scrim. */}
+          <button type="button" aria-label="필터 닫기" onClick={() => setPanel(false)} className="fixed inset-0 z-40 bg-black/50 sm:hidden" />
+          <div
+            id="feed-filters"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-border-strong bg-surface pb-[max(16px,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-border sm:pb-0"
+          >
+            <div className="flex items-center justify-between px-[var(--gutter)] pt-4 pb-1 sm:hidden">
+              <span className="text-[16px] font-bold text-text">필터</span>
+              <button type="button" onClick={() => setPanel(false)} aria-label="닫기" className="p-1 text-muted hover:text-text">
+                <Close size={16} />
+              </button>
+            </div>
+
       {/* Who filed it is the spine of the app, so the tiers lead — one hue at
           five strengths rather than five unrelated colours. Labelled by what
           they rank, not by the abstraction: "신뢰도" of what was never said. */}
       <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
-        <span className="shrink-0 pr-1.5 text-[11px] font-semibold tracking-wide text-muted">
+        <span className="shrink-0 pr-1.5 text-[12px] font-semibold tracking-wide text-muted">
           기자 티어
         </span>
         {ALL_TIERS.map((t) => {
@@ -206,7 +284,7 @@ export function Filters({
                 toggleIn("tier", key);
               }}
               aria-pressed={on}
-              className="shrink-0 rounded-[4px] border px-2.5 py-1 text-[12px] font-semibold transition-colors"
+              className="shrink-0 rounded-[6px] border px-2.5 py-1 text-[12px] font-semibold transition-colors"
               // Unselected chips still carry their hue: the rail is where you
               // learn which colour means which tier, and five identical grey
               // pills teach nothing. Dimming with opacity rather than mixing
@@ -234,7 +312,7 @@ export function Filters({
 
       {selectedTiers.length > 0 && (
         <ScrollRail className="flex items-center gap-1.5 border-t border-border px-3 py-2.5">
-          <span className="shrink-0 pr-1 text-[11px] font-semibold tracking-wide text-muted">
+          <span className="shrink-0 pr-1 text-[12px] font-semibold tracking-wide text-muted">
             이름
           </span>
           {tierReporters.length === 0 ? (
@@ -254,7 +332,7 @@ export function Filters({
                   }}
                   aria-pressed={on}
                   title={`${j.en}${j.outlet ? ` · ${j.outlet}` : ""}`}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
                     on
                       ? "border-accent/50 bg-accent/10 font-semibold text-accent"
                       : "border-border text-muted hover:border-border-strong hover:text-text"
@@ -268,34 +346,6 @@ export function Filters({
           )}
         </ScrollRail>
       )}
-
-      {/* League tabs across the top; picking one drops its clubs in below. */}
-      <div className="border-t border-border">
-        <ScrollRail className="flex gap-0.5 px-[var(--gutter)]">
-          <LeagueTab
-            active={!league}
-            onClick={() => push((p) => p.delete("league"))}
-          >
-            전체
-          </LeagueTab>
-          {grouped.map((g) => (
-            <LeagueTab
-              key={g.league}
-              active={league === g.league}
-              badge={g.count > 0 ? g.count : undefined}
-              badgeTier={g.best}
-              onClick={() =>
-                push((p) =>
-                  league === g.league
-                    ? p.delete("league")
-                    : p.set("league", g.league),
-                )
-              }
-            >
-              {LEAGUE_LABEL[g.league]}
-            </LeagueTab>
-          ))}
-        </ScrollRail>
 
         {/* Clubs of the open league, or every club when no league is open.
             
@@ -319,7 +369,7 @@ export function Filters({
                     toggleIn("team", t.slug);
                   }}
                   aria-pressed={on}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-[4px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
+                  className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
                     on
                       ? "border-accent/50 bg-accent/10 font-semibold text-accent"
                       : "border-border text-muted hover:border-border-strong hover:text-text"
@@ -349,7 +399,7 @@ export function Filters({
                       toggleIn("team", t.slug);
                     }}
                     title="선택 해제"
-                    className="flex shrink-0 items-center gap-1 rounded-[4px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
+                    className="flex shrink-0 items-center gap-1 rounded-[6px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
                   >
                     <TeamCrest team={t} size={16} />
                     {t.ko}
@@ -358,7 +408,9 @@ export function Filters({
                 ))}
           </ScrollRail>
         )}
-      </div>
+          </div>
+        </>
+      )}
     </div>
   );
 }
@@ -388,7 +440,7 @@ function CountBadge({ n, tier }: { n: number; tier: number | null }) {
   return (
     <span
       ref={ref}
-      className="tnum rounded-full px-1.5 py-[1px] text-[10px] font-semibold"
+      className="tnum rounded-full px-1.5 py-[1px] text-[11.5px] font-semibold"
       style={{
         color,
         backgroundColor: `color-mix(in srgb, ${color} 18%, transparent)`,

@@ -33,7 +33,7 @@ export function TeamNews({
           <h2 className="text-[12px] font-semibold text-muted">최근 소식</h2>
           <Link
             href={`/feed?team=${slug}`}
-            className="text-[11.5px] text-faint underline-offset-4 transition-colors hover:text-muted hover:underline"
+            className="text-[12.5px] text-faint underline-offset-4 transition-colors hover:text-muted hover:underline"
           >
             {name} 소식 전체
           </Link>
@@ -46,11 +46,11 @@ export function TeamNews({
                 href={r.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="-mx-2 flex items-start gap-2.5 rounded-[6px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
+                className="-mx-2 flex items-start gap-2.5 rounded-[10px] px-2 py-2.5 transition-colors hover:bg-surface-2/40"
               >
                 {r.tier !== null && (
                   <span
-                    className="mt-[2px] shrink-0 rounded-[4px] px-1.5 py-[1px] text-[10px] font-semibold"
+                    className="mt-[2px] shrink-0 rounded-[6px] px-1.5 py-[1px] text-[11.5px] font-semibold"
                     style={{
                       color: tierStyle(r.tier).color,
                       border: `1px solid ${tierStyle(r.tier).border}`,
@@ -82,7 +82,7 @@ export function TeamNews({
                       );
                     })()}
                   </span>
-                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[11px] text-faint">
+                  <span className="mt-0.5 flex flex-wrap items-center gap-x-2 text-[12px] text-faint">
                     {r.journalistKo && <span>{r.journalistKo}</span>}
                     <span>{r.outlet ?? r.source}</span>
                     <span className="tnum">{timeAgo(r.publishedAt, now)}</span>

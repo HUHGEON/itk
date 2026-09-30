@@ -183,7 +183,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
           />
           최근 24시간
         </h2>
-        <span className="tnum text-[11px] text-faint">
+        <span className="tnum text-[12px] text-faint">
           <span data-count={pulse.total}>{pulse.total}</span>건
         </span>
       </div>
@@ -226,7 +226,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
             >
               <span
                 aria-hidden
-                className="size-2 shrink-0 rounded-[4px] transition-transform duration-150 group-hover:scale-125"
+                className="size-2 shrink-0 rounded-[6px] transition-transform duration-150 group-hover:scale-125"
                 style={{ backgroundColor: tierColor(s.tier) }}
               />
               <span className="flex-1 text-muted transition-colors group-hover:text-text">
@@ -242,7 +242,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
           <li className="flex items-center gap-2 text-[12px]">
             <span
               aria-hidden
-              className="size-2 shrink-0 rounded-[4px]"
+              className="size-2 shrink-0 rounded-[6px]"
               style={{ backgroundColor: "var(--official)" }}
             />
             {/* Outside the bar as well as outside the ladder — the bar is
@@ -257,7 +257,7 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
       </ul>
 
       {pulse.lastCollect && (
-        <p className="mt-2.5 border-t border-border pt-2 text-[10.5px] text-faint">
+        <p className="mt-2.5 border-t border-border pt-2 text-[12px] text-faint">
           마지막 수집 {timeAgo(pulse.lastCollect, now)}
         </p>
       )}

@@ -104,7 +104,7 @@ function Token({
 
         {p.rating != null && (
           <span
-            className={`tnum absolute -right-1.5 -bottom-1 rounded-[4px] px-[3.5px] text-[9.5px] leading-[1.55] font-bold ${ratingTone(p.rating)}`}
+            className={`tnum absolute -right-1.5 -bottom-1 rounded-[6px] px-[3.5px] text-[11px] leading-[1.55] font-bold ${ratingTone(p.rating)}`}
           >
             {p.rating.toFixed(1)}
           </span>
@@ -113,7 +113,7 @@ function Token({
         {p.goals > 0 && (
           <span
             title={`${p.goals}골`}
-            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black"
+            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[11px] leading-[1.5] font-bold text-black"
           >
             <GoalIcon count={p.goals} size={10} />
           </span>
@@ -121,7 +121,7 @@ function Token({
         {p.goals === 0 && p.assists > 0 && (
           <span
             title={`도움 ${p.assists}`}
-            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[9px] leading-[1.5] font-bold text-black"
+            className="absolute -top-1 -left-1.5 flex items-center gap-[1px] rounded-full bg-white px-[3px] text-[11px] leading-[1.5] font-bold text-black"
           >
             <AssistIcon count={p.assists} size={10} />
           </span>
@@ -137,10 +137,10 @@ function Token({
       </span>
 
       <span className="flex max-w-[86px] items-baseline gap-1 sm:max-w-[104px]">
-        <span className="tnum shrink-0 text-[10px] font-semibold text-white/60">
+        <span className="tnum shrink-0 text-[11.5px] font-semibold text-white/60">
           {p.jersey}
         </span>
-        <span className="truncate text-[10.5px] leading-[1.4] font-semibold text-white sm:text-[11.5px]">
+        <span className="truncate text-[12px] leading-[1.4] font-semibold text-white sm:text-[12.5px]">
           {short(p.name)}
         </span>
       </span>
@@ -163,7 +163,7 @@ function Token({
           type="button"
           onClick={() => onOpen(p.id)}
           title={`${p.name} 기록 보기`}
-          className="flex flex-col items-center gap-1 rounded-[6px] transition-opacity hover:opacity-80"
+          className="flex flex-col items-center gap-1 rounded-[10px] transition-opacity hover:opacity-80"
         >
           {body}
         </button>
@@ -191,7 +191,7 @@ function Badge({
       {formation && <span className="tnum shrink-0 text-faint">{formation}</span>}
       {rating != null && (
         <span
-          className={`tnum shrink-0 rounded-[4px] px-1 text-[10.5px] font-bold ${ratingTone(rating)}`}
+          className={`tnum shrink-0 rounded-[6px] px-1 text-[12px] font-bold ${ratingTone(rating)}`}
         >
           {rating.toFixed(1)}
         </span>
@@ -227,11 +227,11 @@ export function Pitch({
 
   return (
     <div className="px-[var(--gutter)] pb-4">
-      <div className="flex items-center justify-between gap-3 pb-2 text-[11.5px] sm:hidden">
+      <div className="flex items-center justify-between gap-3 pb-2 text-[12.5px] sm:hidden">
         <Badge side={awaySide} {...awayMeta} />
         <Badge side={homeSide} {...homeMeta} />
       </div>
-      <div className="hidden items-center justify-between gap-3 pb-2 text-[11.5px] sm:flex">
+      <div className="hidden items-center justify-between gap-3 pb-2 text-[12.5px] sm:flex">
         <Badge side={homeSide} {...homeMeta} />
         <Badge side={awaySide} {...awayMeta} />
       </div>
@@ -248,7 +248,7 @@ export function Pitch({
        */}
       <div className="relative aspect-[3/4] w-full sm:aspect-[16/9]">
       <div
-        className="absolute inset-0 overflow-hidden rounded-[10px] border border-border"
+        className="absolute inset-0 overflow-hidden rounded-[16px] border border-border"
         /*
          * A dark, near-neutral ground rather than green grass.
          *
@@ -262,7 +262,7 @@ export function Pitch({
             "repeating-linear-gradient(to bottom, #1c1c20 0 8.333%, #202024 8.333% 16.666%)",
         }}
       >
-        <span aria-hidden className="absolute inset-2 rounded-[4px] border border-white/15" />
+        <span aria-hidden className="absolute inset-2 rounded-[6px] border border-white/15" />
         <span aria-hidden className="absolute inset-x-2 top-1/2 h-px -translate-y-1/2 bg-white/15 sm:hidden" />
         <span aria-hidden className="absolute inset-y-2 left-1/2 hidden w-px -translate-x-1/2 bg-white/15 sm:block" />
         <span aria-hidden className="absolute top-1/2 left-1/2 size-[16%] -translate-x-1/2 -translate-y-1/2 rounded-full border border-white/15 sm:size-[22%]" />

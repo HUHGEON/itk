@@ -124,7 +124,7 @@ export function Shell({
             href="/feed"
             aria-label="ITK plus 피드 · 필터 초기화"
             title="필터 초기화"
-            className="mx-auto block w-[80%] rounded-[6px] transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+            className="mx-auto block w-[80%] rounded-[10px] transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
           >
             <LogoFluid />
           </Link>
@@ -188,7 +188,7 @@ export function Shell({
             prefetch={false}
             /* A row of its own at the foot of the rail, so it gets a row's
                height rather than the height of eleven-point text. */
-            className="-mx-1 flex items-center rounded-[4px] px-1 py-2 text-[11.5px] text-faint transition-colors hover:bg-surface-2/50 hover:text-muted"
+            className="-mx-1 flex items-center rounded-[6px] px-1 py-2 text-[12.5px] text-faint transition-colors hover:bg-surface-2/50 hover:text-muted"
           >
             ITK+ 소개
           </Link>
@@ -203,7 +203,7 @@ export function Shell({
             onClick={() => setOpen(true)}
             aria-label="메뉴 열기"
             aria-expanded={open}
-            className="-ml-1.5 shrink-0 rounded-[6px] p-2 text-muted transition-colors hover:text-text"
+            className="-ml-1.5 shrink-0 rounded-[10px] p-2 text-muted transition-colors hover:text-text"
           >
             <Menu />
           </button>

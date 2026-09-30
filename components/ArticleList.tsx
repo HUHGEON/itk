@@ -165,7 +165,7 @@ export function ArticleList({
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="rounded-[10px] border border-border px-4 py-2 text-[13px] font-semibold text-accent hover:bg-surface-2"
+            className="rounded-[16px] border border-border px-4 py-2 text-[13px] font-semibold text-accent hover:bg-surface-2"
           >
             불러오지 못했습니다 · 다시 시도
           </button>
@@ -173,7 +173,7 @@ export function ArticleList({
           <button
             type="button"
             onClick={() => void loadMore()}
-            className="rounded-[10px] border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:text-text"
+            className="rounded-[16px] border border-border px-4 py-2 text-[13px] font-semibold text-muted hover:text-text"
           >
             더 보기
           </button>
@@ -211,15 +211,15 @@ function LoadingRows() {
           className="border-b border-border py-3.5 pr-[var(--gutter)] pl-[var(--gutter)]"
         >
           <div
-            className="h-[18px] rounded-[4px] bg-surface-2"
+            className="h-[18px] rounded-[6px] bg-surface-2"
             style={{ width: r.chip }}
           />
           <div
-            className="mt-2.5 h-[15px] rounded-[4px] bg-surface-2"
+            className="mt-2.5 h-[15px] rounded-[6px] bg-surface-2"
             style={{ width: r.head }}
           />
           <div
-            className="mt-2 h-[10px] rounded-[4px] bg-surface-2/60"
+            className="mt-2 h-[10px] rounded-[6px] bg-surface-2/60"
             style={{ width: r.sub }}
           />
         </div>

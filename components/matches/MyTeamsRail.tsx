@@ -36,7 +36,7 @@ export function MyTeamsRail({
 
   return (
     <section className="border-b border-border py-3">
-      <h2 className="px-[var(--gutter)] pb-1.5 text-[11px] font-semibold text-faint">
+      <h2 className="px-[var(--gutter)] pb-1.5 text-[12px] font-semibold text-faint">
         내 팀
       </h2>
       <nav className="flex flex-col">

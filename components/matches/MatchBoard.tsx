@@ -80,7 +80,7 @@ export function MatchBoard({
   return (
     <div ref={board} className={MEASURE}>
       {live && (
-        <p className="px-[calc(var(--gutter)+0.5rem)] pt-3 pb-1 text-[11.5px] text-muted">
+        <p className="px-[calc(var(--gutter)+0.5rem)] pt-3 pb-1 text-[12.5px] text-muted">
           진행 중인 경기는 자동으로 갱신됩니다
         </p>
       )}
@@ -94,7 +94,7 @@ export function MatchBoard({
       </div>
 
       {!bare && (
-        <p className="border-t border-border px-[calc(var(--gutter)+0.5rem)] py-6 text-[11.5px] text-faint">
+        <p className="border-t border-border px-[calc(var(--gutter)+0.5rem)] py-6 text-[12.5px] text-faint">
           경기를 누르면 기록과 선수 명단을 볼 수 있습니다.{" "}
           <Link
             href="/feed"

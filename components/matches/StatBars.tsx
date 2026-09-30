@@ -26,7 +26,7 @@ function Row({ label, home, away, share }: FmStatGroup["rows"][number]) {
         >
           {home}
         </span>
-        <span className="text-center text-[11.5px] text-faint">{label}</span>
+        <span className="text-center text-[12.5px] text-faint">{label}</span>
         <span
           className={`tnum text-[13px] ${
             leading === "away" ? "font-bold text-text" : "text-muted"
@@ -62,7 +62,7 @@ export function StatBars({ groups }: { groups: FmStatGroup[] }) {
       <div className="mx-auto grid max-w-[64rem] gap-x-12 gap-y-2 sm:grid-cols-2">
         {groups.map((g) => (
           <div key={g.title} className="min-w-0">
-            <h2 className="pt-3 pb-1 text-[11.5px] font-semibold text-muted">
+            <h2 className="pt-3 pb-1 text-[12.5px] font-semibold text-muted">
               {g.title}
             </h2>
             <div className="divide-y divide-border/50">

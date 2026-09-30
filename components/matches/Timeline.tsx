@@ -55,10 +55,10 @@ function Entry({
     >
       {e.player}
       {e.kind === "own" && (
-        <span className="ml-1 text-[11px] font-normal text-red-400">자책</span>
+        <span className="ml-1 text-[12px] font-normal text-red-400">자책</span>
       )}
       {e.kind === "pen" && (
-        <span className="ml-1 text-[11px] font-normal text-faint">PK</span>
+        <span className="ml-1 text-[12px] font-normal text-faint">PK</span>
       )}
     </span>
   );
@@ -72,7 +72,7 @@ function Entry({
       <span
         aria-label={MARK[e.kind].label}
         title={MARK[e.kind].label}
-        className={`flex shrink-0 items-center text-[11px] leading-none ${tone(e.kind)}`}
+        className={`flex shrink-0 items-center text-[12px] leading-none ${tone(e.kind)}`}
       >
         {scored ? <GoalIcon count={1} size={11} /> : MARK[e.kind].icon}
       </span>
@@ -81,7 +81,7 @@ function Entry({
           <button
             type="button"
             onClick={() => onOpen(e.playerId!)}
-            className="flex max-w-full min-w-0 rounded-[4px] transition-colors hover:text-accent"
+            className="flex max-w-full min-w-0 rounded-[6px] transition-colors hover:text-accent"
           >
             {name}
           </button>
@@ -89,12 +89,12 @@ function Entry({
           <div className="flex min-w-0">{name}</div>
         )}
         {e.second && (
-          <div className="truncate text-[11px] text-faint">
+          <div className="truncate text-[12px] text-faint">
             {e.kind === "sub" ? `▼ ${e.second}` : `도움 ${e.second}`}
           </div>
         )}
         {scored && e.score && (
-          <div className="tnum text-[11px] font-semibold text-accent">
+          <div className="tnum text-[12px] font-semibold text-accent">
             {e.score}
           </div>
         )}
@@ -122,7 +122,7 @@ export function Timeline({
         {events.map((e) =>
           e.kind === "half" ? (
             <li key={e.id} className="relative flex items-center justify-center">
-              <span className="z-[1] rounded-[4px] bg-surface-2 px-2 py-[2px] text-[11px] font-semibold text-muted">
+              <span className="z-[1] rounded-[6px] bg-surface-2 px-2 py-[2px] text-[12px] font-semibold text-muted">
                 {e.note ?? e.minute}
               </span>
             </li>
@@ -136,7 +136,7 @@ export function Timeline({
                   <Entry e={e} side="home" onOpen={onOpen} />
                 )}
               </div>
-              <span className="tnum z-[1] rounded-[4px] bg-surface px-1.5 text-[11px] font-semibold text-faint">
+              <span className="tnum z-[1] rounded-[6px] bg-surface px-1.5 text-[12px] font-semibold text-faint">
                 {e.minute}
               </span>
               <div className="min-w-0">

@@ -164,7 +164,7 @@ export default async function Matches({
               href={href(shift(date, -1), !onlyTracked)}
               aria-label="이전 날"
               data-press
-              className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
+              className="rounded-[6px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
               ‹
             </Link>
@@ -182,14 +182,14 @@ export default async function Matches({
               href={href(shift(date, 1), !onlyTracked)}
               aria-label="다음 날"
               data-press
-              className="rounded-[4px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
+              className="rounded-[6px] border border-border px-2.5 py-1.5 text-[13px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
               ›
             </Link>
             {ymd(date) !== ymd(today) && (
               <Link
                 href={href(today, !onlyTracked)}
-                className="ml-1 rounded-[4px] px-2 py-1.5 text-[12.5px] text-muted transition-colors hover:text-text"
+                className="ml-1 rounded-[6px] px-2 py-1.5 text-[12.5px] text-muted transition-colors hover:text-text"
               >
                 오늘
               </Link>
@@ -255,7 +255,7 @@ export default async function Matches({
           {ranked && (
             <Link
               href={`/matches/league/${picked.code}`}
-              className="rounded-[4px] border border-border px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
+              className="rounded-[6px] border border-border px-2.5 py-1 text-[12px] text-muted transition-colors hover:border-border-strong hover:text-text"
             >
               순위표
             </Link>
@@ -288,7 +288,7 @@ function Scope({
       href={href}
       aria-current={on ? "true" : undefined}
       data-press
-      className={`tnum rounded-[4px] border px-2.5 py-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
+      className={`tnum rounded-[6px] border px-2.5 py-1.5 text-[12.5px] whitespace-nowrap transition-colors ${
         on
           ? "border-accent/50 bg-accent/10 font-semibold text-accent"
           : "border-border text-muted hover:border-border-strong hover:text-text"

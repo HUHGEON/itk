@@ -81,7 +81,7 @@ export function PlayerCard({
         aria-modal="true"
         aria-label="선수 정보"
         onClick={(e) => e.stopPropagation()}
-        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[10px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[10px]"
+        className="max-h-[88vh] w-full max-w-[34rem] overflow-y-auto rounded-t-[10px] border border-border bg-bg shadow-2xl outline-none sm:rounded-[16px]"
       >
         <div className="sticky top-0 z-10 flex items-center justify-between gap-3 border-b border-border bg-bg/95 px-4 py-3 backdrop-blur-sm">
           <span className="truncate text-[13px] font-semibold text-muted">
@@ -91,7 +91,7 @@ export function PlayerCard({
             type="button"
             onClick={onClose}
             aria-label="닫기"
-            className="shrink-0 rounded-[4px] px-2 py-1 text-[16px] leading-none text-muted transition-colors hover:bg-surface-2 hover:text-text"
+            className="shrink-0 rounded-[6px] px-2 py-1 text-[16px] leading-none text-muted transition-colors hover:bg-surface-2 hover:text-text"
           >
             ×
           </button>
@@ -156,7 +156,7 @@ export function PlayerCard({
               <dl className="grid grid-cols-2 gap-x-6 gap-y-2.5 border-t border-border px-4 py-4 sm:grid-cols-4">
                 {player.facts.map((f) => (
                   <div key={f.label} className="min-w-0">
-                    <dt className="text-[10.5px] text-faint">{f.label}</dt>
+                    <dt className="text-[12px] text-faint">{f.label}</dt>
                     <dd className="truncate text-[13px] font-semibold text-text">
                       {f.value}
                     </dd>
@@ -167,7 +167,7 @@ export function PlayerCard({
 
             {player.stats.length > 0 && (
               <section className="border-t border-border px-4 py-4">
-                <h3 className="pb-2.5 text-[11.5px] font-semibold text-muted">
+                <h3 className="pb-2.5 text-[12.5px] font-semibold text-muted">
                   {player.league ?? "이번 시즌"}
                   {player.season && (
                     <span className="tnum ml-1.5 font-normal text-faint">
@@ -178,7 +178,7 @@ export function PlayerCard({
                 <dl className="grid grid-cols-4 gap-x-4 gap-y-3">
                   {player.stats.map((s) => (
                     <div key={s.label} className="min-w-0">
-                      <dt className="truncate text-[10.5px] text-faint">
+                      <dt className="truncate text-[12px] text-faint">
                         {s.label}
                       </dt>
                       <dd className="tnum text-[16px] font-bold text-text">
@@ -192,7 +192,7 @@ export function PlayerCard({
 
             {player.recent.length > 0 && (
               <section className="border-t border-border px-4 py-4">
-                <h3 className="pb-1.5 text-[11.5px] font-semibold text-muted">
+                <h3 className="pb-1.5 text-[12.5px] font-semibold text-muted">
                   최근 경기
                 </h3>
                 <ul className="divide-y divide-border/60">
@@ -220,12 +220,12 @@ function Recent({ m }: { m: FmRecentMatch }) {
 
   return (
     <li className="grid grid-cols-[auto_1fr_auto] items-center gap-2.5 py-2">
-      <span className="tnum w-[38px] shrink-0 text-[11px] leading-tight text-faint">
+      <span className="tnum w-[38px] shrink-0 text-[12px] leading-tight text-faint">
         {d.month}.{d.day}
-        <span className="ml-0.5 text-[10px]">({WEEKDAY[d.weekday]})</span>
+        <span className="ml-0.5 text-[11.5px]">({WEEKDAY[d.weekday]})</span>
       </span>
       <span className="flex min-w-0 items-center gap-2">
-        <span className="shrink-0 text-[11px] text-faint">
+        <span className="shrink-0 text-[12px] text-faint">
           {m.home ? "홈" : "원정"}
         </span>
         <span className="min-w-0 truncate text-[12.5px] text-text">
@@ -241,13 +241,13 @@ function Recent({ m }: { m: FmRecentMatch }) {
       <span className="flex shrink-0 items-center gap-1.5">
         <span className="tnum text-[12.5px] font-bold text-text">{m.score}</span>
         <span
-          className={`rounded-[4px] px-1 py-[1px] text-[10px] font-bold ${badge}`}
+          className={`rounded-[6px] px-1 py-[1px] text-[11.5px] font-bold ${badge}`}
         >
           {m.outcome}
         </span>
         {m.rating != null && m.rating > 0 ? (
           <span
-            className={`tnum w-[28px] rounded-[4px] text-center text-[10.5px] font-bold ${tone(m.rating)}`}
+            className={`tnum w-[28px] rounded-[6px] text-center text-[12px] font-bold ${tone(m.rating)}`}
           >
             {m.rating.toFixed(1)}
           </span>

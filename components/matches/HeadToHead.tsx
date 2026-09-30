@@ -35,7 +35,7 @@ function Bar({
           <span className="truncate font-semibold text-text">{home.name}</span>
           <span className="tnum text-muted">{h}승</span>
         </span>
-        <span className="tnum shrink-0 text-[11.5px] text-faint">{d}무</span>
+        <span className="tnum shrink-0 text-[12.5px] text-faint">{d}무</span>
         <span className="flex min-w-0 items-baseline justify-end gap-1.5">
           <span className="tnum text-muted">{a}승</span>
           <span className="truncate font-semibold text-text">{away.name}</span>
@@ -46,7 +46,7 @@ function Bar({
         <span className="h-full bg-surface-3" style={{ width: pct(d) }} />
         <span className="h-full rounded-r-full bg-sky-500" style={{ width: pct(a) }} />
       </div>
-      <p className="pt-1.5 text-[11px] text-faint">
+      <p className="pt-1.5 text-[12px] text-faint">
         <span className="tnum">{total}</span>번 만났습니다
       </p>
     </div>
@@ -64,9 +64,9 @@ function Meeting({ m }: { m: FmMeeting }) {
 
   return (
     <li className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2">
-      <span className="tnum w-[74px] shrink-0 text-[11.5px] leading-tight text-faint">
+      <span className="tnum w-[74px] shrink-0 text-[12.5px] leading-tight text-faint">
         {d.year}.{d.month}.{d.day}
-        <span className="ml-1 text-[10.5px]">({WEEKDAY[d.weekday]})</span>
+        <span className="ml-1 text-[12px]">({WEEKDAY[d.weekday]})</span>
       </span>
       <span className="flex min-w-0 items-center justify-end gap-2.5">
         <span
@@ -87,7 +87,7 @@ function Meeting({ m }: { m: FmMeeting }) {
           {m.away}
         </span>
       </span>
-      <span className="w-[92px] shrink-0 truncate text-right text-[10.5px] text-faint">
+      <span className="w-[92px] shrink-0 truncate text-right text-[12px] text-faint">
         {m.competition}
       </span>
     </li>

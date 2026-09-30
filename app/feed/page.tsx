@@ -132,30 +132,35 @@ export default async function Home({
             for the page it just landed on. */}
         <h1 className="sr-only">이적 소식</h1>
 
-        <Filters
-          teams={teams}
-          activity={activity}
-          leagueActivity={leagueActivity}
-          journalists={journalists}
-          journalistActivity={journalistActivity}
-          state={filterState}
-        />
-
-        <NewArticles query={feedQuery} since={now} />
-
-        {rows.length === 0 ? (
-          <EmptyState
-            tieredOnly={tieredOnly}
-            hasJournalists={journalists.length > 0}
+        {/* One reading column, as 요즘IT sets its lists: a headline across a
+            1,100px line was measured on this page and is too long to take in
+            at a glance. */}
+        <div className="mx-auto w-full max-w-[800px]">
+          <Filters
+            teams={teams}
+            activity={activity}
+            leagueActivity={leagueActivity}
+            journalists={journalists}
+            journalistActivity={journalistActivity}
+            state={filterState}
           />
-        ) : (
-          <ArticleList
-            initialRows={rows}
-            teams={teamMap}
-            now={now}
-            query={feedQuery}
-          />
-        )}
+
+          <NewArticles query={feedQuery} since={now} />
+
+          {rows.length === 0 ? (
+            <EmptyState
+              tieredOnly={tieredOnly}
+              hasJournalists={journalists.length > 0}
+            />
+          ) : (
+            <ArticleList
+              initialRows={rows}
+              teams={teamMap}
+              now={now}
+              query={feedQuery}
+            />
+          )}
+        </div>
       </Shell>
     </Suspense>
   );

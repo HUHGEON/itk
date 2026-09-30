@@ -74,7 +74,7 @@ export function LeagueTable({
     <div className="overflow-x-auto px-[var(--gutter)] pb-8">
       <table className="w-full min-w-[30rem] border-collapse">
         <thead>
-          <tr className="border-b border-border text-[11px] text-faint">
+          <tr className="border-b border-border text-[12px] text-faint">
             <th className="w-2 py-2" aria-hidden />
             <th className="w-8 py-2 text-left font-semibold">#</th>
             <th className="py-2 text-left font-semibold">구단</th>
@@ -168,7 +168,7 @@ export function LeagueTable({
       </table>
 
       {shown.length > 0 && (
-        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 text-[11px] text-faint">
+        <ul className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-3 text-[12px] text-faint">
           {shown.map((k) => (
             <li key={k} className="flex items-center gap-1.5">
               <span

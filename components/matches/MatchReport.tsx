@@ -256,7 +256,7 @@ export function MatchReport({
           </span>
         </p>
         {(detail.venue || detail.attendance || detail.referee) && (
-          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11.5px] text-faint">
+          <p className="mt-1 flex flex-wrap items-center gap-x-4 gap-y-1 text-[12.5px] text-faint">
             {detail.venue && <span>{detail.venue}</span>}
             {detail.attendance ? (
               <span className="tnum">
@@ -288,12 +288,12 @@ export function MatchReport({
               </div>
             )}
             {live && (
-              <span className="live-badge rounded-[4px] bg-accent px-1.5 py-[1px] text-[10.5px] font-bold text-accent-ink">
+              <span className="live-badge rounded-[6px] bg-accent px-1.5 py-[1px] text-[12px] font-bold text-accent-ink">
                 {match.clock ?? "LIVE"}
               </span>
             )}
             {done && (
-              <span className="text-[11px] font-semibold text-faint">경기 종료</span>
+              <span className="text-[12px] font-semibold text-faint">경기 종료</span>
             )}
           </div>
 
@@ -428,7 +428,7 @@ function Club({ side, align }: { side: MatchSide; align: "home" | "away" }) {
     <Link
       href={`/matches/team/${side.slug}`}
       title={`${side.name} 일정 보기`}
-      className={`flex min-w-0 items-center gap-3 rounded-[4px] transition-colors hover:text-accent ${lane}`}
+      className={`flex min-w-0 items-center gap-3 rounded-[6px] transition-colors hover:text-accent ${lane}`}
     >
       {body}
     </Link>

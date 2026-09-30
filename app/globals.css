@@ -28,10 +28,13 @@
    * rather than a distinction. The rule now is what an element is, not how big
    * it happens to be.
    *
-   *   4px  chips, badges, small controls
-   *   6px  rows, buttons, inputs
-   *   10px cards, panels, the player sheet
+   *   6px  chips, badges, small controls
+   *   10px rows, buttons, inputs
+   *   16px cards, panels, the player sheet
    *   full avatars, dots, crests
+   *
+   * (Raised from 4/6/10 in the 요즘IT pass: its cards sit at 12-16px and the
+   * softer corners read calmer at the larger type sizes.)
    */
   --border-strong: #4a433c;
 
@@ -108,7 +111,7 @@
   --color-tier-2: var(--tier-2);
   --color-tier-3: var(--tier-3);
 
-  --font-sans: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, "Apple SD Gothic Neo", "Noto Sans KR", sans-serif;
 }
 
 /*
@@ -132,7 +135,7 @@ html {
 body {
   background: var(--bg);
   color: var(--text);
-  font-family: var(--font-plex-kr), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   /* Korean headlines break mid-word without this. */

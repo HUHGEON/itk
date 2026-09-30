@@ -93,7 +93,7 @@ export function MatchRow({
       href={`/matches/game/${match.code}/${match.id}`}
       data-match-row
       title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
-      className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[6px] px-2 py-3 transition-colors sm:gap-4 ${
+      className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[10px] px-2 py-3 transition-colors sm:gap-4 ${
         live ? "bg-accent/[0.06] hover:bg-accent/[0.11]" : "hover:bg-surface-2/40"
       }`}
     >
@@ -109,7 +109,7 @@ export function MatchRow({
           claims to be an ending time.
         */}
         {(showCompetition || done || live) && (
-          <span className="flex items-baseline gap-1 text-[10px] leading-none text-faint">
+          <span className="flex items-baseline gap-1 text-[11.5px] leading-none text-faint">
             {showCompetition && <span>{match.competitionShort}</span>}
             {(done || live) && <span className="tnum">{time}</span>}
           </span>
@@ -134,7 +134,7 @@ export function MatchRow({
         {/* Only a match in play earns a second line. A fixture has nothing to
             add and a finished one says so in a single quiet word. */}
         {live && match.clock && (
-          <span className="tnum text-[10.5px] font-semibold text-accent">
+          <span className="tnum text-[12px] font-semibold text-accent">
             {match.clock}
           </span>
         )}
@@ -147,7 +147,7 @@ export function MatchRow({
           above, so the hour is the only part missing.
         */}
         {done && (
-          <span className="text-[10.5px] font-semibold text-faint">종료</span>
+          <span className="text-[12px] font-semibold text-faint">종료</span>
         )}
       </div>
 

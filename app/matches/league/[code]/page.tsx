@@ -85,7 +85,7 @@ export default async function League({ params }: { params: Params }) {
           <Link
             href={`/matches?comp=${code}`}
             data-press
-            className="rounded-[4px] border border-border px-2.5 py-1 text-[12px] transition-colors hover:border-border-strong hover:text-text"
+            className="rounded-[6px] border border-border px-2.5 py-1 text-[12px] transition-colors hover:border-border-strong hover:text-text"
           >
             경기 일정
           </Link>
@@ -111,7 +111,7 @@ export default async function League({ params }: { params: Params }) {
         </section>
       )}
 
-      <p className={`${MEASURE} px-[var(--gutter)] pb-8 text-[11.5px] text-faint`}>
+      <p className={`${MEASURE} px-[var(--gutter)] pb-8 text-[12.5px] text-faint`}>
         {ymd(today)} 기준
       </p>
     </Shell>

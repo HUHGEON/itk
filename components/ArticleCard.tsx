@@ -12,8 +12,19 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
-import { Chevron } from "./icons";
 import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
+
+/**
+ * A 240x168 WebP of an article's picture, from the free wsrv.nl resizer.
+ *
+ * The originals are the publishers' share images - measured on the latest six:
+ * 30 to 164kB each, for a 120px slot. Resized they are 7 to 9kB, which is the
+ * difference between a phone loading a page of stories and loading a page of
+ * photographs. If the resizer fails the row falls back to the original.
+ */
+function thumb(url: string): string {
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=240&h=168&fit=cover&output=webp&q=72`;
+}
 
 /**
  * One story, read in place.
@@ -22,9 +33,10 @@ import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
  * sits on one quiet line above it, so a column of these scans as headlines with
  * provenance attached rather than as a stack of equally loud cards.
  *
- * Collapsed rows render **no** `<img>` at all: with 80 on screen, mounting every
- * article image at once stalled the page. The image enters the DOM only when the
- * card opens, and is height-capped there.
+ * Each row carries the article's own picture as a small lazy thumbnail. An
+ * earlier version mounted full-size images for all 80 rows at once and stalled
+ * the page; at 120x84 with `loading="lazy"` only the rows near the screen fetch
+ * anything.
  */
 export function ArticleCard({
   row,
@@ -36,7 +48,8 @@ export function ArticleCard({
   now: number;
 }) {
   const [open, setOpen] = useState(false);
-  const [imageOk, setImageOk] = useState(true);
+  // 0: resized copy, 1: the original, 2: give up and hide.
+  const [imageTry, setImageTry] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
 
   /**
@@ -70,8 +83,10 @@ export function ArticleCard({
   // The original sits under the translation for checking, and it opens with the
   // same run - left alone it put the emoji back at full size one line down.
   const original = splitLeadingEmoji(row.title);
-  const showImage = Boolean(row.imageUrl) && imageOk;
-  const expandable = Boolean(body) || showImage;
+  const showImage = Boolean(row.imageUrl) && imageTry < 2;
+  // Opening shows the summary and the link out; the picture is already on
+  // the row.
+  const expandable = true;
 
   // Byline first; failing that, the reporter an outlet credited; failing that,
   // whatever name the article itself carried. Only the first two have a tier -
@@ -101,7 +116,7 @@ export function ArticleCard({
       // opened" — it read as a hover state.
       className={`group relative transition-colors ${
         open
-          ? "z-10 my-1 rounded-[10px] border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
+          ? "z-10 my-1 rounded-[16px] border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
           : "border-b border-border last:border-b-0"
       }`}
     >
@@ -132,146 +147,111 @@ export function ArticleCard({
         // A real focus ring rather than the tinted background alone: on a
         // column of rows that all change colour on hover, a background shift is
         // not a strong enough answer to "where is the keyboard".
-        className={`block w-full rounded-[6px] py-3.5 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none focus-visible:ring-inset ${
-          expandable
-            ? "cursor-pointer hover:bg-surface-2/50"
-            : "cursor-default"
+        className={`flex w-full gap-4 rounded-[10px] py-4 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none focus-visible:ring-inset sm:gap-5 ${
+          expandable ? "cursor-pointer hover:bg-surface-2/50" : "cursor-default"
         }`}
       >
-        {/* Tier and name as one object, not two. They answer the same
-            question — who said this, and what is that worth — and reading them
-            as a single credential is faster than pairing a loose badge with a
-            loose name. The tier colours the cap; the name carries the weight. */}
-        <div className="flex items-center gap-2 text-[11px]">
-          <span
-            className="flex min-w-0 shrink-0 items-stretch overflow-hidden rounded-[4px] border"
-            style={{
-              borderColor:
-                tier.border === "transparent" ? tier.bg : tier.border,
-            }}
-          >
+        {/*
+          The 요즘IT row: who and where on one quiet line, the headline, the
+          original for checking, then what it is about - with the article's own
+          picture on the right. 113 of the latest 120 stories carry one, so the
+          column reads as a page of stories rather than a wall of text.
+        */}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-2 text-[13px]">
+            {/* Tier and name as one object: they answer the same question -
+                who said this, and what is that worth. */}
             <span
-              className="shrink-0 px-1.5 py-[3px] text-[10px] font-semibold tracking-tight"
-              style={{ backgroundColor: tier.bg, color: tier.ink }}
+              className="flex min-w-0 shrink items-stretch overflow-hidden rounded-[6px] border"
+              style={{ borderColor: tier.border === "transparent" ? tier.bg : tier.border }}
             >
-              {row.official ? "공식" : tierLabel(row.tier)}
-            </span>
-            <span className="min-w-0 truncate bg-surface-2 px-2 py-[3px] text-[12.5px] leading-[1.35] font-semibold text-text">
-              {row.official ? officialName : (byline ?? "기자 미확인")}
-            </span>
-          </span>
-
-          {/* Beside the byline, not under the headline. Who filed it and what
-              it is about are read together, and a separate row below the story
-              pushed every card taller for one line of chips. Crest plus name
-              rather than a bare 14px icon: most crests are dark navy or maroon
-              and vanish against a near-black page at that size. */}
-          {rowTeams.length > 0 ? (
-            <span className="flex shrink-0 items-center gap-1">
-              {rowTeams.slice(0, 3).map((t) => (
-                <span
-                  key={t.slug}
-                  title={t.ko}
-                  className="inline-flex items-center gap-1 rounded-full border border-border-strong bg-surface-3 p-[2px] text-[11px] font-semibold text-text sm:pr-2.5"
-                >
-                  <span className="flex size-[18px] items-center justify-center rounded-full bg-surface">
-                    <TeamCrest team={t} size={15} />
-                  </span>
-                  {/* The name is what makes a dark crest legible, but on a
-                      phone the line has no room for it and the crest alone
-                      still reads. */}
-                  <span className="hidden sm:inline">{t.ko}</span>
-                </span>
-              ))}
-            </span>
-          ) : (
-            leagueLabel && (
-              // Only seventeen clubs carry crests, so a Crystal Palace story
-              // can never be tagged with one — but the reporter who filed it
-              // covers the Premier League, and that is the category it sits
-              // under. Without this the row simply had nothing.
-              // Same weight as a club chip — it answers the same question.
-              <span className="hidden shrink-0 rounded-full border border-border-strong bg-surface-3 px-2.5 py-[3px] text-[11px] font-semibold text-text sm:inline">
-                {leagueLabel}
-              </span>
-            )
-          )}
-
-          {!row.official && outlet && (
-            <span className="hidden min-w-0 truncate text-muted sm:block">
-              {outlet}
-            </span>
-          )}
-
-          <time
-            className="tnum ml-auto shrink-0 text-muted"
-            dateTime={new Date(row.publishedAt).toISOString()}
-          >
-            {timeAgo(row.publishedAt, now)}
-          </time>
-        </div>
-        <div className="mt-1.5 flex items-start gap-3">
-          {/* The full column. Capping the headline at a 54ch measure left the
-              right third of every row empty and pushed headlines onto a third
-              line to buy nothing — these are one- and two-line headlines, not
-              body copy, and the reading-measure argument does not apply. */}
-          <div className="min-w-0 flex-1">
-            <h2
-              // Bigger than the metadata by enough to be the thing you read
-              // first. At 16.5 against a 12.5 byline the two were close enough
-              // that the eye had to choose, which is what made a column of
-              // these feel flat.
-              //
-              // `text-pretty` because Korean is set with `word-break: keep-all`
-              // and a two-line headline was regularly leaving one short word
-              // alone on the second line.
-              className={`text-[16.5px] leading-[1.38] font-semibold tracking-[-0.011em] text-pretty text-text sm:text-[18px] ${
-                open ? "" : "line-clamp-3"
-              }`}
-            >
-              {/* Kept, but at the size it was written at. Hidden from screen
-                  readers: "blue circle red circle star" before every Romano
-                  headline is not what that run is there to say. */}
-              {mark && (
-                <span
-                  aria-hidden
-                  className="mr-1.5 align-[0.08em] text-[0.72em] opacity-60"
-                >
-                  {mark}
-                </span>
-              )}
-              {headline}
-            </h2>
-            {/* The machine translation mangles football phrasing often enough
-                that the original has to stay readable at a glance, not be
-                hidden behind an expand. */}
-            {/* One line when shut. A three-line English headline under a
-                three-line Korean one doubles the row for a reference most
-                readers only glance at; opening the article restores it. */}
-            {translated && (
-              <p
-                className={`mt-1 text-[12px] leading-snug text-faint ${
-                  open ? "" : "line-clamp-1"
-                }`}
+              <span
+                className="shrink-0 px-1.5 py-[2px] text-[12px] font-semibold tracking-tight"
+                style={{ backgroundColor: tier.bg, color: tier.ink }}
               >
-                {original.mark && (
-                  <span aria-hidden className="mr-1 text-[0.8em] opacity-55">
-                    {original.mark}
-                  </span>
-                )}
-                {original.text}
-              </p>
-            )}
+                {row.official ? "공식" : tierLabel(row.tier)}
+              </span>
+              <span className="min-w-0 truncate bg-surface-2 px-2 py-[2px] text-[13px] font-semibold text-text">
+                {row.official ? officialName : (byline ?? "기자 미확인")}
+              </span>
+            </span>
+            {!row.official && outlet && <span className="hidden min-w-0 truncate text-muted sm:block">{outlet}</span>}
+            <time className="tnum ml-auto shrink-0 text-muted" dateTime={new Date(row.publishedAt).toISOString()}>
+              {timeAgo(row.publishedAt, now)}
+            </time>
           </div>
 
-          {expandable && (
-            <Chevron
-              className={`mt-1.5 ml-auto shrink-0 text-faint transition-transform duration-150 group-hover:text-muted ${
-                open ? "rotate-90" : ""
-              }`}
-            />
+          <h2
+            // `text-pretty` because Korean is set with `word-break: keep-all`
+            // and a two-line headline regularly left one short word alone.
+            className={`mt-2 text-[17px] leading-[1.55] font-semibold tracking-[-0.01em] text-pretty text-text sm:text-[18px] ${
+              open ? "" : "line-clamp-2"
+            }`}
+          >
+            {/* The reporters' own emoji, kept at the size they were written at
+                and hidden from screen readers. */}
+            {mark && (
+              <span aria-hidden className="mr-1.5 align-[0.08em] text-[0.72em] opacity-60">
+                {mark}
+              </span>
+            )}
+            {headline}
+          </h2>
+
+          {/* Machine translation mangles football phrasing often enough that
+              the original has to stay readable at a glance. */}
+          {translated && (
+            <p className={`mt-1 text-[13px] leading-[1.5] text-faint ${open ? "" : "line-clamp-1"}`}>
+              {original.mark && (
+                <span aria-hidden className="mr-1 text-[0.8em] opacity-55">
+                  {original.mark}
+                </span>
+              )}
+              {original.text}
+            </p>
+          )}
+
+          {(rowTeams.length > 0 || leagueLabel) && (
+            <div className="mt-2.5 flex flex-wrap items-center gap-1.5">
+              {rowTeams.length > 0
+                ? rowTeams.slice(0, 3).map((t) => (
+                    <span
+                      key={t.slug}
+                      className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 py-[3px] pr-2.5 pl-[3px] text-[12.5px] font-semibold text-muted"
+                    >
+                      <span className="flex size-[18px] items-center justify-center rounded-full bg-surface-3">
+                        <TeamCrest team={t} size={14} />
+                      </span>
+                      {t.ko}
+                    </span>
+                  ))
+                : // Only seventeen clubs carry crests; a story about anyone else
+                  // still sits under the league its reporter covers.
+                  leagueLabel && (
+                    <span className="rounded-full bg-surface-2 px-2.5 py-[3px] text-[12.5px] font-semibold text-muted">
+                      {leagueLabel}
+                    </span>
+                  )}
+            </div>
           )}
         </div>
+
+        {showImage && (
+          // Lazy and small: the whole column mounting full-size agency photos
+          // at once is what once stalled this page, so the thumbnail is asked
+          // for only as it nears the screen.
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={imageTry === 0 ? thumb(row.imageUrl!) : row.imageUrl!}
+            alt=""
+            loading="lazy"
+            decoding="async"
+            width={120}
+            height={84}
+            onError={() => setImageTry((n) => n + 1)}
+            className="mt-1 h-[64px] w-[88px] shrink-0 rounded-[10px] bg-surface-3 object-cover sm:h-[84px] sm:w-[120px]"
+          />
+        )}
       </button>
 
       {open && (
@@ -282,23 +262,7 @@ export function ArticleCard({
           {/* Beside the text rather than above it. A full-bleed photo pushed the
               summary — the reason the card opens — below the fold, and stock
               agency shots earn less room than the words do. */}
-          <div className="flex flex-col gap-3.5 sm:flex-row">
-            {showImage && (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                src={row.imageUrl!}
-                alt=""
-                onError={() => setImageOk(false)}
-                className="h-40 w-full shrink-0 rounded-[6px] bg-surface-3 object-cover sm:h-[124px] sm:w-[196px]"
-              />
-            )}
-
-            {body && (
-              <p className="min-w-0 text-[14px] leading-[1.7] text-text/75">
-                {body}
-              </p>
-            )}
-          </div>
+          {body && <p className="min-w-0 text-[15px] leading-[1.75] text-text/80">{body}</p>}
 
           <a
             href={row.url}

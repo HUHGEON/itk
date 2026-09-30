@@ -108,7 +108,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
           >
             {p.facts.map((f) => (
               <div key={f.label} className="min-w-0">
-                <dt className="text-[11px] text-faint">{f.label}</dt>
+                <dt className="text-[12px] text-faint">{f.label}</dt>
                 <dd className="truncate text-[13.5px] font-semibold text-text">
                   {f.value}
                 </dd>
@@ -132,7 +132,7 @@ export default async function PlayerPage({ params }: { params: Params }) {
             <dl className="grid grid-cols-3 gap-x-6 gap-y-3 sm:grid-cols-4">
               {p.stats.map((s) => (
                 <div key={s.label} className="min-w-0">
-                  <dt className="truncate text-[11px] text-faint">{s.label}</dt>
+                  <dt className="truncate text-[12px] text-faint">{s.label}</dt>
                   <dd className="tnum text-[17px] font-bold text-text">
                     {s.value}
                   </dd>
@@ -172,15 +172,15 @@ function Recent({ m }: { m: FmRecentMatch }) {
 
   return (
     <li className="grid grid-cols-[auto_1fr_auto] items-center gap-3 py-2.5">
-      <div className="tnum w-[52px] shrink-0 text-[11.5px] leading-tight text-faint">
+      <div className="tnum w-[52px] shrink-0 text-[12.5px] leading-tight text-faint">
         <div>
           {d.month}.{d.day}
         </div>
-        <div className="text-[10.5px]">({WEEKDAY[d.weekday]})</div>
+        <div className="text-[12px]">({WEEKDAY[d.weekday]})</div>
       </div>
 
       <div className="flex min-w-0 items-center gap-2.5">
-        <span className="shrink-0 text-[11.5px] text-faint">
+        <span className="shrink-0 text-[12.5px] text-faint">
           {m.home ? "홈" : "원정"}
         </span>
         <span className="min-w-0 truncate text-[13.5px] text-text">
@@ -196,18 +196,18 @@ function Recent({ m }: { m: FmRecentMatch }) {
 
       <div className="flex shrink-0 items-center gap-2">
         {m.minutes != null && (
-          <span className="tnum text-[11px] text-faint">{m.minutes}&apos;</span>
+          <span className="tnum text-[12px] text-faint">{m.minutes}&apos;</span>
         )}
         <span className="tnum text-[13.5px] font-bold text-text">{m.score}</span>
         <span
-          className={`rounded-[4px] px-1.5 py-[1px] text-[10.5px] font-bold ${badge}`}
+          className={`rounded-[6px] px-1.5 py-[1px] text-[12px] font-bold ${badge}`}
         >
           {m.outcome}
         </span>
         {/* A rating of zero is the source saying it has none, not a nought. */}
         {m.rating != null && m.rating > 0 ? (
           <span
-            className={`tnum w-[30px] rounded-[4px] text-center text-[11px] font-bold ${tone(m.rating)}`}
+            className={`tnum w-[30px] rounded-[6px] text-center text-[12px] font-bold ${tone(m.rating)}`}
           >
             {m.rating.toFixed(1)}
           </span>

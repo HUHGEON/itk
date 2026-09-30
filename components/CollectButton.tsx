@@ -137,7 +137,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
     <div className="flex w-full flex-col gap-1">
       {note && (
         <span
-          className={`text-[11px] ${state === "error" ? "text-red-400" : "text-muted"}`}
+          className={`text-[12px] ${state === "error" ? "text-red-400" : "text-muted"}`}
         >
           {note}
         </span>
@@ -147,7 +147,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         onClick={() => void run()}
         disabled={state === "running"}
         title={title}
-        className={`relative inline-flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-[4px] px-3 py-2 text-[11.5px] font-semibold transition-colors disabled:opacity-50 ${
+        className={`relative inline-flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-[6px] px-3 py-2 text-[12.5px] font-semibold transition-colors disabled:opacity-50 ${
           due
             ? "text-accent-ink hover:opacity-90"
             : "border border-border text-muted hover:border-border-strong hover:text-text"

@@ -49,13 +49,13 @@ function Card({
         </span>
 
         {showMinute && p.onAt != null && (
-          <span className="tnum absolute -top-1 -left-2 rounded-[4px] bg-surface-2 px-1 text-[9.5px] leading-[1.6] font-bold text-emerald-400 ring-1 ring-border">
+          <span className="tnum absolute -top-1 -left-2 rounded-[6px] bg-surface-2 px-1 text-[11px] leading-[1.6] font-bold text-emerald-400 ring-1 ring-border">
             {p.onAt}&apos;
           </span>
         )}
         {p.rating != null && (
           <span
-            className={`tnum absolute -top-1 -right-2 rounded-[4px] px-1 text-[9.5px] leading-[1.6] font-bold ${tone(p.rating)}`}
+            className={`tnum absolute -top-1 -right-2 rounded-[6px] px-1 text-[11px] leading-[1.6] font-bold ${tone(p.rating)}`}
           >
             {p.rating.toFixed(1)}
           </span>
@@ -73,14 +73,14 @@ function Card({
       </span>
 
       <span className="flex max-w-full items-baseline gap-1">
-        <span className="tnum shrink-0 text-[10.5px] text-faint">
+        <span className="tnum shrink-0 text-[12px] text-faint">
           {p.jersey}
         </span>
         <span className="truncate text-[12px] font-semibold text-text">
           {p.name.split(" ").slice(-1)[0]}
         </span>
       </span>
-      <span className="text-[10.5px] text-faint">{role(p.position)}</span>
+      <span className="text-[12px] text-faint">{role(p.position)}</span>
     </>
   );
 
@@ -91,7 +91,7 @@ function Card({
           type="button"
           onClick={() => onOpen(p.id)}
           title={`${p.name} 기록 보기`}
-          className="flex w-full flex-col items-center gap-1 rounded-[6px] px-1 py-2 transition-colors hover:bg-surface-2/50"
+          className="flex w-full flex-col items-center gap-1 rounded-[10px] px-1 py-2 transition-colors hover:bg-surface-2/50"
         >
           {body}
         </button>
@@ -118,7 +118,7 @@ function Side({
   if (players.length === 0) return null;
   return (
     <div className="min-w-0">
-      <h3 className="truncate pb-1 text-[11.5px] font-semibold text-muted">
+      <h3 className="truncate pb-1 text-[12.5px] font-semibold text-muted">
         {title}
       </h3>
       <ul className="grid grid-cols-3 gap-x-1 border-t border-border/60 pt-1 sm:grid-cols-4">
@@ -216,7 +216,7 @@ export function Lineups({
             ].map(([name, list]) =>
               list.length === 0 ? null : (
                 <div key={name} className="min-w-0">
-                  <h3 className="truncate pb-1 text-[11.5px] font-semibold text-muted">
+                  <h3 className="truncate pb-1 text-[12.5px] font-semibold text-muted">
                     {name}
                   </h3>
                   <ul className="divide-y divide-border/50 border-t border-border/60">
@@ -228,7 +228,7 @@ export function Lineups({
                         <span className="truncate text-[12.5px] text-muted">
                           {u.name}
                         </span>
-                        <span className="shrink-0 text-[11px] text-faint">
+                        <span className="shrink-0 text-[12px] text-faint">
                           {u.reason}
                         </span>
                       </li>

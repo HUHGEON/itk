@@ -28,7 +28,7 @@ export function FavouriteStar({ slug, name }: { slug: string; name: string }) {
       title={on ? "즐겨찾기 해제" : "즐겨찾기"}
       /* 24px 아래로는 손가락이 잘 안 닿는다 - 별 자체는 그대로 두고
          닿는 면적만 넓힌다. */
-      className={`ml-auto flex size-7 shrink-0 items-center justify-center rounded-[4px] text-[13px] leading-none transition-opacity ${
+      className={`ml-auto flex size-7 shrink-0 items-center justify-center rounded-[6px] text-[13px] leading-none transition-opacity ${
         on
           ? "text-accent opacity-100"
           : "text-faint opacity-0 group-hover:opacity-100 focus-visible:opacity-100"
