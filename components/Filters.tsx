@@ -15,7 +15,7 @@ import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
-import { FunnelSimple } from "@phosphor-icons/react/dist/ssr";
+import { Check, FunnelSimple } from "@phosphor-icons/react/dist/ssr";
 import { LeagueMark } from "./LeagueMark";
 import { pressPop, rollNumber, useBeforePaint } from "@/lib/motion";
 
@@ -208,10 +208,11 @@ export function Filters({
         aria-pressed={on}
         className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border pr-3.5 pl-2 text-[13.5px] whitespace-nowrap transition-colors ${
           on
-            ? "border-accent/50 bg-accent/10 font-semibold text-accent"
+            ? "border-text bg-text font-semibold text-bg"
             : "border-border text-muted hover:border-border-strong hover:text-text"
         }`}
       >
+        {on && <Check className="size-3.5 shrink-0" weight="bold" aria-hidden />}
         <TeamCrest team={t} size={20} />
         {t.ko}
         {act && act.count > 0 && (
@@ -341,17 +342,23 @@ export function Filters({
                 toggleIn("tier", key);
               }}
               aria-pressed={on}
-              className="shrink-0 rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors"
+              className="flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors"
               // Unselected chips still carry their hue: the rail is where you
               // learn which colour means which tier, and five identical grey
               // pills teach nothing. Dimming with opacity rather than mixing
               // toward grey keeps all five equally legible against the black.
               style={
                 on
-                  ? {
-                      backgroundColor: st.bg,
-                      borderColor: st.border,
-                      color: st.ink,
+                  ? // Chosen: filled solid in the tier's hue, dark type, a
+                    // check. It borrowed the byline badge's style before,
+                    // and that style fades down the ladder - measured, a
+                    // chosen 1티어 was a 16% tint against 12% unchosen, and
+                    // a chosen 2 or 3티어 went transparent, fainter than
+                    // unchosen. "Did that click?" was the report.
+                    {
+                      backgroundColor: st.color,
+                      borderColor: st.color,
+                      color: "#0b0b0c",
                     }
                   : // Full-strength ink on a faint wash of the tier's own hue.
                     // It was dimmed to 78% on a transparent chip, which put
@@ -364,6 +371,7 @@ export function Filters({
                     }
               }
             >
+              {on && <Check className="size-3.5" weight="bold" aria-hidden />}
               {tierLabel(t)}
             </button>
           );
@@ -394,10 +402,11 @@ export function Filters({
                   title={`${j.en}${j.outlet ? ` · ${j.outlet}` : ""}`}
                   className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border px-2.5 py-1 text-[12px] whitespace-nowrap transition-colors ${
                     on
-                      ? "border-accent/50 bg-accent/10 font-semibold text-accent"
+                      ? "border-text bg-text font-semibold text-bg"
                       : "border-border text-muted hover:border-border-strong hover:text-text"
                   }`}
                 >
+                  {on && <Check className="size-3.5 shrink-0" weight="bold" aria-hidden />}
                   {j.ko}
                   <CountBadge n={n} tier={j.tier} />
                 </button>
