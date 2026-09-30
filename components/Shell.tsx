@@ -149,12 +149,15 @@ export function Shell({
         <nav className="flex shrink-0 border-b border-border">
           <RailTab
             href="/feed"
-            on={!pathname.startsWith("/matches") && !pathname.startsWith("/games")}
+            on={!pathname.startsWith("/matches") && !pathname.startsWith("/games") && !pathname.startsWith("/journalists")}
           >
             이적 소식
           </RailTab>
           <RailTab href="/matches" on={pathname.startsWith("/matches")}>
             경기 일정
+          </RailTab>
+          <RailTab href="/journalists" on={pathname.startsWith("/journalists")}>
+            기자
           </RailTab>
           <RailTab href="/games" on={pathname.startsWith("/games")}>
             미니게임
