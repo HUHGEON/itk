@@ -25,12 +25,15 @@ export function MatchBoard({
   initial,
   onlyTracked,
   bare = false,
+  next = null,
 }: {
   date: Date;
   initial: Match[];
   onlyTracked: boolean;
   /** The page already named the competition, so the rows need not repeat it. */
   bare?: boolean;
+  /** on an empty day, the next day with a match */
+  next?: { href: string; label: string } | null;
 }) {
   const { matches, live } = useLiveMatches(date, initial);
   const board = useRef<HTMLDivElement>(null);
@@ -72,6 +75,14 @@ export function MatchBoard({
           <p className="mt-2 text-[13px] text-faint">
             다른 경기 {matches.length}건은 전체 보기에서 볼 수 있습니다
           </p>
+        )}
+        {next && (
+          <Link
+            href={next.href}
+            className="mt-5 inline-flex items-center gap-1.5 rounded-[10px] bg-accent px-4 py-2.5 text-[14px] font-semibold text-accent-ink transition-[filter] hover:brightness-110"
+          >
+            다음 경기일 {next.label} 보기 ›
+          </Link>
         )}
       </div>
     );

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Suspense } from "react";
-import { COMPETITIONS, matchesOn, seoul, seoulDay, ymd } from "@/lib/matches";
+import { COMPETITIONS, matchesOn, nextMatchDay, seoul, seoulDay, ymd } from "@/lib/matches";
 import { MatchBoard } from "@/components/matches/MatchBoard";
 import { MyTeams } from "@/components/matches/MyTeams";
 import { MEASURE } from "@/components/matches/Measure";
@@ -105,6 +105,9 @@ export default async function Matches({
     ? all.filter((m) => m.competition === picked.ko)
     : all;
   const trackedCount = matches.filter((m) => m.tracked).length;
+  // An empty day points at the next one with football on it.
+  const shown = onlyTracked ? trackedCount : matches.length;
+  const nextDay = shown === 0 && !picked ? await nextMatchDay(date, onlyTracked) : null;
 
   // Feeds the rail, so it can show what is on and hide what is not.
   const counts: Record<string, number> = {};
@@ -269,6 +272,11 @@ export default async function Matches({
         initial={matches}
         onlyTracked={onlyTracked}
         bare={Boolean(picked)}
+        next={
+          nextDay
+            ? { href: href(nextDay, !onlyTracked), label: `${label(nextDay, today).date}${label(nextDay, today).near ? ` (${label(nextDay, today).near})` : ""}` }
+            : null
+        }
       />
     </Shell>
   );

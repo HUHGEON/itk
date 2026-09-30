@@ -7,6 +7,7 @@
  * and static, so importing it directly is both smaller and simpler.
  */
 import registry from "@/data/teams.json";
+import clubNames from "@/data/club-names.json";
 
 interface RegistryTeam {
   slug: string;
@@ -18,6 +19,12 @@ interface RegistryTeam {
 }
 
 const TEAMS = registry as RegistryTeam[];
+/**
+ * Korean names for every other club in the leagues we list, from
+ * scripts/build-club-names.ts: without it an untracked side came through in
+ * English beside the Korean ones - "Brighton & Hove Albion" against "첼시".
+ */
+const CLUB_KO = clubNames as Record<string, string>;
 
 /**
  * Fixtures, results and live scores.
@@ -325,7 +332,7 @@ function side(c: EspnCompetitor | undefined): MatchSide {
   const known = resolve(raw);
   const n = c?.score == null ? null : Number(c.score);
   return {
-    name: known?.ko ?? raw,
+    name: known?.ko ?? CLUB_KO[raw] ?? raw,
     sourceName: raw,
     slug: known?.slug ?? null,
     /*
@@ -525,7 +532,7 @@ export async function tableFor(
         const known = resolve(raw);
         rows.push({
           rank: stat(e.stats, "rank"),
-          name: known?.ko ?? raw,
+          name: known?.ko ?? CLUB_KO[raw] ?? raw,
           slug: known?.slug ?? null,
           // Same two spellings as everywhere else: the standings endpoint
           // gives a list, and reading only `logo` left thirteen of twenty rows
@@ -604,6 +611,30 @@ function competitionsFor(slugs: string[]): string[] {
     const prefix = code.split(".")[0];
     return prefix === "uefa" || prefix === "fifa" || countries.size === 0 || countries.has(prefix);
   });
+}
+
+/**
+ * The first Korean day after `after` that has a match, within six weeks.
+ *
+ * For the fixtures page on an empty day: an international break leaves a
+ * fortnight of "no matches" days, and paging through them one arrow at a time
+ * was measured at ten clicks from 30 September to the next Premier League
+ * round. Asked by the month, like the other windows, and only on an empty day.
+ */
+export async function nextMatchDay(after: Date, onlyTracked: boolean): Promise<Date | null> {
+  const from = new Date(after.getTime() + 24 * 3600_000);
+  const to = new Date(after.getTime() + 42 * 24 * 3600_000);
+  const codes = onlyTracked ? competitionsFor(TEAMS.map((t) => t.slug)) : COMPETITIONS.map((c) => c.code as string);
+  const lists = await Promise.all(
+    codes.map((code) => fetchWindow(code, from, to, { next: { revalidate: 600 } } as RequestInit)),
+  );
+  const first = lists
+    .flat()
+    .filter((m) => !onlyTracked || m.tracked)
+    .sort((a, b) => a.kickoff - b.kickoff)[0];
+  if (!first) return null;
+  const t = seoul(first.kickoff);
+  return seoulDay(t.year, t.month, t.day);
 }
 
 /**
