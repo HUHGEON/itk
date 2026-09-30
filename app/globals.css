@@ -48,11 +48,13 @@
   --text: #f4f4f5;
   /*
    * Three steps, all of them readable on a card, which is where nearly all
-   * text sits: muted #a1a1aa is 7.1:1 on #151518 and faint #8a8a93 5.2:1,
-   * both over the 4.5:1 small text needs.
+   * text sits. They were #a1a1aa and #8a8a93 - over 4.5:1 on paper, but
+   * secondary text on the near-black cards was reported as hard to make out.
+   * Lifted a step each: muted #bcbcc4 is 9.6:1 on #151518, faint #9d9da6
+   * 6.8:1, and white body text still stands clear above both.
    */
-  --muted: #a1a1aa;
-  --faint: #8a8a93;
+  --muted: #bcbcc4;
+  --faint: #9d9da6;
 
   /* The ribbon itself, for the places the brand should actually show up:
      the rule under the header, the primary button, the panel markers. A flat
