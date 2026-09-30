@@ -86,6 +86,9 @@ const untilMidnight = () => {
  * glow hotter. A wrong answer costs a point. The day ends when all thirty are
  * claimed.
  */
+/** the first daily board to keep a nation and its region apart */
+const NESTED_FROM = 368;
+
 export function HeatmapGame() {
   const { grid, items, error } = useGrid();
   const day = dayNumber();
@@ -101,7 +104,10 @@ export function HeatmapGame() {
   const closeHowto = () => setHowto(false);
 
   const board = useMemo(
-    () => (grid ? makeBoard(grid, day * 1009 + 17, SCORE_SLOT) : []),
+    // Puzzles up to #367 were played with a nation and its region allowed on
+    // one board; they stay exactly as they were, for the archive and anyone
+    // mid-way through today's.
+    () => (grid ? makeBoard(grid, day * 1009 + 17, SCORE_SLOT, day >= NESTED_FROM) : []),
     [grid, day],
   );
   const byId = useMemo(() => new Map(board.map((c) => [c.id, c])), [board]);

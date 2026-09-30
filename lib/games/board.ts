@@ -32,6 +32,40 @@ const RECIPES: Record<Family, number>[] = [
   [13, 9, 4, 2, 2], [18, 5, 4, 1, 2], [16, 7, 4, 2, 1], [17, 7, 3, 2, 1],
 ].map(([club, trophy, country, league, group]) => ({ club, trophy, country, league, group }));
 
+/*
+ * A nation and a region that holds it are one question asked twice: every
+ * Scotland answer is also a 켈트 국가 answer, and the two side by side on a
+ * board were called out as odd. Measured from the players rather than listed
+ * by hand - a nation is "inside" a region when 90% or more of its players are
+ * in the region too - and the pair never shares a board.
+ */
+const inside = new WeakMap<Grid, Map<number, Set<number>>>();
+function nested(grid: Grid): Map<number, Set<number>> {
+  const hit = inside.get(grid);
+  if (hit) return hit;
+  const nations = grid.cats.flatMap((c, i) => (c.kind === "nation" ? [i] : []));
+  const regions = grid.cats.flatMap((c, i) => (c.kind === "region" ? [i] : []));
+  const both = new Map<string, number>();
+  const size = new Map<number, number>();
+  for (const p of grid.players) {
+    for (const n of nations) {
+      if (!p.cats.has(n)) continue;
+      size.set(n, (size.get(n) ?? 0) + 1);
+      for (const r of regions) if (p.cats.has(r)) both.set(`${n}:${r}`, (both.get(`${n}:${r}`) ?? 0) + 1);
+    }
+  }
+  const out = new Map<number, Set<number>>();
+  const link = (a: number, b: number) => (out.get(a) ?? out.set(a, new Set()).get(a)!).add(b);
+  for (const n of nations)
+    for (const r of regions)
+      if ((both.get(`${n}:${r}`) ?? 0) >= 0.9 * (size.get(n) ?? Infinity)) {
+        link(n, r);
+        link(r, n);
+      }
+  inside.set(grid, out);
+  return out;
+}
+
 export interface BoardCell extends Cell {
   cat: number;
 }
@@ -48,9 +82,11 @@ export function makeBoard(
   grid: Grid,
   seed: number,
   skip?: { q: number; r: number },
+  /** keep a nation and its region apart (see `nested`); off only to replay old daily boards unchanged */
+  separateNested = true,
 ): BoardCell[] {
   for (let k = 0; k < 50; k++) {
-    const board = tryBoard(grid, seed + k * 7919, skip);
+    const board = tryBoard(grid, seed + k * 7919, skip, separateNested);
     if (board) return board;
   }
   throw new Error("could not lay out a board");
@@ -59,11 +95,13 @@ export function makeBoard(
 function tryBoard(
   grid: Grid,
   seed: number,
-  skip?: { q: number; r: number },
+  skip: { q: number; r: number } | undefined,
+  separateNested: boolean,
 ): BoardCell[] | null {
   const layout = cells(skip);
   const byId = new Map(layout.map((c) => [c.id, c]));
   const random = rng(seed);
+  const clash = separateNested ? nested(grid) : new Map<number, Set<number>>();
 
   // Well-known categories more often: a hex nobody can answer is dead weight.
   const weighted = shuffle(
@@ -92,7 +130,10 @@ function tryBoard(
         .map((n) => placed.get(cellId(n)))
         .filter((x): x is number => x !== undefined);
       const fits = weighted.filter(
-        (c) => !used.has(c.i) && touching.every((t) => grid.pairs.has(pairKey(t, c.i))),
+        (c) =>
+          !used.has(c.i) &&
+          ![...(clash.get(c.i) ?? [])].some((x) => used.has(x)) &&
+          touching.every((t) => grid.pairs.has(pairKey(t, c.i))),
       );
       // Which family this hex is for: the ones still short, in proportion to
       // how short they are.
