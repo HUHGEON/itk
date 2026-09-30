@@ -2,9 +2,12 @@ import { Suspense, type ReactNode } from "react";
 import { Shell } from "@/components/Shell";
 import { SearchBox } from "@/components/SearchBox";
 import { CollectButton } from "@/components/CollectButton";
-import { GamesRail } from "./GamesRail";
 
-/** The frame every game page shares: the site shell, the games rail, a title. */
+/**
+ * The frame every game page shares: the site shell and a title. No side
+ * column: the header's 미니게임 tab already leads back to the four games, and
+ * a board wants the width.
+ */
 export function GamePage({
   title,
   en,
@@ -22,7 +25,7 @@ export function GamePage({
 }) {
   return (
     <Shell
-      rail={<GamesRail />}
+      rail={null}
       actions={
         <>
           <Suspense fallback={null}>

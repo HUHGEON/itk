@@ -141,7 +141,7 @@ export default async function Matches({
       {/* Date and scope sit together: they are the two things that change what
           is on screen, and splitting them across the page would mean hunting
           for one after using the other. */}
-      <div className="sticky top-0 z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
+      <div className="sticky top-[var(--headerh)] z-20 border-b border-border bg-bg/95 backdrop-blur-sm">
         {/*
           The date holds the middle.
           

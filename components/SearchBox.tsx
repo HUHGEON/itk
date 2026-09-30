@@ -94,12 +94,14 @@ export function SearchBox({ state }: { state: FilterState }) {
         type="button"
         onClick={() => setOpen(true)}
         aria-haspopup="dialog"
-        className={`flex min-w-0 flex-1 items-center gap-2 rounded-[10px] border border-border bg-surface-2 px-3 py-2 text-left transition-colors hover:border-border-strong ${
+        aria-label="기사 검색"
+        // An icon on a phone, a field-shaped button in the header above that.
+        className={`flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 p-2 text-left transition-colors hover:border-border-strong md:w-[220px] md:px-3 ${
           pending ? "opacity-60" : ""
         }`}
       >
-        <Search className="shrink-0 text-faint" />
-        <span className={`min-w-0 flex-1 truncate text-[13px] ${state.q ? "text-text" : "text-faint"}`}>
+        <Search className="shrink-0 text-muted" />
+        <span className={`hidden min-w-0 flex-1 truncate text-[13px] md:block ${state.q ? "text-text" : "text-faint"}`}>
           {state.q || "선수·팀·키워드"}
         </span>
       </button>

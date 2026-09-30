@@ -134,10 +134,13 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
       : "지금 수집 (약 15초)";
 
   return (
-    <div className="flex w-full flex-col gap-1">
+    // Sits in the header now, so the result drops below the button instead of
+    // pushing the bar taller.
+    <div className="relative flex items-center">
       {note && (
         <span
-          className={`text-[12px] ${state === "error" ? "text-red-400" : "text-muted"}`}
+          role="status"
+          className={`absolute top-full right-0 z-10 mt-1.5 rounded-[6px] border border-border bg-surface px-2 py-1 text-[12px] whitespace-nowrap shadow-lg ${state === "error" ? "text-red-400" : "text-muted"}`}
         >
           {note}
         </span>
@@ -147,7 +150,7 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         onClick={() => void run()}
         disabled={state === "running"}
         title={title}
-        className={`relative inline-flex w-full items-center justify-center gap-1.5 overflow-hidden rounded-[6px] px-3 py-2 text-[12.5px] font-semibold transition-colors disabled:opacity-50 ${
+        className={`relative inline-flex items-center justify-center gap-1.5 overflow-hidden rounded-[10px] px-3 py-2 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
           due
             ? "text-accent-ink hover:opacity-90"
             : "border border-border text-muted hover:border-border-strong hover:text-text"

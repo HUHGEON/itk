@@ -4,69 +4,49 @@ import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Close, Menu } from "./icons";
-import { Logo, LogoFluid } from "./Logo";
+import { Logo } from "./Logo";
 
 /**
- * The app shell.
+ * The app shell: a header across the top, the page in the middle, and the
+ * page's side panels in a column to its right.
  *
- * Everything that is not a story lives in the rail — the mark, search, collect,
- * the panels — which leaves the content column with nothing above it. So there
- * is no page header at all above `lg`: the feed starts at the top of the
- * window and gets the full width.
+ * It used to be a 245px rail down the left holding everything at once - the
+ * site's four sections, search, collect, and whatever the page wanted beside
+ * it. Once the feed became an 800px reading column (after 요즘IT's lists), the
+ * rail left a 200px gutter of nothing between itself and the stories. 요즘IT
+ * has no rail: sections and search sit in a header, and a page that has
+ * something to say on the side says it in a box to the right. That is the
+ * layout here.
  *
- * One rail, two behaviours. Above `lg` it is a fixed column that owns the left
- * edge. Below it there is no room for a permanent column, so the same markup
- * becomes a drawer behind a menu button — rendered once either way, because the
- * panels hold state (a subscription list keyed on a browser token) that a
- * second copy would fork.
+ * On a phone the sections become a row of tabs under the header, and the side
+ * panels move into a drawer behind the menu button - rendered once either way,
+ * because the panels hold state (a subscription list keyed on a browser token)
+ * that a second copy would fork.
  */
-function RailTab({
-  href,
-  on,
-  children,
-}: {
-  href: string;
-  on: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-current={on ? "page" : undefined}
-      className={`flex-1 border-b-2 py-2.5 text-center text-[13px] transition-colors ${
-        on
-          ? "border-accent font-semibold text-text"
-          : "border-transparent text-muted hover:text-text"
-      }`}
-    >
-      {children}
-    </Link>
-  );
-}
+const SECTIONS = [
+  { href: "/feed", label: "이적 소식", match: (p: string) => p === "/feed" || p === "/" },
+  { href: "/matches", label: "경기 일정", match: (p: string) => p.startsWith("/matches") },
+  { href: "/journalists", label: "기자", match: (p: string) => p.startsWith("/journalists") },
+  { href: "/games", label: "미니게임", match: (p: string) => p.startsWith("/games") },
+];
 
 export function Shell({
   rail,
   actions,
   children,
 }: {
+  /** the page's side panels: a column on the right, a drawer on a phone */
   rail: ReactNode;
+  /** search and collect, in the header */
   actions: ReactNode;
   children: ReactNode;
 }) {
   const [open, setOpen] = useState(false);
-  /*
-   * Whether the rail is a drawer or a fixed column.
-   *
-   * Below the large breakpoint the rail is slid off the left edge when closed,
-   * and being off-screen is not the same as being out of the way: measured with
-   * the drawer shut, pressing Tab walked through the logo, both site tabs, the
-   * search box, the collect button and every club in the list - about forty
-   * invisible controls - before reaching the page. `inert` takes the whole
-   * thing out of the tab order and off the accessibility tree, but only while
-   * it is actually a closed drawer, because on a wide screen the same element
-   * is the visible rail.
-   */
+  // Whether the side column is currently a closed drawer (phone) or the
+  // visible column (desktop); a closed drawer is taken out of the tab order.
   const [drawer, setDrawer] = useState(false);
+  const pathname = usePathname();
+  const params = useSearchParams();
 
   useEffect(() => {
     const mq = window.matchMedia("(max-width: 1023.98px)");
@@ -75,8 +55,6 @@ export function Shell({
     mq.addEventListener("change", sync);
     return () => mq.removeEventListener("change", sync);
   }, []);
-  const pathname = usePathname();
-  const params = useSearchParams();
 
   // Tapping a filter inside the drawer navigates; the drawer should not stay
   // over the result.
@@ -94,8 +72,73 @@ export function Shell({
     };
   }, [open]);
 
+  const hasRail = Boolean(rail);
+
   return (
     <div className="min-h-screen bg-bg">
+      <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur-md">
+        <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-2 px-[var(--gutter)] sm:gap-6">
+          <Link
+            href="/feed"
+            aria-label="ITK plus 이적 소식"
+            className="shrink-0 rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
+          >
+            <Logo height={30} />
+          </Link>
+
+          <nav className="hidden h-full items-stretch gap-1 md:flex" aria-label="섹션">
+            {SECTIONS.map((s) => {
+              const on = s.match(pathname);
+              return (
+                <Link
+                  key={s.href}
+                  href={s.href}
+                  aria-current={on ? "page" : undefined}
+                  className={`flex items-center border-b-2 px-3 text-[15px] transition-colors ${
+                    on ? "border-accent font-semibold text-text" : "border-transparent text-muted hover:text-text"
+                  }`}
+                >
+                  {s.label}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2">{actions}</div>
+
+          {hasRail && (
+            <button
+              type="button"
+              onClick={() => setOpen(true)}
+              aria-label="메뉴 열기"
+              aria-expanded={open}
+              className="-mr-1.5 shrink-0 rounded-[10px] p-2 text-muted transition-colors hover:text-text lg:hidden"
+            >
+              <Menu />
+            </button>
+          )}
+        </div>
+
+        {/* The sections, as a row of tabs on a phone. */}
+        <nav className="flex border-t border-border md:hidden" aria-label="섹션">
+          {SECTIONS.map((s) => {
+            const on = s.match(pathname);
+            return (
+              <Link
+                key={s.href}
+                href={s.href}
+                aria-current={on ? "page" : undefined}
+                className={`flex-1 border-b-2 py-2.5 text-center text-[14px] transition-colors ${
+                  on ? "border-accent font-semibold text-text" : "border-transparent text-muted"
+                }`}
+              >
+                {s.label}
+              </Link>
+            );
+          })}
+        </nav>
+      </header>
+
       {open && (
         <button
           type="button"
@@ -105,121 +148,45 @@ export function Shell({
         />
       )}
 
-      {/* The rail scrolls with a bar rather than without one. It fits on any
-          window taller than about 660px and shows nothing at all there, since
-          `auto` only draws a bar on real overflow - but measured at 560px it
-          runs 45px past the bottom, and a nav list cut off with no mark at all
-          gives no reason to look further. */}
-      <aside
-        inert={drawer && !open}
-        className={`fixed inset-y-0 left-0 z-50 flex w-[min(19rem,86vw)] flex-col overflow-y-auto border-r border-border bg-surface transition-transform duration-200 lg:z-30 lg:w-[var(--rail)] lg:translate-x-0 ${
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+      <div
+        className={`mx-auto max-w-[1240px] ${
+          hasRail ? "lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8 lg:px-[var(--gutter)]" : ""
         }`}
       >
-        {/* The mark takes the band rather than sitting in a corner of it —
-            centred at 80% of the column, so it reads as placed rather than
-            wedged against the two rules on either side. */}
-        <div className="relative shrink-0 border-b border-border px-[var(--gutter)] py-3.5">
-          <Link
-            href="/feed"
-            aria-label="ITK plus 피드 · 필터 초기화"
-            title="필터 초기화"
-            className="mx-auto block w-[80%] rounded-[10px] transition-opacity hover:opacity-85 focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none"
-          >
-            <LogoFluid />
-          </Link>
-          <button
-            type="button"
-            onClick={() => setOpen(false)}
-            aria-label="메뉴 닫기"
-            className="absolute top-2 right-2 rounded p-1.5 text-muted transition-colors hover:text-text lg:hidden"
-          >
-            <Close />
-          </button>
-        </div>
-
-        {/*
-          The two halves of the site, directly under the mark.
-
-          These used to be a pair of small links at the very bottom of the rail,
-          below every filter and panel, which is a place people reach by
-          accident rather than on purpose - the match pages were shipped and
-          nobody could find them. Top of the rail, full width, reading as tabs.
-        */}
-        <nav className="flex shrink-0 border-b border-border">
-          <RailTab
-            href="/feed"
-            on={!pathname.startsWith("/matches") && !pathname.startsWith("/games") && !pathname.startsWith("/journalists")}
-          >
-            이적 소식
-          </RailTab>
-          <RailTab href="/matches" on={pathname.startsWith("/matches")}>
-            경기 일정
-          </RailTab>
-          <RailTab href="/journalists" on={pathname.startsWith("/journalists")}>
-            기자
-          </RailTab>
-          <RailTab href="/games" on={pathname.startsWith("/games")}>
-            미니게임
-          </RailTab>
-        </nav>
-
-        {/* Search and collect belong with the controls, not floating over the
-            stories they act on. */}
-        {/* Stacked: the rail is ~13rem at its narrowest and a search field
-            beside a button there is two cramped controls instead of one good
-            one. */}
-        <div className="flex shrink-0 flex-col gap-2 border-b border-border px-[var(--gutter)] py-3">
-          {actions}
-        </div>
-
-        {rail}
-
-        {/* The way back to the front page, at the bottom of the rail rather
-            than in the header: someone who opens this daily is here for the
-            stories, and a nav item above them would sell the site to someone
-            already using it.
-
-            `?intro` because the root now goes straight to the feed for anyone
-            who has been here before - this is the deliberate way back in, and
-            without the parameter it would bounce straight to where it started.
-            Not prefetched: it is the least-clicked link on the page and it
-            was pulling the whole introduction's chunk down on every load. */}
-        <div className="mt-auto border-t border-border px-[var(--gutter)] py-1.5">
-          <Link
-            href="/?intro=1"
-            prefetch={false}
-            /* A row of its own at the foot of the rail, so it gets a row's
-               height rather than the height of eleven-point text. */
-            className="-mx-1 flex items-center rounded-[6px] px-1 py-2 text-[12.5px] text-faint transition-colors hover:bg-surface-2/50 hover:text-muted"
-          >
-            ITK+ 소개
-          </Link>
-        </div>
-      </aside>
-
-      <div className="lg:pl-[calc(var(--rail)+0.5rem)]">
-        {/* Below lg there is no rail, so a slim bar carries the way into it. */}
-        <div className="sticky top-0 z-20 flex h-[var(--headerh)] items-center gap-2 border-b border-border bg-bg/95 px-[var(--gutter)] backdrop-blur-sm lg:hidden">
-          <button
-            type="button"
-            onClick={() => setOpen(true)}
-            aria-label="메뉴 열기"
-            aria-expanded={open}
-            className="-ml-1.5 shrink-0 rounded-[10px] p-2 text-muted transition-colors hover:text-text"
-          >
-            <Menu />
-          </button>
-          <Link
-            href="/feed"
-            aria-label="ITK plus 피드 · 필터 초기화"
-            className="shrink-0"
-          >
-            <Logo height={26} />
-          </Link>
-        </div>
-
         <main className="min-w-0">{children}</main>
+
+        {hasRail && (
+          <aside
+            inert={drawer && !open}
+            className={`fixed inset-y-0 right-0 z-50 w-[min(20rem,86vw)] overflow-y-auto border-l border-border bg-surface transition-transform duration-200 ${
+              open ? "translate-x-0" : "translate-x-full"
+            } lg:sticky lg:top-[5.25rem] lg:z-auto lg:my-5 lg:max-h-[calc(100vh-6.5rem)] lg:w-auto lg:translate-x-0 lg:self-start lg:rounded-2xl lg:border lg:transition-none`}
+          >
+            <div className="flex items-center justify-between border-b border-border px-[var(--gutter)] py-3 lg:hidden">
+              <span className="text-[15px] font-bold text-text">메뉴</span>
+              <button
+                type="button"
+                onClick={() => setOpen(false)}
+                aria-label="메뉴 닫기"
+                className="rounded p-1.5 text-muted hover:text-text"
+              >
+                <Close />
+              </button>
+            </div>
+            {rail}
+            {/* The way back to the front page: rarely wanted by someone who
+                reads daily, so it sits at the foot of the side column. */}
+            <div className="border-t border-border px-[var(--gutter)] py-2">
+              <Link
+                href="/?intro=1"
+                prefetch={false}
+                className="block py-1.5 text-[12.5px] text-faint transition-colors hover:text-muted"
+              >
+                ITK+ 소개
+              </Link>
+            </div>
+          </aside>
+        )}
       </div>
     </div>
   );

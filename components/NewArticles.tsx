@@ -140,7 +140,7 @@ export function NewArticles({
   if (count === 0) return null;
 
   return (
-    <div className="pointer-events-none sticky top-[calc(var(--headerh)+0.5rem)] z-10 flex justify-center lg:top-2">
+    <div className="pointer-events-none sticky top-[calc(var(--headerh)+0.5rem)] z-10 flex justify-center">
       <button
         ref={pill}
         type="button"
