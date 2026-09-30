@@ -161,7 +161,8 @@ export function Filters({
 
   const selected = teams.filter((t) => selectedTeams.includes(t.slug));
   const openGroup = grouped.find((g) => g.league === league) ?? null;
-  const activeCount = selectedTiers.length + selectedTeams.length + (who ? 1 : 0);
+  // Tiers and their reporters are in view now; the button counts what is behind it.
+  const activeCount = selectedTeams.length;
   const hasAnyFilter =
     selectedTiers.length > 0 ||
     selectedTeams.length > 0 ||
@@ -317,28 +318,14 @@ export function Filters({
         </button>
       </div>
 
-      {subRow && <div className="bg-surface-2/50">{clubRow}</div>}
-
-      {panel && (
-        <>
-          {/* On a phone the panel is a sheet from the bottom, over a scrim. */}
-          <button type="button" aria-label="필터 닫기" onClick={() => setPanel(false)} className="fixed inset-0 z-40 bg-black/50 sm:hidden" />
-          <div
-            id="feed-filters"
-            className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-border-strong bg-surface pb-[max(16px,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-border sm:pb-0"
-          >
-            <div className="flex items-center justify-between px-[var(--gutter)] pt-4 pb-1 sm:hidden">
-              <span className="text-[16px] font-bold text-text">필터</span>
-              <button type="button" onClick={() => setPanel(false)} aria-label="닫기" className="p-1 text-muted hover:text-text">
-                <Close size={16} />
-              </button>
-            </div>
-
+      {/* The tiers are the site's premise, so they stand in view under the
+          leagues rather than behind the 필터 button, where they were not
+          found. Picking one opens that tier's reporters beneath it. */}
       {/* Who filed it is the spine of the app, so the tiers lead — one hue at
           five strengths rather than five unrelated colours. Labelled by what
           they rank, not by the abstraction: "신뢰도" of what was never said. */}
-      <ScrollRail className="flex items-center gap-1.5 px-[var(--gutter)] py-3">
-        <span className="shrink-0 pr-1.5 text-[12px] font-semibold tracking-wide text-muted">
+      <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-2.5">
+        <span className="shrink-0 pr-1.5 text-[12.5px] font-semibold text-muted">
           기자 티어
         </span>
         {ALL_TIERS.map((t) => {
@@ -354,7 +341,7 @@ export function Filters({
                 toggleIn("tier", key);
               }}
               aria-pressed={on}
-              className="shrink-0 rounded-[6px] border px-2.5 py-1 text-[12px] font-semibold transition-colors"
+              className="shrink-0 rounded-full border px-3 py-1 text-[13px] font-semibold transition-colors"
               // Unselected chips still carry their hue: the rail is where you
               // learn which colour means which tier, and five identical grey
               // pills teach nothing. Dimming with opacity rather than mixing
@@ -416,6 +403,24 @@ export function Filters({
           )}
         </ScrollRail>
       )}
+
+
+      {subRow && <div className="bg-surface-2/50">{clubRow}</div>}
+
+      {panel && (
+        <>
+          {/* On a phone the panel is a sheet from the bottom, over a scrim. */}
+          <button type="button" aria-label="필터 닫기" onClick={() => setPanel(false)} className="fixed inset-0 z-40 bg-black/50 sm:hidden" />
+          <div
+            id="feed-filters"
+            className="fixed inset-x-0 bottom-0 z-50 max-h-[75vh] overflow-y-auto rounded-t-2xl border-t border-border-strong bg-surface pb-[max(16px,env(safe-area-inset-bottom))] sm:static sm:z-auto sm:max-h-none sm:overflow-visible sm:rounded-none sm:border-border sm:pb-0"
+          >
+            <div className="flex items-center justify-between px-[var(--gutter)] pt-4 pb-1 sm:hidden">
+              <span className="text-[16px] font-bold text-text">필터</span>
+              <button type="button" onClick={() => setPanel(false)} aria-label="닫기" className="p-1 text-muted hover:text-text">
+                <Close size={16} />
+              </button>
+            </div>
 
         {/* Every club, while no league is open. Once one is, its own clubs
             sit under the tabs instead (see clubRow). */}

@@ -1,264 +1,137 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
-import { animate, stagger, utils } from "animejs";
+import { useRouter } from "next/navigation";
+import { useEffect, useState } from "react";
 import type { Pulse } from "@/lib/feed";
 import { ALL_TIERS } from "@/lib/types";
 import { tierColor, tierLabel, timeAgo } from "@/lib/format";
-import { reducedMotion, useBeforePaint } from "@/lib/motion";
+import { reducedMotion } from "@/lib/motion";
 
 /**
- * The last 24 hours as one bar.
+ * The last 24 hours as a ring: how the day's stories split across the tiers.
  *
- * The sidebar ran out of content halfway down the page, and a feed sorted by
- * time tells you what just happened but not what the day looked like. The
- * segments are the tier colours the rest of the app uses, so the shape of the
- * bar reads as "mostly rumour" or "a real 0-tier day" without a legend — and
- * each one is a link into that filter.
- *
- * The bar and the legend under it are one object, which the static version
- * never managed to say: five colours in a 6px strip and five colours in a list
- * is a matching puzzle at that size. Pointing at a row now dims every segment
- * but its own and opens the bar up, so the pairing is answered by looking
- * rather than by comparing swatches.
+ * It was a 6px stacked bar; a ring reads as "shares of one day" at a glance
+ * and has room in the middle for the total. The tier colours are the ones the
+ * whole site uses - a ladder that fades from the 0-tier orange to grey - so 2
+ * and 3 are close greys by design (measured: ΔE 9.5, under the 15 a colour
+ * alone needs). Identity therefore never rests on colour: every segment is
+ * separated by a gap, the legend names each tier with its count and share,
+ * and pointing at either lights the one segment and puts its numbers in the
+ * middle.
  */
 
-/** Segment growth and count-up run on the same clock. */
-const DRAW_MS = 760;
-const STEP_MS = 70;
-
-/** Resting and engaged heights of the bar, in px — `h-1.5` is the resting one. */
-const BAR_REST = 6;
-const BAR_OPEN = 10;
+const R = 46;
+const STROKE = 14;
+const C = 2 * Math.PI * R;
+/** the surface gap between segments, in px of arc */
+const GAP = 3;
 
 export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
-  const tiers = ALL_TIERS.map((t) => ({
-    tier: t,
-    n: pulse.byTier[String(t)] ?? 0,
-  })).filter((s) => s.n > 0);
-
+  const router = useRouter();
+  const tiers = ALL_TIERS.map((t) => ({ tier: t, n: pulse.byTier[String(t)] ?? 0 })).filter((s) => s.n > 0);
   const ranked = pulse.total - pulse.official;
-
-  const root = useRef<HTMLElement>(null);
   const [lit, setLit] = useState<number | null>(null);
-
-  /**
-   * The numbers themselves, not the object holding them.
-   *
-   * `pulse` is rebuilt by the server on every render, so keying the draw on it
-   * replayed the whole bar each time a filter chip was pressed — and the last
-   * 24 hours do not depend on the filter, so the same five numbers redrew from
-   * zero while the reader was looking at something else entirely.
-   */
-  const pulseKey = JSON.stringify([pulse.total, pulse.official, pulse.byTier]);
-
-  /**
-   * The bar draws itself in, and the counts run up to meet it.
-   *
-   * Deliberately `scaleX` rather than `width`: the segments are flex items, so
-   * animating width would reflow the whole strip sixty times a second and drag
-   * its neighbours along with it. Scaling leaves the layout alone — each
-   * segment fills the space it already owns.
-   *
-   * It waits to be seen. Below `lg` the rail is a drawer: present from the
-   * first paint but translated out of the viewport, so an entrance on mount
-   * plays to nobody and the bar is already finished by the time the drawer
-   * opens. A transform moving an element back into view does re-trigger
-   * IntersectionObserver, so one guard covers both layouts.
-   */
-  useBeforePaint(() => {
-    const el = root.current;
-    if (!el || reducedMotion()) return;
-
-    const segments = Array.from(el.querySelectorAll<HTMLElement>("[data-seg]"));
-    const counts = Array.from(el.querySelectorAll<HTMLElement>("[data-count]"));
-    if (segments.length === 0) return;
-
-    // The from-state lives here, not in the markup, so that a browser which
-    // never runs this still renders a finished bar with real numbers in it.
-    utils.set(segments, { scaleX: 0 });
-    for (const c of counts) c.textContent = "0";
-
-    const running: { revert: () => void }[] = [];
-
-    const play = () => {
-      running.push(
-        animate(segments, {
-          scaleX: 1,
-          duration: DRAW_MS,
-          ease: "outExpo",
-          delay: stagger(STEP_MS),
-        }),
-      );
-
-      for (const [i, c] of counts.entries()) {
-        const to = Number(c.dataset.count);
-        if (!Number.isFinite(to)) continue;
-        const tick = { v: 0 };
-        running.push(
-          animate(tick, {
-            v: to,
-            duration: DRAW_MS,
-            ease: "outExpo",
-            delay: i * STEP_MS,
-            onUpdate: () => {
-              c.textContent = String(utils.round(tick.v, 0));
-            },
-            // The last frame of an eased tween lands a hair short often enough
-            // to leave a headline count one off its own total.
-            onComplete: () => {
-              c.textContent = String(to);
-            },
-          }),
-        );
-      }
-    };
-
-    const stop = () => {
-      for (const a of running) a.revert();
-      for (const c of counts) c.textContent = c.dataset.count ?? "";
-    };
-
-    if (typeof IntersectionObserver === "undefined") {
-      play();
-      return stop;
-    }
-
-    const io = new IntersectionObserver((entries) => {
-      if (!entries.some((e) => e.isIntersecting)) return;
-      io.disconnect();
-      play();
-    });
-    io.observe(el);
-
-    return () => {
-      io.disconnect();
-      stop();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [pulseKey]);
-
-  // Pointer or keyboard on a legend row. Skipped until something is actually
-  // lit, so an untouched panel carries no inline styles at all.
-  const touched = useRef(false);
+  // The ring draws itself once, from nothing, on first paint.
+  const [drawn, setDrawn] = useState(false);
   useEffect(() => {
-    const el = root.current;
-    if (!el || reducedMotion()) return;
-    if (!touched.current) {
-      if (lit === null) return;
-      touched.current = true;
-    }
-
-    const segments = Array.from(el.querySelectorAll<HTMLElement>("[data-seg]"));
-    const bar = el.querySelector<HTMLElement>("[data-bar]");
-    if (segments.length === 0 || !bar) return;
-
-    animate(segments, {
-      opacity: (_target, i) => (lit === null || lit === i ? 1 : 0.2),
-      duration: 220,
-      ease: "outQuad",
-    });
-    animate(bar, {
-      height: lit === null ? BAR_REST : BAR_OPEN,
-      duration: 260,
-      ease: "outBack",
-    });
-  }, [lit]);
+    if (reducedMotion()) return setDrawn(true);
+    const id = requestAnimationFrame(() => setDrawn(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
 
   if (ranked === 0) return null;
 
+  let start = 0;
+  const segs = tiers.map((s) => {
+    const len = (s.n / ranked) * C;
+    const seg = { ...s, start, len: Math.max(0.5, len - (tiers.length > 1 ? GAP : 0)) };
+    start += len;
+    return seg;
+  });
+  const focus = lit === null ? null : segs[lit];
+  const pct = (n: number) => Math.round((n / ranked) * 100);
+
   return (
-    <section
-      ref={root}
-      className="p-5"
-      onMouseLeave={() => setLit(null)}
-    >
+    <section className="p-5" onMouseLeave={() => setLit(null)}>
       <div className="flex items-baseline justify-between">
         <h2 className="flex items-center gap-2 text-[15px] font-bold">
-          <span
-            aria-hidden
-            className="h-[15px] w-[3px] rounded-full"
-            style={{ background: "var(--ribbon)" }}
-          />
+          <span aria-hidden className="h-[15px] w-[3px] rounded-full" style={{ background: "var(--ribbon)" }} />
           최근 24시간
         </h2>
-        <span className="tnum text-[12px] text-faint">
-          <span data-count={pulse.total}>{pulse.total}</span>건
-        </span>
+        <span className="tnum text-[12.5px] text-faint">{pulse.total}건</span>
       </div>
 
-      <div
-        data-bar
-        className="mt-2.5 flex h-1.5 overflow-hidden rounded-full bg-surface-3"
-        role="img"
-        aria-label={tiers
-          .map((s) => `${tierLabel(s.tier)} ${s.n}건`)
-          .join(", ")}
-      >
-        {tiers.map((s) => (
-          <span
-            key={s.tier}
-            data-seg
-            // Grows from the left edge it already sits against, so a staggered
-            // draw reads as one bar filling rather than five bars appearing.
-            className="origin-left"
-            style={{
-              width: `${(s.n / ranked) * 100}%`,
-              backgroundColor: tierColor(s.tier),
-            }}
-          />
-        ))}
-      </div>
-
-      <ul className="mt-2.5 space-y-1">
-        {tiers.map((s, i) => (
-          <li key={s.tier}>
-            <Link
-              href={`/feed?tier=${s.tier}`}
-              onMouseEnter={() => setLit(i)}
-              // Same signal without a pointer: tabbing the legend walks the bar.
-              onFocus={() => setLit(i)}
-              onBlur={() => setLit(null)}
-              /* A standalone row in a list, so it earns a full target rather
-                 than the height of its own text. */
-              className="group -my-1 flex items-center gap-2 py-1.5 text-[12px]"
-            >
-              <span
-                aria-hidden
-                className="size-2 shrink-0 rounded-[6px] transition-transform duration-150 group-hover:scale-125"
-                style={{ backgroundColor: tierColor(s.tier) }}
+      <div className="mt-4 flex items-center gap-5">
+        <div className="relative size-[124px] shrink-0">
+          <svg
+            viewBox="0 0 124 124"
+            className="size-full -rotate-90"
+            role="img"
+            aria-label={segs.map((s) => `${tierLabel(s.tier)} ${s.n}건`).join(", ")}
+          >
+            <circle cx="62" cy="62" r={R} fill="none" stroke="var(--surface-3)" strokeWidth={STROKE} opacity={0.5} />
+            {segs.map((s, i) => (
+              <circle
+                key={s.tier}
+                cx="62"
+                cy="62"
+                r={R}
+                fill="none"
+                stroke={tierColor(s.tier)}
+                strokeWidth={lit === i ? STROKE + 4 : STROKE}
+                strokeDasharray={`${drawn ? s.len : 0} ${C}`}
+                strokeDashoffset={-s.start}
+                opacity={lit === null || lit === i ? 1 : 0.22}
+                className="cursor-pointer"
+                style={{
+                  transition: `stroke-dasharray 800ms cubic-bezier(0.22,1,0.36,1) ${i * 70}ms, opacity 200ms, stroke-width 200ms`,
+                }}
+                onMouseEnter={() => setLit(i)}
+                onClick={() => router.push(`/feed?tier=${s.tier}`)}
               />
-              <span className="flex-1 text-muted transition-colors group-hover:text-text">
-                {tierLabel(s.tier)}
-              </span>
-              <span className="tnum text-text/80" data-count={s.n}>
-                {s.n}
-              </span>
-            </Link>
-          </li>
-        ))}
-        {pulse.official > 0 && (
-          <li className="flex items-center gap-2 text-[12px]">
-            <span
-              aria-hidden
-              className="size-2 shrink-0 rounded-[6px]"
-              style={{ backgroundColor: "var(--official)" }}
-            />
-            {/* Outside the bar as well as outside the ladder — the bar is
-                scaled to the ranked total, so this row has no segment to
-                light and stays inert. */}
-            <span className="flex-1 text-muted">구단 공식</span>
-            <span className="tnum text-text/80" data-count={pulse.official}>
-              {pulse.official}
+            ))}
+          </svg>
+          {/* The middle says the total, or the pointed-at tier. */}
+          <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+            <span className="tnum text-[24px] leading-none font-bold text-text">{focus ? focus.n : ranked}</span>
+            <span className="mt-1 text-[11.5px] text-muted">
+              {focus ? `${tierLabel(focus.tier)} · ${pct(focus.n)}%` : "티어 기사"}
             </span>
-          </li>
-        )}
-      </ul>
+          </div>
+        </div>
 
-      {pulse.lastCollect && (
-        <p className="mt-2.5 border-t border-border pt-2 text-[12px] text-faint">
-          마지막 수집 {timeAgo(pulse.lastCollect, now)}
+        <ul className="min-w-0 flex-1 space-y-0.5">
+          {segs.map((s, i) => (
+            <li key={s.tier}>
+              <Link
+                href={`/feed?tier=${s.tier}`}
+                onMouseEnter={() => setLit(i)}
+                onFocus={() => setLit(i)}
+                onBlur={() => setLit(null)}
+                className={`flex items-center gap-2 rounded-lg px-1.5 py-1 text-[13px] transition-colors ${
+                  lit === i ? "bg-white/[0.05]" : ""
+                }`}
+              >
+                <span aria-hidden className="size-2.5 shrink-0 rounded-full" style={{ backgroundColor: tierColor(s.tier) }} />
+                <span className={`flex-1 ${lit === i ? "text-text" : "text-muted"}`}>{tierLabel(s.tier)}</span>
+                <span className="tnum font-semibold text-text">{s.n}</span>
+                <span className="tnum w-8 text-right text-[12px] text-faint">{pct(s.n)}%</span>
+              </Link>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {(pulse.official > 0 || pulse.lastCollect) && (
+        <p className="mt-4 flex items-center gap-2 border-t border-border pt-3 text-[12.5px] text-faint">
+          {pulse.official > 0 && (
+            <>
+              <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: "var(--official)" }} />
+              구단 공식 {pulse.official}건
+            </>
+          )}
+          {pulse.lastCollect && <span className="ml-auto">마지막 수집 {timeAgo(pulse.lastCollect, now)}</span>}
         </p>
       )}
     </section>

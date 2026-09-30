@@ -50,27 +50,43 @@ export function ScrollRail({
     ro.observe(el);
     for (const child of Array.from(el.children)) ro.observe(child);
 
-    // Non-passive: translating the wheel means preventing the page scroll it
-    // would otherwise cause.
+    /*
+     * Non-passive: translating the wheel means preventing the page scroll it
+     * would otherwise cause.
+     *
+     * Two things made this feel broken, both measured with synthetic wheel
+     * events on the league rail (481px of overflow):
+     *  - Line-mode deltas (Firefox, and many wheel mice) arrive as "3 lines",
+     *    and adding 3 to scrollLeft moved the rail 9px for three notches.
+     *    They are converted to pixels now.
+     *  - Under scroll-behavior: smooth, each notch restarted the animation
+     *    from wherever the last one had got to, so three 100px notches moved
+     *    199px. The destination is kept here instead and each notch adds to
+     *    it, so three notches go 300px.
+     */
+    let target: number | null = null;
+    let settle: ReturnType<typeof setTimeout> | undefined;
     const onWheel = (e: WheelEvent) => {
       if (e.deltaY === 0 || Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
       const max = el.scrollWidth - el.clientWidth;
       if (max <= 0) return;
+      const unit = e.deltaMode === 1 ? 40 : e.deltaMode === 2 ? el.clientWidth : 1;
+      const delta = e.deltaY * unit;
+      const from = target ?? el.scrollLeft;
       // At either end, let the gesture fall through to the page.
-      if (
-        (e.deltaY < 0 && el.scrollLeft <= 0) ||
-        (e.deltaY > 0 && el.scrollLeft >= max)
-      ) {
-        return;
-      }
+      if ((delta < 0 && from <= 0.5) || (delta > 0 && from >= max - 0.5)) return;
       e.preventDefault();
-      el.scrollLeft += e.deltaY;
+      target = Math.min(max, Math.max(0, from + delta));
+      el.scrollTo({ left: target, behavior: reducedMotion() ? "auto" : "smooth" });
+      clearTimeout(settle);
+      settle = setTimeout(() => (target = null), 350);
     };
     el.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
       el.removeEventListener("scroll", sync);
       el.removeEventListener("wheel", onWheel);
+      clearTimeout(settle);
       ro.disconnect();
     };
   }, [sync, children]);

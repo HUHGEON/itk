@@ -20,6 +20,7 @@ import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 import { FeedHero } from "@/components/FeedHero";
 import { TopReporters } from "@/components/TopReporters";
+import { StickyFilters } from "@/components/StickyFilters";
 import type { FeedRow } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
@@ -158,16 +159,19 @@ export default async function Home({
             {unfiltered ? "최신 소식" : "검색 결과"}
           </h2>
 
-          <div className="order-1 overflow-clip rounded-[20px] bg-surface lg:order-none">
-            <Filters
-              teams={teams}
-              activity={activity}
-              leagueActivity={leagueActivity}
-              journalists={journalists}
-              journalistActivity={journalistActivity}
-              state={filterState}
-            />
-          </div>
+          {/* Pinned under the header as the list scrolls. */}
+          <StickyFilters className="order-1 lg:order-none">
+            <div className="overflow-clip rounded-[20px] bg-surface">
+              <Filters
+                teams={teams}
+                activity={activity}
+                leagueActivity={leagueActivity}
+                journalists={journalists}
+                journalistActivity={journalistActivity}
+                state={filterState}
+              />
+            </div>
+          </StickyFilters>
 
           {/* The "new stories" pill sticks while the list scrolls, so it
               shares the list's box. */}
