@@ -11,7 +11,7 @@ import {
 } from "react";
 import type { Team, League, Journalist } from "@/lib/types";
 import { LEAGUE_LABEL, ALL_TIERS } from "@/lib/types";
-import { tierColor, tierLabel, tierStyle } from "@/lib/format";
+import { tierLabel, tierStyle, tierTextColor } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
@@ -358,7 +358,8 @@ export function Filters({
                     {
                       backgroundColor: st.color,
                       borderColor: st.color,
-                      color: "#0b0b0c",
+                      // 3티어's grey is dark enough to want white type.
+                      color: t === 3 ? "#ffffff" : "#0b0b0c",
                     }
                   : // Full-strength ink on a faint wash of the tier's own hue.
                     // It was dimmed to 78% on a transparent chip, which put
@@ -367,7 +368,7 @@ export function Filters({
                     {
                       backgroundColor: `color-mix(in srgb, ${st.color} 12%, transparent)`,
                       borderColor: `color-mix(in srgb, ${st.color} 40%, transparent)`,
-                      color: st.color,
+                      color: st.text,
                     }
               }
             >
@@ -450,7 +451,7 @@ export function Filters({
  * scoop should not look the same as one with forty 3-tier rumours.
  */
 function CountBadge({ n, tier }: { n: number; tier: number | null }) {
-  const color = tierColor(tier);
+  const color = tierTextColor(tier);
   const ref = useRef<HTMLSpanElement>(null);
   const prev = useRef(n);
 

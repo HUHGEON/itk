@@ -25,6 +25,8 @@ export interface TierStyle {
   border: string;
   /** text colour that sits on `bg` */
   ink: string;
+  /** the tier's colour for words on the page, readable on a dark card */
+  text: string;
 }
 
 const HUE: Record<string, string> = {
@@ -34,6 +36,9 @@ const HUE: Record<string, string> = {
   "2": "var(--tier-2)",
   "3": "var(--tier-3)",
 };
+
+/** Where the hue itself is too dark to set words in. */
+const TEXT: Record<string, string> = { "3": "var(--tier-3-text)" };
 
 const LADDER: Record<string, number> = {
   "0": 1,
@@ -51,11 +56,13 @@ export function tierStyle(tier: number | null, official = false): TierStyle {
       bg: "var(--official)",
       border: "transparent",
       ink: "var(--accent-ink)",
+      text: "var(--official)",
     };
   }
 
   const key = tier === null ? "" : String(tier);
   const color = HUE[key] ?? "var(--muted)";
+  const text = TEXT[key] ?? color;
   const w = LADDER[key] ?? 0;
 
   // Top of the ladder: a solid block, dark type on it.
@@ -66,6 +73,7 @@ export function tierStyle(tier: number | null, official = false): TierStyle {
       bg: color,
       border: "transparent",
       ink: "var(--accent-ink)",
+      text,
     };
   }
   // Middle: the hue as a tint, so it still reads as its own colour.
@@ -75,7 +83,8 @@ export function tierStyle(tier: number | null, official = false): TierStyle {
       color,
       bg: `color-mix(in srgb, ${color} 16%, transparent)`,
       border: `color-mix(in srgb, ${color} 42%, transparent)`,
-      ink: color,
+      ink: text,
+      text,
     };
   }
   // Bottom: outline only.
@@ -83,8 +92,9 @@ export function tierStyle(tier: number | null, official = false): TierStyle {
     weight: w,
     color,
     bg: "transparent",
-    border: `color-mix(in srgb, ${color} 34%, transparent)`,
-    ink: color,
+    border: `color-mix(in srgb, ${color} 60%, transparent)`,
+    ink: text,
+    text,
   };
 }
 
@@ -100,6 +110,11 @@ export function tierRule(tier: number | null, official = false): string {
 
 export function tierColor(tier: number | null): string {
   return tierStyle(tier).color;
+}
+
+/** The tier's colour for words: the same hue, lifted where it is too dark to read. */
+export function tierTextColor(tier: number | null): string {
+  return tierStyle(tier).text;
 }
 
 export function timeAgo(ts: number, now = Date.now()): string {

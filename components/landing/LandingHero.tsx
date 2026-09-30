@@ -2,7 +2,7 @@
 
 import { useRef } from "react";
 import { animate, onScroll, stagger, utils } from "animejs";
-import { tierColor, tierLabel } from "@/lib/format";
+import { tierColor, tierTextColor, tierLabel } from "@/lib/format";
 import { reducedMotion, useBeforePaint } from "@/lib/motion";
 
 /**
@@ -103,7 +103,7 @@ export function TierLadder({
               <li key={t.tier} className="flex items-center gap-3.5">
                 <span
                   className="w-[52px] shrink-0 text-[12.5px] font-semibold"
-                  style={{ color: tierColor(t.tier) }}
+                  style={{ color: tierTextColor(t.tier) }}
                 >
                   {tierLabel(t.tier)}
                 </span>

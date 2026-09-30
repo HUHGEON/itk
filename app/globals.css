@@ -77,7 +77,11 @@
   --tier-15: #54c8e8;
   --tier-2: #9aa4b5;
   /* 4.61:1 on the page but 4.3:1 on the panels it actually sits in. */
-  --tier-3: #7f8794;
+  /* Darker than 2's grey, asked for so the bottom of the ladder reads as the
+     bottom; too dark for small text on a card (3.2:1), so words in the
+     tier's colour use --tier-3-text (5.8:1 on #151518). */
+  --tier-3: #585f6a;
+  --tier-3-text: #8b929d;
 
   /* A club announcing its own signing is a fact, not a report, so it sits
      outside the ladder and takes a hue none of the tiers use. */
