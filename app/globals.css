@@ -382,3 +382,8 @@ html {
   0%, 100% { opacity: 0.35; transform: scale(0.9); }
   50% { opacity: 1; transform: scale(1); }
 }
+/* The search panel drops from the top, as 요즘IT's does. */
+@keyframes search-drop {
+  from { transform: translateY(-16px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
