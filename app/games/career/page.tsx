@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { GamePage } from "@/components/games/GamePage";
 import { CareerGame } from "@/components/games/CareerGame";
 
@@ -9,10 +10,11 @@ import { CareerGame } from "@/components/games/CareerGame";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Career Path · ITK+ 미니게임",
-  description: "한 줄씩 공개되는 이적 경로만 보고 오늘의 선수를 맞혀 보세요.",
-};
+export const metadata: Metadata = pageMeta(
+  "Career Path · ITK+ 미니게임",
+  "한 줄씩 공개되는 이적 경로만 보고 오늘의 선수를 맞혀 보세요.",
+  "/games/career/opengraph-image",
+);
 
 export default function Page() {
   return (

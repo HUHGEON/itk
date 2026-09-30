@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { GamePage } from "@/components/games/GamePage";
 import { PossessionGame } from "@/components/games/PossessionGame";
 
@@ -9,10 +10,11 @@ import { PossessionGame } from "@/components/games/PossessionGame";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Possession Play · ITK+ 미니게임",
-  description: "칸을 골라 선수를 대고 맞닿은 칸까지 빼앗는 1대1 축구 땅따먹기.",
-};
+export const metadata: Metadata = pageMeta(
+  "Possession Play · ITK+ 미니게임",
+  "칸을 골라 선수를 대고 맞닿은 칸까지 빼앗는 1대1 축구 땅따먹기.",
+  "/games/possession/opengraph-image",
+);
 
 export default function Page() {
   return (

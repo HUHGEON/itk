@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import Link from "next/link";
 import { Suspense } from "react";
 import { getJournalistActivity, getPulse } from "@/lib/feed";
@@ -13,10 +14,10 @@ import { TeamCrest } from "@/components/TeamCrest";
 
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "기자 · ITK+",
-  description: "티어로 나눈 해외 축구 기자 명단. 누가 얼마나 쓰는지, 어느 구단을 다루는지.",
-};
+export const metadata: Metadata = pageMeta(
+  "기자 · ITK+",
+  "티어로 나눈 해외 축구 기자 명단. 누가 얼마나 쓰는지, 어느 구단을 다루는지.",
+);
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

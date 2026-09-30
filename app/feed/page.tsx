@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import {
   getFeed,
   getJournalistActivity,
@@ -32,10 +33,10 @@ export const dynamic = "force-dynamic";
  * search box and the mark in the rail all address this route now, so a filtered
  * view is /feed?team=psg rather than /?team=psg.
  */
-export const metadata: Metadata = {
-  title: "이적 소식 · ITK+",
-  description: "해외 축구 기자 244명의 이적설을, 최초 보도자와 신뢰도 티어로.",
-};
+export const metadata: Metadata = pageMeta(
+  "이적 소식 · ITK+",
+  "해외 축구 기자 244명의 이적설을, 최초 보도자와 신뢰도 티어로.",
+);
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 

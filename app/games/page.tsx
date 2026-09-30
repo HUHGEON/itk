@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import Link from "next/link";
 import { ArrowRight } from "@phosphor-icons/react/dist/ssr";
 import { GamePage } from "@/components/games/GamePage";
@@ -10,10 +11,11 @@ import { GAMES, type GameSlug } from "@/lib/games/catalog";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "미니게임 · ITK+",
-  description: "축구 지식으로 푸는 한글 미니게임 네 가지. Possession Play, The Heatmap, Career Path, Who Are Ya?",
-};
+export const metadata: Metadata = pageMeta(
+  "미니게임 · ITK+",
+  "축구 지식으로 푸는 한글 미니게임 네 가지. Possession Play, The Heatmap, Career Path, Who Are Ya?",
+  "/games/opengraph-image",
+);
 
 /*
  * Each game has a colour of its own, taken from the game itself: the blue

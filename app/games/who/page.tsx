@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { pageMeta } from "@/lib/meta";
 import { GamePage } from "@/components/games/GamePage";
 import { WhoGame } from "@/components/games/WhoGame";
 
@@ -9,10 +10,11 @@ import { WhoGame } from "@/components/games/WhoGame";
  */
 export const dynamic = "force-dynamic";
 
-export const metadata: Metadata = {
-  title: "Who Are Ya? · ITK+ 미니게임",
-  description: "국적·리그·팀·포지션·나이·등번호 힌트로 오늘의 선수를 8번 안에 맞혀 보세요.",
-};
+export const metadata: Metadata = pageMeta(
+  "Who Are Ya? · ITK+ 미니게임",
+  "국적·리그·팀·포지션·나이·등번호 힌트로 오늘의 선수를 8번 안에 맞혀 보세요.",
+  "/games/who/opengraph-image",
+);
 
 export default function Page() {
   return (
