@@ -10,7 +10,7 @@
  */
 import "../lib/load-env";
 import { rpc } from "../lib/supabase";
-import { getFeed, type FeedRow } from "../lib/feed";
+import { getFeedFresh as getFeed, type FeedRow } from "../lib/feed";
 import { loadTeams } from "../lib/registry";
 import { tierLabel } from "../lib/format";
 import { ALL_TIERS } from "../lib/types";
@@ -157,12 +157,18 @@ async function main() {
       total += n;
       if (n > 0) console.log(`  ${sub.id.slice(0, 8)} → ${n}건`);
     } catch (err) {
-      // One broken destination must not stop the others.
+      /*
+       * One broken destination must not stop the others - but an exception
+       * here is our failure, not the webhook's. Only a refused send (inside
+       * runOne) counts toward the ten strikes that switch a destination off.
+       * Counting these too is how a code bug on 2026-09-03 silently disabled
+       * every subscription within a few hours.
+       */
       console.error(
-        `  ${sub.id.slice(0, 8)} 실패:`,
+        `  ${sub.id.slice(0, 8)} 실패 (구독은 유지):`,
         err instanceof Error ? err.message : err,
       );
-      await rpc<number>("itk_subscription_failed", { p_id: sub.id }).catch(() => {});
+      process.exitCode = 1;
     }
   }
 

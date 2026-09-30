@@ -275,17 +275,33 @@ function cached<A extends unknown[], R>(
   fn: (...args: A) => Promise<R>,
   seconds = 60,
 ) {
-  return (...args: A): Promise<R> =>
-    unstable_cache(() => fn(...args), [name, JSON.stringify(args ?? [])], {
-      revalidate: seconds,
-      tags: [FEED_TAG],
-    })();
+  return async (...args: A): Promise<R> => {
+    try {
+      return await unstable_cache(() => fn(...args), [name, JSON.stringify(args ?? [])], {
+        revalidate: seconds,
+        tags: [FEED_TAG],
+      })();
+    } catch (err) {
+      /*
+       * Outside a Next.js server there is no cache to use. The Discord
+       * notifier runs as a plain script in GitHub Actions, and from the day
+       * this cache went in (2026-09-03) every one of its runs threw
+       * "Invariant: incrementalCache missing in unstable_cache" - ten in a row,
+       * and both subscriptions were switched off as dead webhooks. Anywhere
+       * without the cache, just ask the database.
+       */
+      if (err instanceof Error && /incrementalCache missing/.test(err.message)) return fn(...args);
+      throw err;
+    }
+  };
 }
 
 /** Cleared whenever articles are written. */
 export const FEED_TAG = "feed";
 
 export const getFeed = cached("getFeed", uncached_getFeed);
+/** The feed as it is right now, for jobs that must not see a minute-old copy. */
+export const getFeedFresh = uncached_getFeed;
 export const getJournalistActivity = cached(
   "getJournalistActivity",
   uncached_getJournalistActivity,
