@@ -55,19 +55,19 @@ export function SideNav() {
   const onFeed = pathname === "/feed";
   const league = onFeed ? params.get("league") : null;
   const team = onFeed ? params.get("team") : null;
-  const clubs = mine.length ? mine : allClubs ? TEAMS : TEAMS.slice(0, 6);
+  const clubs = mine.length ? mine : allClubs ? TEAMS : TEAMS.slice(0, 5);
 
   return (
     <div className="flex min-h-full flex-col px-3 pb-6">
       <Link
         href="/feed"
         aria-label="ITK plus 이적 소식"
-        className="mx-2 mt-6 mb-7 hidden self-start rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:block"
+        className="mx-2 mt-5 mb-5 hidden self-start rounded-[6px] focus-visible:ring-2 focus-visible:ring-accent focus-visible:outline-none lg:block"
       >
         <Logo height={32} />
       </Link>
 
-      <nav aria-label="섹션" className="space-y-1">
+      <nav aria-label="섹션" className="space-y-0.5">
         {SECTIONS.map(({ href, label, Icon, match }) => {
           const on = match(pathname) && !(href === "/feed" && (league || team));
           return (
@@ -75,7 +75,7 @@ export function SideNav() {
               key={href}
               href={href}
               aria-current={on ? "page" : undefined}
-              className={`group flex h-11 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors ${
+              className={`group flex h-10 items-center gap-3 rounded-xl px-3 text-[15px] transition-colors ${
                 on ? "bg-accent/12 font-semibold text-text" : "text-muted hover:bg-white/[0.04] hover:text-text"
               }`}
             >
@@ -95,7 +95,7 @@ export function SideNav() {
               <Link
                 href={`/feed?league=${l}`}
                 aria-current={on ? "page" : undefined}
-                className={`flex h-10 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors ${
+                className={`flex h-9 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors ${
                   on ? "bg-white/[0.07] font-semibold text-text" : "text-muted hover:bg-white/[0.04] hover:text-text"
                 }`}
               >
@@ -118,7 +118,7 @@ export function SideNav() {
               <Link
                 href={`/feed?team=${t.slug}`}
                 aria-current={on ? "page" : undefined}
-                className={`flex h-10 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors ${
+                className={`flex h-9 items-center gap-3 rounded-xl px-3 text-[14px] transition-colors ${
                   on ? "bg-white/[0.07] font-semibold text-text" : "text-muted hover:bg-white/[0.04] hover:text-text"
                 }`}
               >
@@ -137,14 +137,14 @@ export function SideNav() {
           onClick={() => setAllClubs((v) => !v)}
           className="mx-3 mt-1.5 self-start text-[13px] text-faint transition-colors hover:text-text"
         >
-          {allClubs ? "접기" : `${TEAMS.length - 6}개 더 보기`}
+          {allClubs ? "접기" : `${TEAMS.length - 5}개 더 보기`}
         </button>
       )}
 
       <Link
         href="/?intro=1"
         prefetch={false}
-        className="mx-3 mt-auto pt-8 text-[12.5px] text-faint transition-colors hover:text-muted"
+        className="mx-3 mt-auto pt-5 text-[12.5px] text-faint transition-colors hover:text-muted"
       >
         ITK+ 소개
       </Link>
@@ -153,5 +153,5 @@ export function SideNav() {
 }
 
 function Heading({ children }: { children: React.ReactNode }) {
-  return <p className="mx-3 mt-7 mb-2 text-[12px] font-semibold tracking-wide text-faint">{children}</p>;
+  return <p className="mx-3 mt-5 mb-1.5 text-[12px] font-semibold tracking-wide text-faint">{children}</p>;
 }

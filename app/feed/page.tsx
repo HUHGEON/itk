@@ -19,7 +19,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 import { FeedHero } from "@/components/FeedHero";
-import { TopReporters } from "@/components/TopReporters";
+import { TrendingClubs } from "@/components/TrendingClubs";
 import { StickyFilters } from "@/components/StickyFilters";
 import type { FeedRow } from "@/lib/feed";
 
@@ -79,7 +79,7 @@ export default async function Home({
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
 
-  const [rows, activity, leagueActivity, journalistActivity, pulse, week] =
+  const [rows, activity, leagueActivity, journalistActivity, pulse, dayClubs] =
     await Promise.all([
       getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
       // Counts describe the combination on screen, so each excludes its own
@@ -95,7 +95,9 @@ export default async function Home({
       }),
       getJournalistActivity({ teams: teamSlugs, league, q }),
       getPulse(),
-      getJournalistActivity({}, 168).catch(() => ({}) as Record<string, number>),
+      getTeamActivity({ tieredOnly: true }, 24).catch(
+        () => ({}) as Record<string, { count: number; bestTier: number | null }>,
+      ),
     ]);
 
   const teams = loadTeams();
@@ -127,7 +129,7 @@ export default async function Home({
         rail={
           <>
             <PulsePanel pulse={pulse} now={now} />
-            <TopReporters journalists={journalists} counts={week} />
+            <TrendingClubs teams={teams} activity={dayClubs} />
             <DiscordPanel teams={teams} />
             <AlertPanel teams={teams} />
           </>
