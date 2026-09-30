@@ -159,7 +159,12 @@ export function CollectButton({ lastCollect }: { lastCollect: number | null }) {
         } ${
           due
             ? "text-accent-ink hover:opacity-90"
-            : "border border-border text-muted hover:border-border-strong hover:text-text"
+            : block
+              ? // The column's main button, always a solid shape as X's is: an
+                // outline on the near-black page measured 1.2:1 at its edge
+                // and was reported as hard to see. Orange stays for "due".
+                "bg-surface-3 text-text shadow-[inset_0_0_0_1px_rgba(255,255,255,0.08)] hover:bg-[#323238]"
+              : "border border-border text-muted hover:border-border-strong hover:text-text"
         }`}
         style={due ? { background: "var(--ribbon)" } : undefined}
       >

@@ -99,12 +99,12 @@ export function SearchBox({ state }: { state: FilterState }) {
         aria-label="기사 검색"
         // An icon in the phone's header; a full-width field at the top of a column.
         className={`flex items-center gap-2 border border-border text-left transition-colors hover:border-border-strong ${
-          block ? "h-11 w-full rounded-xl bg-surface px-3.5" : "rounded-[10px] bg-surface-2 p-2 md:w-[220px] md:px-3"
+          block ? "h-11 w-full rounded-xl border-border-strong bg-surface-2 px-3.5 hover:border-[#55555c]" : "rounded-[10px] bg-surface-2 p-2 md:w-[220px] md:px-3"
         } ${pending ? "opacity-60" : ""}`}
       >
-        <Search className="shrink-0 text-muted" />
+        <Search className={`shrink-0 ${block ? "text-text/80" : "text-muted"}`} />
         <span
-          className={`min-w-0 flex-1 truncate ${block ? "block text-[14px]" : "hidden text-[13px] md:block"} ${state.q ? "text-text" : "text-faint"}`}
+          className={`min-w-0 flex-1 truncate ${block ? "block text-[14px]" : "hidden text-[13px] md:block"} ${state.q ? "text-text" : block ? "text-muted" : "text-faint"}`}
         >
           {state.q || "선수·팀·키워드 검색"}
         </span>
