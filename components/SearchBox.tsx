@@ -96,7 +96,7 @@ export function SearchBox({ state }: { state: FilterState }) {
         aria-haspopup="dialog"
         aria-label="기사 검색"
         // An icon on a phone, a field-shaped button in the header above that.
-        className={`flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 p-2 text-left transition-colors hover:border-border-strong md:w-[220px] md:px-3 xl:w-[300px] ${
+        className={`flex items-center gap-2 rounded-[10px] border border-border bg-surface-2 p-2 text-left transition-colors hover:border-border-strong md:w-[220px] md:px-3 lg:w-[380px] xl:w-[440px] ${
           pending ? "opacity-60" : ""
         }`}
       >

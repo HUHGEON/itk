@@ -84,7 +84,6 @@ export function Shell({
   }, [open]);
 
   const hasRail = Boolean(rail);
-  const section = SECTIONS.find((s) => s.match(pathname));
 
   return (
     <div className="min-h-screen bg-bg">
@@ -144,10 +143,24 @@ export function Shell({
         </aside>
 
         <main className="min-w-0">
-          {/* The toolbar: the page's name, and search and collect beside it. */}
-          <div className="sticky top-0 z-30 hidden h-16 items-center gap-3 bg-bg/85 backdrop-blur-xl lg:flex">
-            <h2 className="mr-auto text-[20px] font-bold tracking-tight text-text">{section?.label}</h2>
-            {actions}
+          {/*
+            The toolbar: search wide at the start of the page's column, and
+            collect at the far end, over the widget column - the bar spans
+            both, as a dashboard's top bar does. It used to be the page's name,
+            then search and collect packed together, which left the search
+            floating mid-screen and nothing over the widgets. The page's name
+            went with it: the left column already marks where you are.
+
+            It stays inside <main> so it can stick (a grid item's sticky range
+            is its own grid area) and reaches over the widget column with a
+            negative margin: 320px of column plus the 24px gap.
+          */}
+          <div
+            className={`sticky top-0 z-30 hidden h-16 items-center gap-3 bg-bg/85 backdrop-blur-xl lg:flex ${
+              hasRail ? "xl:-mr-[344px]" : ""
+            }`}
+          >
+            <div className="flex min-w-0 flex-1 items-center gap-3 [&>*:last-child]:ml-auto">{actions}</div>
             {hasRail && (
               <button
                 type="button"
