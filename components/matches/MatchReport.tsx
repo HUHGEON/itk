@@ -17,6 +17,7 @@ import { Timeline } from "./Timeline";
 import { StatBars } from "./StatBars";
 import { Lineups } from "./Lineups";
 import { HeadToHead } from "./HeadToHead";
+import { MatchPreview } from "./MatchPreview";
 import { Pitch, type PitchPlayer } from "./Pitch";
 import { PlayerCard } from "./PlayerCard";
 
@@ -34,7 +35,7 @@ import { PlayerCard } from "./PlayerCard";
  */
 const INTERVAL_MS = 5000;
 
-type TabId = "lineup" | "events" | "stats" | "h2h";
+type TabId = "preview" | "lineup" | "events" | "stats" | "h2h";
 
 /** When each player was replaced, read off the timeline. */
 function subMinutes(events: MatchDetail["events"]): Record<string, string> {
@@ -206,7 +207,11 @@ export function MatchReport({
   const events = fm?.events ?? [];
   const stats = fm?.stats ?? [];
 
+  // Before kick-off FotMob's preview leads - who is out, recent form, the
+  // ground - the way its own match page opens.
+  const hasPreview = match.state === "pre" && Boolean(fm?.preview);
   const tabs = [
+    hasPreview && { id: "preview" as const, label: "미리 보기" },
     (hasPitch || fm?.lineup) && { id: "lineup" as const, label: "라인업" },
     events.length > 0 && { id: "events" as const, label: "경기 기록" },
     stats.length > 0 && { id: "stats" as const, label: "통계" },
@@ -333,6 +338,9 @@ export function MatchReport({
             ))}
           </nav>
 
+          {current === "preview" && fm?.preview && (
+            <MatchPreview preview={fm.preview} home={match.home} away={match.away} />
+          )}
           {current === "lineup" && (
             <section className="pt-4">
               <Pitch

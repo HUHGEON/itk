@@ -118,6 +118,34 @@ export interface FmHeadToHead {
   meetings: FmMeeting[];
 }
 
+export interface FmAbsent {
+  id: number;
+  name: string;
+  /** "부상", "출장 정지" */
+  kind: string;
+  /** when they are expected back, in Korean: "출전 불투명", "10월 하순" */
+  back: string | null;
+}
+
+export interface FmFormGame {
+  home: string;
+  away: string;
+  /** "2 - 1" */
+  score: string;
+  /** for this side */
+  result: "W" | "D" | "L";
+  date: number;
+}
+
+/** What the source shows before a match: who is out, recent form, the ground. */
+export interface FmPreview {
+  round: string | null;
+  absent: { home: FmAbsent[]; away: FmAbsent[] };
+  form: { home: FmFormGame[]; away: FmFormGame[] };
+  venue: { name: string; city: string | null; capacity: number | null } | null;
+  weather: { temp: number; text: string } | null;
+}
+
 export interface FmReport {
   /** This source's match id, so the browser can poll the same match. */
   id: number;
@@ -125,6 +153,7 @@ export interface FmReport {
   events: FmEvent[];
   stats: FmStatGroup[];
   h2h: FmHeadToHead | null;
+  preview: FmPreview | null;
 }
 
 /**
@@ -790,6 +819,7 @@ export async function fotmobReportById(id: number): Promise<FmReport | null> {
       events: buildEvents(json),
       stats: buildStats(json),
       h2h: buildH2H(json, home?.name ?? ""),
+      preview: buildPreview(json),
     };
   } catch {
     return null;
@@ -873,4 +903,94 @@ function buildH2H(json: unknown, homeName: string): FmHeadToHead | null {
           meetings.filter((m) => m.outcome === "away").length,
         ];
   return { record, meetings };
+}
+
+
+/* -------------------------------------------------------------------------
+ * Before kick-off.
+ * ----------------------------------------------------------------------- */
+
+const MONTH: Record<string, number> = {
+  January: 1, February: 2, March: 3, April: 4, May: 5, June: 6,
+  July: 7, August: 8, September: 9, October: 10, November: 11, December: 12,
+};
+const PART: Record<string, string> = { Early: "초", Mid: "중순", Late: "하순" };
+
+/**
+ * The source's return estimate in Korean. Measured on the Arsenal-Leeds
+ * preview: "Doubtful", "Late October 2026", "Early January 2027" - a part of
+ * a month and a year, or a word.
+ */
+function backKo(v: string | undefined): string | null {
+  if (!v) return null;
+  if (/doubt/i.test(v)) return "출전 불투명";
+  if (/unknown/i.test(v)) return "복귀 미정";
+  const m = v.match(/^(Early|Mid|Late)\s+(\w+)\s+(\d{4})$/);
+  if (m && MONTH[m[2]]) return `${MONTH[m[2]]}월 ${PART[m[1]]} 복귀 예상`;
+  return v;
+}
+
+const WEATHER: [RegExp, string][] = [
+  [/thunder/i, "뇌우"], [/snow/i, "눈"], [/rain|shower|drizzle/i, "비"],
+  [/fog|mist/i, "안개"], [/partly|mostly sunny|mostly clear/i, "구름 조금"],
+  [/cloud|overcast/i, "흐림"], [/sun|clear|fair/i, "맑음"],
+];
+
+interface RawAbsent {
+  id?: number;
+  name?: string;
+  unavailability?: { type?: string; expectedReturn?: string };
+}
+interface RawForm {
+  resultString?: string;
+  score?: string;
+  date?: { utcTime?: string };
+  home?: { name?: string };
+  away?: { name?: string };
+}
+
+function buildPreview(json: unknown): FmPreview | null {
+  const c = (json as { content?: Record<string, unknown> }).content;
+  if (!c) return null;
+  const general = (json as { general?: { leagueRoundName?: string } }).general;
+  const lu = c.lineup as { homeTeam?: { unavailable?: RawAbsent[] }; awayTeam?: { unavailable?: RawAbsent[] } } | undefined;
+  const facts = c.matchFacts as
+    | { teamForm?: RawForm[][]; infoBox?: { Stadium?: { name?: string; city?: string; capacity?: number } } }
+    | undefined;
+  const w = c.weather as { temperature?: number; description?: string } | undefined;
+
+  const absent = (list: RawAbsent[] | undefined): FmAbsent[] =>
+    (list ?? []).flatMap((p) =>
+      p.id && p.name
+        ? [{
+            id: p.id,
+            name: p.name,
+            kind: p.unavailability?.type === "suspension" ? "출장 정지" : p.unavailability?.type === "injury" ? "부상" : "결장",
+            back: backKo(p.unavailability?.expectedReturn),
+          }]
+        : [],
+    );
+  // Newest first, as the source's own page lists them; the array arrives oldest first.
+  const form = (list: RawForm[] | undefined): FmFormGame[] =>
+    [...(list ?? [])].reverse().flatMap((g) => {
+      const r = g.resultString;
+      if (r !== "W" && r !== "D" && r !== "L") return [];
+      return [{
+        home: g.home?.name ?? "?",
+        away: g.away?.name ?? "?",
+        score: g.score ?? "",
+        result: r,
+        date: Date.parse(g.date?.utcTime ?? "") || 0,
+      }];
+    });
+
+  const st = facts?.infoBox?.Stadium;
+  const text = w?.description ? (WEATHER.find(([re]) => re.test(w.description!))?.[1] ?? null) : null;
+  return {
+    round: general?.leagueRoundName ?? null,
+    absent: { home: absent(lu?.homeTeam?.unavailable), away: absent(lu?.awayTeam?.unavailable) },
+    form: { home: form(facts?.teamForm?.[0]), away: form(facts?.teamForm?.[1]) },
+    venue: st?.name ? { name: st.name, city: st.city ?? null, capacity: st.capacity ?? null } : null,
+    weather: typeof w?.temperature === "number" && text ? { temp: Math.round(w.temperature), text } : null,
+  };
 }

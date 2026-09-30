@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { facesFor } from "@/lib/faces";
 import { fotmobReport } from "@/lib/fotmob";
-import { matchDetail, seoul, ymd } from "@/lib/matches";
+import { matchDetail, matchesOn, seoul, ymd } from "@/lib/matches";
+import { SameDay } from "@/components/matches/SameDay";
 import { MatchRail } from "@/components/matches/MatchRail";
 import { MatchReport } from "@/components/matches/MatchReport";
 import { Shell } from "@/components/Shell";
@@ -61,7 +62,12 @@ export default async function Game({ params }: { params: Params }) {
    * it does not are portraits looked up one player at a time, which is the
    * slower path and the one worth avoiding.
    */
-  const fm = await fotmobReport(detail.match);
+  const [fm, day] = await Promise.all([
+    fotmobReport(detail.match),
+    // The competition's other games that day, for the column beside it.
+    matchesOn(new Date(detail.match.kickoff)).catch(() => []),
+  ]);
+  const sameDay = day.filter((m) => m.code === detail.match.code);
 
   const squad = (side: "home" | "away") => {
     const l = detail.lineups?.[side];
@@ -79,7 +85,14 @@ export default async function Game({ params }: { params: Params }) {
   return (
     <Shell
       rail={
-        <MatchRail active={code} day={ymd(new Date(detail.match.kickoff))} />
+        // The day's other games in the competition, as FotMob keeps them
+        // beside a match; the competition and club lists stay on the
+        // fixtures page, where the column would otherwise run past the screen.
+        sameDay.length > 1 ? (
+          <SameDay current={detail.match} matches={sameDay} />
+        ) : (
+          <MatchRail active={code} day={ymd(new Date(detail.match.kickoff))} />
+        )
       }
       actions={
         <>

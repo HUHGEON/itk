@@ -1136,3 +1136,45 @@ export const TABLE_ZONES: Record<
   "uefa.europa": { top: 8, second: 24, labels: { top: "16강 직행", second: "플레이오프" } },
   "uefa.europa.conf": { top: 8, second: 24, labels: { top: "16강 직행", second: "플레이오프" } },
 };
+
+/*
+ * FotMob's short forms of club names, mapped to the full names the other
+ * sources use, so they find their Korean name like any other.
+ */
+const SHORT_FORMS: Record<string, string> = {
+  "Man United": "Manchester United",
+  "Man City": "Manchester City",
+  "Nottm Forest": "Nottingham Forest",
+  Wolves: "Wolverhampton Wanderers",
+  Spurs: "Tottenham Hotspur",
+  Tottenham: "Tottenham Hotspur",
+  Brighton: "Brighton & Hove Albion",
+  Newcastle: "Newcastle United",
+  Leeds: "Leeds United",
+  "West Ham": "West Ham United",
+  Leicester: "Leicester City",
+  Ipswich: "Ipswich Town",
+  "Sheff Utd": "Sheffield United",
+  PSG: "Paris Saint-Germain",
+  Inter: "Internazionale",
+  "Atletico Madrid": "Atlético Madrid",
+  Leverkusen: "Bayer Leverkusen",
+  Dortmund: "Borussia Dortmund",
+};
+
+/**
+ * A club's Korean name from whatever spelling a source gave: the registry
+ * first, then the table built from ESPN, then that table under a longer form
+ * of the name. The name comes back unchanged when nothing matches.
+ */
+export function koClub(name: string): string {
+  const raw = name.trim();
+  const full = SHORT_FORMS[raw] ?? raw;
+  const reg =
+    resolve(full) ??
+    TEAMS.find((t) => t.en === full || t.en === raw || t.aliases?.includes(raw) || t.aliases?.includes(full));
+  if (reg) return reg.ko;
+  if (CLUB_KO[full]) return CLUB_KO[full];
+  const longer = Object.keys(CLUB_KO).filter((k) => k.startsWith(`${full} `));
+  return longer.length === 1 ? CLUB_KO[longer[0]] : raw;
+}
