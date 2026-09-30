@@ -180,6 +180,70 @@ export function Filters({
     .filter(Boolean)
     .join(" · ");
 
+  /*
+   * A league's clubs are its children, and picking the league opens them.
+   *
+   * They used to live only in the 필터 panel, so choosing 프리미어리그 narrowed
+   * the feed and left the next step - one of its clubs - behind a second
+   * button. Now the open league's clubs sit right under the tabs, the way a
+   * category menu opens its sub-menu. A league with no tracked clubs
+   * (분데스리가, 종합) has no row to open.
+   */
+  const subRow = Boolean(openGroup && openGroup.members.length > 0);
+  const clubRow = (
+    <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
+  {(openGroup?.members ?? teams).map((t) => {
+    const on = selectedTeams.includes(t.slug);
+    const act = activity[t.slug];
+    return (
+      <button
+        key={t.slug}
+        type="button"
+        onClick={(e) => {
+          press(e);
+          toggleIn("team", t.slug);
+        }}
+        aria-pressed={on}
+        className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
+          on
+            ? "border-accent/50 bg-accent/10 font-semibold text-accent"
+            : "border-border text-muted hover:border-border-strong hover:text-text"
+        }`}
+      >
+        <TeamCrest team={t} size={16} />
+        {t.ko}
+        {act && act.count > 0 && (
+          <span className="ml-0.5">
+            <CountBadge n={act.count} tier={act.bestTier} />
+          </span>
+        )}
+      </button>
+    );
+  })}
+
+  {/* Off-league picks stay visible while another tab is open */}
+  {openGroup &&
+    selected
+      .filter((t) => t.league !== openGroup.league)
+      .map((t) => (
+        <button
+          key={t.slug}
+          type="button"
+          onClick={(e) => {
+            press(e);
+            toggleIn("team", t.slug);
+          }}
+          title="선택 해제"
+          className="flex shrink-0 items-center gap-1 rounded-[6px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
+        >
+          <TeamCrest team={t} size={16} />
+          {t.ko}
+          <Close size={10} className="opacity-70" />
+        </button>
+      ))}
+</ScrollRail>
+  );
+
   return (
     <div
       className={`border-b border-border bg-surface ${pending ? "opacity-60" : ""}`}
@@ -248,6 +312,8 @@ export function Filters({
           {activeCount > 0 && <span className="tnum rounded-full bg-accent px-1.5 text-[11.5px] text-accent-ink">{activeCount}</span>}
         </button>
       </div>
+
+      {subRow && <div className="bg-surface-2/50">{clubRow}</div>}
 
       {panel && (
         <>
@@ -347,67 +413,9 @@ export function Filters({
         </ScrollRail>
       )}
 
-        {/* Clubs of the open league, or every club when no league is open.
-            
-            This row used to appear only after a league tab was chosen, which
-            meant someone landing on 전체 had no way of knowing the feed could be
-            filtered by club at all - measured: zero club controls on the page
-            in its default state. Showing all seventeen up front makes the
-            feature findable, and picking a league still narrows the row to that
-            league's clubs. */}
-        {(teams.length > 0 || selected.length > 0) && (
-          <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
-            {(openGroup?.members ?? teams).map((t) => {
-              const on = selectedTeams.includes(t.slug);
-              const act = activity[t.slug];
-              return (
-                <button
-                  key={t.slug}
-                  type="button"
-                  onClick={(e) => {
-                    press(e);
-                    toggleIn("team", t.slug);
-                  }}
-                  aria-pressed={on}
-                  className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
-                    on
-                      ? "border-accent/50 bg-accent/10 font-semibold text-accent"
-                      : "border-border text-muted hover:border-border-strong hover:text-text"
-                  }`}
-                >
-                  <TeamCrest team={t} size={16} />
-                  {t.ko}
-                  {act && act.count > 0 && (
-                    <span className="ml-0.5">
-                      <CountBadge n={act.count} tier={act.bestTier} />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-
-            {/* Off-league picks stay visible while another tab is open */}
-            {openGroup &&
-              selected
-                .filter((t) => t.league !== openGroup.league)
-                .map((t) => (
-                  <button
-                    key={t.slug}
-                    type="button"
-                    onClick={(e) => {
-                      press(e);
-                      toggleIn("team", t.slug);
-                    }}
-                    title="선택 해제"
-                    className="flex shrink-0 items-center gap-1 rounded-[6px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
-                  >
-                    <TeamCrest team={t} size={16} />
-                    {t.ko}
-                    <Close size={10} className="opacity-70" />
-                  </button>
-                ))}
-          </ScrollRail>
-        )}
+        {/* Every club, while no league is open. Once one is, its own clubs
+            sit under the tabs instead (see clubRow). */}
+        {!subRow && teams.length > 0 && clubRow}
           </div>
         </>
       )}
