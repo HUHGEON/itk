@@ -12,6 +12,7 @@ interface RegistryTeam {
   slug: string;
   ko: string;
   en: string;
+  league?: string;
   aliases?: string[];
   crest?: string;
 }
@@ -426,9 +427,14 @@ export async function matchesOn(
    */
   const want = ymd(date);
   const before = ymd(new Date(date.getTime() - 24 * 3600_000));
-  const span = `${before}-${want}`;
+  /*
+   * Two single days, not a range. The source stopped answering ranges
+   * ("20261016-20261017" is a 400 since late September 2026, measured) and
+   * every day on the fixtures page came back empty - one day at a time still
+   * works.
+   */
   const lists = await Promise.all(
-    COMPETITIONS.map((c) => fetchOne(c.code, span, signal)),
+    COMPETITIONS.flatMap((c) => [fetchOne(c.code, before, signal), fetchOne(c.code, want, signal)]),
   );
   return lists
     .flat()
@@ -531,6 +537,64 @@ export async function tableFor(
   }
 }
 
+
+/*
+ * Ranges by the month.
+ *
+ * The scoreboard used to take "from-to" date ranges; since late September 2026
+ * it answers those with a 400 (measured: 20261016-20261025 → 400, 20261017 →
+ * five matches). A whole month ("202610") is still accepted, with scores, so a
+ * window is asked for as the months it touches and cut to size here.
+ */
+function monthsBetween(from: Date, to: Date): string[] {
+  const out: string[] = [];
+  const d = new Date(Date.UTC(from.getUTCFullYear(), from.getUTCMonth(), 1));
+  while (d.getTime() <= to.getTime()) {
+    out.push(`${d.getUTCFullYear()}${String(d.getUTCMonth() + 1).padStart(2, "0")}`);
+    d.setUTCMonth(d.getUTCMonth() + 1);
+  }
+  return out;
+}
+
+async function fetchWindow(
+  code: string,
+  from: Date,
+  to: Date,
+  init: RequestInit,
+): Promise<Match[]> {
+  const lists = await Promise.all(
+    monthsBetween(from, to).map(async (m) => {
+      try {
+        const res = await espnFetch(`${ESPN}/${code}/scoreboard?dates=${m}&limit=500`, init);
+        if (!res) return [];
+        const json = (await res.json()) as { events?: unknown[] };
+        return (json.events ?? []).map((e) => toMatch(e, code)).filter((x): x is Match => x !== null);
+      } catch {
+        return [];
+      }
+    }),
+  );
+  return lists.flat().filter((m) => m.kickoff >= from.getTime() && m.kickoff <= to.getTime());
+}
+
+/** A tracked club's country, as the prefix of its competitions' codes. */
+const COUNTRY: Record<string, string> = { EPL: "eng", LaLiga: "esp", SerieA: "ita", Bundesliga: "ger", Ligue1: "fra", Eredivisie: "ned" };
+
+/**
+ * The competitions these clubs can appear in: their own countries' leagues and
+ * cups, and the European and world ones. Asking all twenty-odd for every club
+ * would be four times the requests for nothing.
+ */
+function competitionsFor(slugs: string[]): string[] {
+  const countries = new Set(
+    slugs.map((s) => COUNTRY[TEAMS.find((t) => t.slug === s)?.league ?? ""]).filter(Boolean),
+  );
+  return COMPETITIONS.map((c) => c.code as string).filter((code) => {
+    const prefix = code.split(".")[0];
+    return prefix === "uefa" || prefix === "fifa" || countries.size === 0 || countries.has(prefix);
+  });
+}
+
 /**
  * Every match a club plays in a window, across all competitions.
  *
@@ -549,27 +613,12 @@ export async function matchesForTeam(
   from.setDate(from.getDate() - back);
   const to = new Date();
   to.setDate(to.getDate() + forward);
-  const span = `${ymd(from)}-${ymd(to)}`;
-
   const lists = await Promise.all(
-    COMPETITIONS.map(async (c) => {
-      try {
-        const res = await espnFetch(
-          `${ESPN}/${c.code}/scoreboard?dates=${span}`,
-          { signal, next: { revalidate: 120 } } as RequestInit,
-        );
-        if (!res) return [];
-        const json = (await res.json()) as { events?: unknown[] };
-        return (json.events ?? [])
-          .map((e) => toMatch(e, c.code))
-          .filter(
-            (m): m is Match =>
-              m !== null && (m.home.slug === slug || m.away.slug === slug),
-          );
-      } catch {
-        return [];
-      }
-    }),
+    competitionsFor([slug]).map((code) =>
+      fetchWindow(code, from, to, { signal, next: { revalidate: 120 } } as RequestInit).then((ms) =>
+        ms.filter((m) => m.home.slug === slug || m.away.slug === slug),
+      ),
+    ),
   );
   return lists.flat().sort((a, b) => a.kickoff - b.kickoff);
 }
@@ -993,24 +1042,8 @@ export async function nextForClubs(
   const wanted = new Set(slugs);
   const from = new Date(Date.now() - 4 * 3600_000);
   const to = new Date(Date.now() + 14 * 86_400_000);
-  const span = `${ymd(from)}-${ymd(to)}`;
-
   const lists = await Promise.all(
-    COMPETITIONS.map(async (c) => {
-      try {
-        const res = await espnFetch(`${ESPN}/${c.code}/scoreboard?dates=${span}`, {
-          signal,
-          cache: "no-store",
-        });
-        if (!res) return [];
-        const json = (await res.json()) as { events?: unknown[] };
-        return (json.events ?? [])
-          .map((e) => toMatch(e, c.code))
-          .filter((m): m is Match => m !== null);
-      } catch {
-        return [];
-      }
-    }),
+    competitionsFor(slugs).map((code) => fetchWindow(code, from, to, { signal, cache: "no-store" })),
   );
 
   const cutoff = Date.now() - 3 * 3600_000;
