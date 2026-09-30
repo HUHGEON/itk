@@ -15,7 +15,7 @@ import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
-import { FunnelSimple } from "@phosphor-icons/react/dist/ssr";
+import { FunnelSimple, GlobeHemisphereWest, SquaresFour } from "@phosphor-icons/react/dist/ssr";
 import { pressPop, rollNumber, useBeforePaint } from "@/lib/motion";
 
 /**
@@ -38,6 +38,42 @@ const LEAGUES: League[] = [
   "Eredivisie",
   "General",
 ];
+
+/*
+ * Each league by its own mark, from FotMob's image host (free, no key; ids
+ * checked by eye: 47 Premier League, 87 LaLiga, 54 Bundesliga, 55 Serie A,
+ * 53 Ligue 1, 57 Eredivisie). The dark variants are drawn for a dark page -
+ * Ligue 1's is white-on-nothing. A tab someone has to read to find is a tab
+ * they miss; a logo is found at a glance.
+ */
+const LEAGUE_LOGO: Partial<Record<League, number>> = {
+  EPL: 47,
+  LaLiga: 87,
+  Bundesliga: 54,
+  SerieA: 55,
+  Ligue1: 53,
+  Eredivisie: 57,
+};
+
+function LeagueMark({ league, on }: { league: League | null; on: boolean }) {
+  const id = league ? LEAGUE_LOGO[league] : undefined;
+  if (id)
+    return (
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        // The chosen tab is filled white, where the dark variant (a white
+        // lion, a white Ligue 1) vanishes - measured on screen - so it takes
+        // the light-page mark instead.
+        src={`https://images.fotmob.com/image_resources/logo/leaguelogo/${on ? "" : "dark/"}${id}.png`}
+        alt=""
+        width={18}
+        height={18}
+        className="size-[18px] shrink-0 object-contain"
+      />
+    );
+  const Icon = league ? GlobeHemisphereWest : SquaresFour;
+  return <Icon className="size-[18px] shrink-0" weight="fill" />;
+}
 
 type Activity = Record<string, { count: number; bestTier: number | null }>;
 
@@ -191,7 +227,7 @@ export function Filters({
    */
   const subRow = Boolean(openGroup && openGroup.members.length > 0);
   const clubRow = (
-    <ScrollRail className="flex items-center gap-1.5 border-t border-border px-[var(--gutter)] py-3">
+    <ScrollRail className="flex items-center gap-2 border-t border-border px-[var(--gutter)] py-3">
   {(openGroup?.members ?? teams).map((t) => {
     const on = selectedTeams.includes(t.slug);
     const act = activity[t.slug];
@@ -204,13 +240,13 @@ export function Filters({
           toggleIn("team", t.slug);
         }}
         aria-pressed={on}
-        className={`flex shrink-0 items-center gap-1.5 rounded-[6px] border py-1 pr-2.5 pl-1.5 text-[12px] whitespace-nowrap transition-colors ${
+        className={`flex h-9 shrink-0 items-center gap-1.5 rounded-full border pr-3.5 pl-2 text-[13.5px] whitespace-nowrap transition-colors ${
           on
             ? "border-accent/50 bg-accent/10 font-semibold text-accent"
             : "border-border text-muted hover:border-border-strong hover:text-text"
         }`}
       >
-        <TeamCrest team={t} size={16} />
+        <TeamCrest team={t} size={20} />
         {t.ko}
         {act && act.count > 0 && (
           <span className="ml-0.5">
@@ -234,9 +270,9 @@ export function Filters({
             toggleIn("team", t.slug);
           }}
           title="선택 해제"
-          className="flex shrink-0 items-center gap-1 rounded-[6px] border border-accent/50 bg-accent/10 py-1 pr-2 pl-1.5 text-[12px] font-semibold text-accent"
+          className="flex h-9 shrink-0 items-center gap-1.5 rounded-full border border-accent/50 bg-accent/10 pr-3 pl-2 text-[13.5px] font-semibold text-accent"
         >
-          <TeamCrest team={t} size={16} />
+          <TeamCrest team={t} size={20} />
           {t.ko}
           <Close size={10} className="opacity-70" />
         </button>
@@ -246,7 +282,7 @@ export function Filters({
 
   return (
     <div
-      className={`border-b border-border bg-surface ${pending ? "opacity-60" : ""}`}
+      className={`bg-surface ${pending ? "opacity-60" : ""}`}
     >
       {/* What's currently applied, plus the way out of it */}
       {hasAnyFilter && (
@@ -270,9 +306,10 @@ export function Filters({
       {/* League tabs, and beside them the way into everything else. */}
       <div className="flex items-stretch">
         <div className="min-w-0 flex-1">
-        <ScrollRail className="flex gap-0.5 px-[var(--gutter)]">
+        <ScrollRail className="flex gap-2 px-[var(--gutter)] py-3">
           <LeagueTab
             active={!league}
+            league={null}
             onClick={() => push((p) => p.delete("league"))}
           >
             전체
@@ -280,6 +317,7 @@ export function Filters({
           {grouped.map((g) => (
             <LeagueTab
               key={g.league}
+              league={g.league}
               active={league === g.league}
               badge={g.count > 0 ? g.count : undefined}
               badgeTier={g.best}
@@ -301,14 +339,15 @@ export function Filters({
           onClick={() => setPanel((v) => !v)}
           aria-expanded={panel}
           aria-controls="feed-filters"
-          className={`my-1.5 mr-[var(--gutter)] flex shrink-0 items-center gap-1.5 rounded-[10px] border px-3 text-[13px] font-semibold transition-colors ${
+          className={`my-3 mr-[var(--gutter)] flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[14px] sm:px-4 font-semibold transition-colors ${
             panel || activeCount > 0
               ? "border-accent/50 bg-accent/10 text-accent"
               : "border-border text-muted hover:border-border-strong hover:text-text"
           }`}
         >
           <FunnelSimple className="size-4" weight="bold" />
-          필터
+          {/* Icon only on a phone, where the league pills need the width. */}
+          <span className="sr-only sm:not-sr-only">필터</span>
           {activeCount > 0 && <span className="tnum rounded-full bg-accent px-1.5 text-[11.5px] text-accent-ink">{activeCount}</span>}
         </button>
       </div>
@@ -461,12 +500,14 @@ function CountBadge({ n, tier }: { n: number; tier: number | null }) {
 
 function LeagueTab({
   active,
+  league,
   badge,
   badgeTier,
   onClick,
   children,
 }: {
   active: boolean;
+  league: League | null;
   badge?: number;
   badgeTier?: number | null;
   onClick: () => void;
@@ -480,12 +521,14 @@ function LeagueTab({
         onClick();
       }}
       aria-pressed={active}
-      className={`flex shrink-0 items-center gap-1.5 border-b-2 px-3 py-2.5 text-[13px] transition-colors ${
-        active
-          ? "border-accent font-semibold text-text"
-          : "border-transparent text-muted hover:text-text"
+      // SofaScore's category pills: icon and name, and the chosen one filled
+      // solid white, which is the one state on a dark page nobody misses. The
+      // earlier 13px grey text with a 2px underline was read past.
+      className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition-colors ${
+        active ? "bg-text text-bg" : "bg-surface-2 text-muted hover:bg-surface-3 hover:text-text"
       }`}
     >
+      <LeagueMark league={league} on={active} />
       {children}
       {badge !== undefined && <CountBadge n={badge} tier={badgeTier ?? null} />}
     </button>

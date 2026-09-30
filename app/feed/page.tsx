@@ -143,8 +143,8 @@ export default async function Home({
         {/* FotMob's islands: each part of the page on its own panel over the
             black, 16px apart. */}
         <div className="flex flex-col gap-2 py-2 sm:gap-4 sm:px-[var(--gutter)] sm:py-4 lg:px-0">
-          {picks.length >= 4 && <FeedHero lead={picks[0]} rest={picks.slice(1)} now={now} />}
-
+          {/* The filters first, on their own panel: under the hero they sat
+              600px down the page and were reported as hard to find. */}
           <div className="overflow-clip bg-surface sm:rounded-2xl">
             <Filters
               teams={teams}
@@ -154,7 +154,11 @@ export default async function Home({
               journalistActivity={journalistActivity}
               state={filterState}
             />
+          </div>
 
+          {picks.length >= 4 && <FeedHero lead={picks[0]} rest={picks.slice(1)} now={now} />}
+
+          <div className="overflow-clip bg-surface sm:rounded-2xl">
             <NewArticles query={feedQuery} since={now} />
 
             {rows.length === 0 ? (
