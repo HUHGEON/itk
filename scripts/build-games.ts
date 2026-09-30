@@ -34,6 +34,24 @@ const RESERVE_TEAM = "Q2412834";
 const GOALKEEPER = "Q201330";
 const LOAN = "Q2914547";
 
+/*
+ * Wikidata's positions (P413) folded into the four a fan names a player by,
+ * to tell two players of one name apart in the search box. Counted over the
+ * 40k pool: midfielder 20k, forward 16k, defender 13k, goalkeeper 6k, then
+ * wing half, full-back, centre-back and a long tail of rarer terms.
+ */
+const POSITION: Record<string, "G" | "D" | "M" | "F"> = {
+  Q201330: "G", Q172964: "G", Q1317534: "G",
+  Q336286: "D", Q268258: "D", Q90173132: "D", Q107213256: "D", Q1489923: "D", Q3522468: "D", Q1109563: "D",
+  Q193592: "M", Q18691898: "M", Q6008848: "M", Q90326494: "M", Q8025128: "M", Q904289: "M", Q1201458: "M",
+  Q16501245: "M", Q114358125: "M",
+  Q280658: "F", Q543457: "F", Q3446915: "F", Q9731197: "F", Q1642283: "F", Q6037916: "F", Q11681748: "F",
+  Q1369558: "F", Q2827965: "F", Q114358150: "F", Q114358158: "F", Q18451027: "F",
+};
+/** "M" or "MF" - pitch order, at most two. */
+const positions = (p: Player) =>
+  "GDMF".split("").filter((c) => [...p.positions].some((q) => POSITION[q] === c)).slice(0, 2).join("");
+
 interface Stint {
   club: string;
   start: number | null;
@@ -572,7 +590,7 @@ async function main() {
     source: "Wikidata (CC0)",
     cats: usable.map((c) => ({ ...c, n: members.get(c.id)!.size })),
     pairs,
-    players: list.map(({ p, v }) => [display(p), p.en, p.born ?? 0, p.links, v, alts(p).join("|")]),
+    players: list.map(({ p, v }) => [display(p), p.en, p.born ?? 0, p.links, v, alts(p).join("|"), positions(p)]),
   };
   writeFileSync(join(OUT, "grid.json"), JSON.stringify(grid));
 

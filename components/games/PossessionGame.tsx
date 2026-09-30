@@ -30,7 +30,7 @@ import { ACCENT, HexBoard, OWNER, over, type HexLook } from "./HexBoard";
 import { MobileSheet } from "./MobileSheet";
 import { PlayerPicker } from "./PlayerPicker";
 import { HAPTIC, Toast, buzz, useToast } from "./Toast";
-import { useGrid, type GridPick } from "./useGrid";
+import { pickItems, useGrid, type GridPick } from "./useGrid";
 import {
   rememberRole,
   rememberedRole,
@@ -707,10 +707,7 @@ function MatchView({
   onAnswer: (cell: string, p: GridPick) => void;
   actions: { again?: () => void; againLabel?: string; againDisabled?: boolean; leave: () => void; leaveLabel: string };
 }) {
-  const items = useMemo<GridPick[]>(
-    () => grid.players.map((p) => ({ ...p, key: p.id, sub: p.born ? `${p.born}년생` : undefined })),
-    [grid],
-  );
+  const items = useMemo(() => pickItems(grid), [grid]);
   const [selected, setSelected] = useState<string | null>(null);
   const [shake, setShake] = useState({ id: "", nonce: 0 });
   const [endOpen, setEndOpen] = useState(false);

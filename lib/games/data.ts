@@ -26,6 +26,8 @@ export interface GridPlayer {
   fame: number;
   cats: Set<number>;
   alt: string[];
+  /** "D", "MF": goalkeeper/defender/midfielder/forward, in pitch order */
+  pos: string;
 }
 
 export interface Grid {
@@ -69,13 +71,13 @@ export async function loadGrid(): Promise<Grid> {
     built?: string;
     cats: Category[];
     pairs: [number, number, number][];
-    players: [string, string, number, number, number[], string?][];
+    players: [string, string, number, number, number[], string?, string?][];
   }>("grid.json");
   return {
     built: raw.built,
     cats: raw.cats,
     pairs: new Set(raw.pairs.map(([a, b]) => pairKey(a, b))),
-    players: raw.players.map(([ko, en, born, fame, v, alt], id) => ({
+    players: raw.players.map(([ko, en, born, fame, v, alt, pos], id) => ({
       id,
       ko,
       en,
@@ -83,6 +85,7 @@ export async function loadGrid(): Promise<Grid> {
       fame,
       cats: new Set(v),
       alt: alt ? alt.split("|") : [],
+      pos: pos ?? "",
     })),
   };
 }
