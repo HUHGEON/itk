@@ -150,3 +150,15 @@ export function splitLeadingEmoji(title: string): {
   if (!text.trim()) return { mark: "", text: title };
   return { mark: m[0].trim(), text };
 }
+
+/**
+ * A resized WebP of an article's picture, from the free wsrv.nl resizer.
+ *
+ * The originals are the publishers' share images - measured on the latest six:
+ * 30 to 164kB each, for a 120px slot. Resized to 240x168 they are 7 to 9kB,
+ * which is the difference between a phone loading a page of stories and
+ * loading a page of photographs. Callers fall back to the original on error.
+ */
+export function thumb(url: string, w = 240, h = 168): string {
+  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=${w}&h=${h}&fit=cover&output=webp&q=72`;
+}

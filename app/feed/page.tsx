@@ -18,6 +18,8 @@ import { CollectButton } from "@/components/CollectButton";
 import { SearchBox } from "@/components/SearchBox";
 import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
+import { FeedHero } from "@/components/FeedHero";
+import type { FeedRow } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
 
@@ -110,9 +112,15 @@ export default async function Home({
     }).filter(([, v]) => v !== ""),
   ).toString();
 
+  // Only on the unfiltered feed: a filtered view is already an answer to "what
+  // matters", and a hero above it would repeat its first rows.
+  const unfiltered = !tiers.length && !teamSlugs.length && !league && !q && !who && tieredOnly;
+  const picks = unfiltered ? spotlight(rows, now) : [];
+
   return (
     <Suspense fallback={null}>
       <Shell
+        bare
         rail={
           <>
             <PulsePanel pulse={pulse} now={now} />
@@ -132,38 +140,61 @@ export default async function Home({
             for the page it just landed on. */}
         <h1 className="sr-only">이적 소식</h1>
 
-        {/* One reading column, as 요즘IT sets its lists: a headline across a
-            1,100px line was measured on this page and is too long to take in
-            at a glance. */}
-        <div className="mx-auto w-full max-w-[800px]">
-          <Filters
-            teams={teams}
-            activity={activity}
-            leagueActivity={leagueActivity}
-            journalists={journalists}
-            journalistActivity={journalistActivity}
-            state={filterState}
-          />
+        {/* FotMob's islands: each part of the page on its own panel over the
+            black, 16px apart. */}
+        <div className="flex flex-col gap-2 py-2 sm:gap-4 sm:px-[var(--gutter)] sm:py-4 lg:px-0">
+          {picks.length >= 4 && <FeedHero lead={picks[0]} rest={picks.slice(1)} now={now} />}
 
-          <NewArticles query={feedQuery} since={now} />
+          <div className="overflow-clip bg-surface sm:rounded-2xl">
+            <Filters
+              teams={teams}
+              activity={activity}
+              leagueActivity={leagueActivity}
+              journalists={journalists}
+              journalistActivity={journalistActivity}
+              state={filterState}
+            />
 
-          {rows.length === 0 ? (
-            <EmptyState
-              tieredOnly={tieredOnly}
-              hasJournalists={journalists.length > 0}
-            />
-          ) : (
-            <ArticleList
-              initialRows={rows}
-              teams={teamMap}
-              now={now}
-              query={feedQuery}
-            />
-          )}
+            <NewArticles query={feedQuery} since={now} />
+
+            {rows.length === 0 ? (
+              <EmptyState
+                tieredOnly={tieredOnly}
+                hasJournalists={journalists.length > 0}
+              />
+            ) : (
+              <ArticleList
+                initialRows={rows}
+                teams={teamMap}
+                now={now}
+                query={feedQuery}
+              />
+            )}
+          </div>
         </div>
       </Shell>
     </Suspense>
   );
+}
+
+/**
+ * The day's stories worth leading with: the last 24 hours, with a picture,
+ * most trusted first and newest next, one per reporter so a prolific 1-tier
+ * does not fill all five places with one story told five ways.
+ */
+function spotlight(rows: FeedRow[], now: number): FeedRow[] {
+  const rank = (r: FeedRow) => (r.official ? 0 : (r.tier ?? 9));
+  const seen = new Set<string>();
+  return rows
+    .filter((r) => r.imageUrl && now - r.publishedAt < 86_400_000 && (r.official || r.tier !== null))
+    .sort((a, b) => rank(a) - rank(b) || b.publishedAt - a.publishedAt)
+    .filter((r) => {
+      const who = r.journalistKo ?? r.citedKo ?? r.source;
+      if (seen.has(who)) return false;
+      seen.add(who);
+      return true;
+    })
+    .slice(0, 5);
 }
 
 function EmptyState({

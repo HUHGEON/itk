@@ -11,14 +11,20 @@
  * is what the tier list actually is.
  */
 :root {
-  /* Warm near-black, sampled from the logo. The blacks in the mark's ball read
-     #221814 — brown-leaning, not blue — and a cool grey UI under a warm mark
-     made the two look like they came from different places. */
-  --bg: #0a0908;
-  --surface: #131211;
-  --surface-2: #1c1a18;
-  --surface-3: #262320;
-  --border: #322d28;
+  /*
+   * FotMob's islands: a true-black page, and everything that is read sitting
+   * in a lifted #1d1d1d panel with 16px corners. Measured on fotmob.com/news:
+   * body #000, header bar #1a1a1a, cards #1d1d1d, dividers #333. The earlier
+   * warm near-black (#0a0908 page, #131211 panels) put 3% of lightness between
+   * the page and a panel, so panels did not read as panels; black under
+   * #1d1d1d is the step that makes a section a thing you can see.
+   */
+  --bg: #000000;
+  --header: #1a1a1a;
+  --surface: #1d1d1d;
+  --surface-2: #262626;
+  --surface-3: #303030;
+  --border: #333333;
 
   /*
    * One radius scale, three steps and a pill.
@@ -36,23 +42,18 @@
    * (Raised from 4/6/10 in the 요즘IT pass: its cards sit at 12-16px and the
    * softer corners read calmer at the larger type sizes.)
    */
-  --border-strong: #4a433c;
+  --border-strong: #474747;
 
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
      contrast to stare at. */
-  --text: #f2f0ec;
+  --text: #f5f5f5;
   /*
-   * Three steps, all of them readable.
-   *
-   * Measured against the page: the old faint sat at 3.05:1 and muted at 4.93:1,
-   * where small text needs 4.5:1 - so competition labels, kick-off times, table
-   * headings and every "9월 5일 (토)" on the site were below the line, forty to
-   * fifty instances a page. Both are lifted until the darkest surface they
-   * appear on clears it, and lifted together so the ladder between text, muted
-   * and faint is as legible as it was.
+   * Three steps, all of them readable on a panel, which is where nearly all
+   * text now sits: muted is FotMob's own secondary grey (#9f9f9f, 6.6:1 on
+   * #1d1d1d) and faint #8c8c8c clears small-text 4.5:1 there at 5.0:1.
    */
-  --muted: #a8a29a;
-  --faint: #8f887e;
+  --muted: #9f9f9f;
+  --faint: #8c8c8c;
 
   /* The ribbon itself, for the places the brand should actually show up:
      the rule under the header, the primary button, the panel markers. A flat
@@ -92,6 +93,7 @@
 
 @theme inline {
   --color-bg: var(--bg);
+  --color-header: var(--header);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
   --color-surface-3: var(--surface-3);

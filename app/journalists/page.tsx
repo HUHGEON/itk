@@ -45,6 +45,7 @@ export default async function JournalistsPage({ searchParams }: { searchParams: 
 
   return (
     <Shell
+        bare
       rail={pulse ? <PulsePanel pulse={pulse} now={Date.now()} /> : null}
       actions={
         <>
@@ -55,7 +56,7 @@ export default async function JournalistsPage({ searchParams }: { searchParams: 
         </>
       }
     >
-      <div className="mx-auto w-full max-w-[800px] px-[var(--gutter)] pt-8 pb-16">
+      <div className="px-[var(--gutter)] pt-6 pb-16 lg:px-0">
         <h1 className="text-[26px] font-bold tracking-tight text-text">기자</h1>
         <p className="mt-1.5 text-[15px] text-muted">
           티어로 나눈 {all.length}명. 최근 30일 동안 많이 쓴 순서입니다.
@@ -68,7 +69,7 @@ export default async function JournalistsPage({ searchParams }: { searchParams: 
           ))}
         </nav>
 
-        <ul className="mt-5 space-y-3">
+        <ul className="mt-5 grid gap-3 sm:gap-4 xl:grid-cols-2">
           {list.map((j) => (
             <li key={j.id}>
               <Card j={j} month={month[j.id] ?? 0} week={week[j.id] ?? 0} teams={teams} />
@@ -87,7 +88,7 @@ function TierTab({ href, on, label, n, tier }: { href: string; on: boolean; labe
       href={href}
       aria-current={on ? "page" : undefined}
       className={`flex shrink-0 items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-[13.5px] font-semibold transition-colors ${
-        on ? "border-transparent bg-text text-bg" : "border-border text-muted hover:border-border-strong hover:text-text"
+        on ? "border-transparent bg-text text-bg" : "border-transparent bg-surface text-muted hover:text-text"
       }`}
       style={on && st ? { background: st.bg, color: st.ink } : undefined}
     >
@@ -102,7 +103,7 @@ function Card({ j, month, week, teams }: { j: Journalist; month: number; week: n
   const covered = j.teams.map((s) => teams.get(s)).filter((t): t is Team => Boolean(t));
   const league = LEAGUE_LABEL[j.league as League];
   return (
-    <article className="flex gap-4 rounded-2xl border border-border bg-surface p-5 transition-colors hover:border-border-strong sm:gap-5 sm:p-6">
+    <article className="flex h-full gap-4 rounded-2xl bg-surface p-5 transition-colors hover:bg-surface-2 sm:gap-5">
       {/* No portraits to hand, so the initial in the tier's own colour: the
           one thing about a reporter this site exists to show. */}
       <span
@@ -129,7 +130,7 @@ function Card({ j, month, week, teams }: { j: Journalist; month: number; week: n
           </div>
           <Link
             href={`/feed?tier=${j.tier}&who=${j.id}`}
-            className="shrink-0 rounded-[10px] bg-accent px-3.5 py-2 text-[13px] font-semibold text-accent-ink transition-[filter] hover:brightness-110"
+            className="shrink-0 rounded-full bg-surface-3 px-3.5 py-1.5 text-[13px] font-semibold text-text transition-colors hover:bg-accent hover:text-accent-ink"
           >
             기사 보기
           </Link>

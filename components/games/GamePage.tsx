@@ -25,6 +25,7 @@ export function GamePage({
 }) {
   return (
     <Shell
+        bare
       rail={null}
       actions={
         <>
@@ -36,7 +37,7 @@ export function GamePage({
       }
     >
       <div className="px-[var(--gutter)] pt-5 pb-16">
-        <div className={wide ? "mx-auto max-w-[1180px]" : ""}>
+        <div>
           <header className={wide ? "mb-6" : "mx-auto mb-5"} style={wide ? undefined : { maxWidth: width }}>
             <h1 className={`font-bold tracking-tight text-text ${wide ? "text-[28px]" : "text-[22px]"}`}>{title}</h1>
             <p className={wide ? "mt-1 text-[14px] text-muted" : "text-[12px] text-faint"}>{en}</p>

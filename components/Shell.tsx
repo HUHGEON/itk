@@ -33,8 +33,14 @@ const SECTIONS = [
 export function Shell({
   rail,
   actions,
+  bare = false,
   children,
 }: {
+  /**
+   * The page lays out its own panels (the feed's two, the reporters' cards,
+   * the games) rather than sitting in the one the shell gives it.
+   */
+  bare?: boolean;
   /** the page's side panels: a column on the right, a drawer on a phone */
   rail: ReactNode;
   /** search and collect, in the header */
@@ -76,8 +82,8 @@ export function Shell({
 
   return (
     <div className="min-h-screen bg-bg">
-      <header className="sticky top-0 z-40 border-b border-border bg-bg/90 backdrop-blur-md">
-        <div className="mx-auto flex h-16 max-w-[1240px] items-center gap-2 px-[var(--gutter)] sm:gap-6">
+      <header className="sticky top-0 z-40 bg-header">
+        <div className="mx-auto flex h-16 max-w-[1280px] items-center gap-2 px-[var(--gutter)] sm:gap-6">
           <Link
             href="/feed"
             aria-label="ITK plus 이적 소식"
@@ -149,18 +155,29 @@ export function Shell({
       )}
 
       <div
-        className={`mx-auto max-w-[1240px] ${
-          hasRail ? "lg:grid lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-8 lg:px-[var(--gutter)]" : ""
+        className={`mx-auto max-w-[1280px] ${
+          hasRail ? "lg:grid lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-4 lg:px-[var(--gutter)]" : ""
         }`}
       >
-        <main className="min-w-0">{children}</main>
+        <main className="min-w-0">
+          {bare ? (
+            children
+          ) : (
+            // FotMob's island: the page's content on one #1d1d1d panel over the
+            // black, level with the side column. Clipped rather than hidden so
+            // the sticky bars inside still stick to the window.
+            <div className="py-2 sm:px-[var(--gutter)] sm:py-4 lg:px-0">
+              <div className="min-h-[60vh] overflow-clip bg-surface sm:rounded-2xl">{children}</div>
+            </div>
+          )}
+        </main>
 
         {hasRail && (
           <aside
             inert={drawer && !open}
             className={`fixed inset-y-0 right-0 z-50 w-[min(20rem,86vw)] overflow-y-auto border-l border-border bg-surface transition-transform duration-200 ${
               open ? "translate-x-0" : "translate-x-full"
-            } lg:sticky lg:top-[5.25rem] lg:z-auto lg:my-5 lg:max-h-[calc(100vh-6.5rem)] lg:w-auto lg:translate-x-0 lg:self-start lg:rounded-2xl lg:border lg:transition-none`}
+            } lg:sticky lg:top-[5rem] lg:z-auto lg:my-4 lg:max-h-[calc(100vh-6rem)] lg:w-auto lg:translate-x-0 lg:self-start lg:rounded-2xl lg:border-0 lg:transition-none`}
           >
             <div className="flex items-center justify-between border-b border-border px-[var(--gutter)] py-3 lg:hidden">
               <span className="text-[15px] font-bold text-text">메뉴</span>

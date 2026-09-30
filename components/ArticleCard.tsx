@@ -12,19 +12,9 @@ import {
   timeAgo,
 } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
+import { thumb } from "@/lib/format";
 import { expand, reducedMotion, useBeforePaint } from "@/lib/motion";
 
-/**
- * A 240x168 WebP of an article's picture, from the free wsrv.nl resizer.
- *
- * The originals are the publishers' share images - measured on the latest six:
- * 30 to 164kB each, for a 120px slot. Resized they are 7 to 9kB, which is the
- * difference between a phone loading a page of stories and loading a page of
- * photographs. If the resizer fails the row falls back to the original.
- */
-function thumb(url: string): string {
-  return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=240&h=168&fit=cover&output=webp&q=72`;
-}
 
 /**
  * One story, read in place.
