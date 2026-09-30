@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
+  ArrowCounterClockwise,
   ArrowDown,
   ArrowUp,
   ChartBar,
@@ -133,6 +134,26 @@ export function WhoGame() {
 
   const closeInfo = () => setInfo(false);
 
+  /*
+   * Starting this puzzle over: its guesses, the photo choice and the revealed
+   * face go; the stats stay, and a replayed day is not counted twice
+   * (recordResult keeps one result per day). Two presses, since one stray tap
+   * would throw away a finished game.
+   */
+  const [confirmReset, setConfirmReset] = useState(false);
+  useEffect(() => {
+    if (!confirmReset) return;
+    const t = setTimeout(() => setConfirmReset(false), 3000);
+    return () => clearTimeout(t);
+  }, [confirmReset]);
+  const reset = () => {
+    if (!confirmReset) return setConfirmReset(true);
+    setConfirmReset(false);
+    setRevealing(false);
+    setPraise("");
+    setSave(FRESH);
+  };
+
   const leagueOf = useMemo(() => new Map(data?.clubs.map((c) => [c.id, c.league]) ?? []), [data]);
   const clubName = useMemo(() => new Map(data?.clubs.map((c) => [c.id, c.ko]) ?? []), [data]);
 
@@ -218,9 +239,24 @@ export function WhoGame() {
         <button type="button" onClick={() => setInfo(true)} aria-label="하는 법" className="rounded-[6px] p-1 hover:text-text">
           <Info className="size-6" />
         </button>
-        <button type="button" onClick={() => setShowStats(true)} aria-label="통계" className="rounded-[6px] p-1 hover:text-text">
-          <ChartBar className="size-6" />
-        </button>
+        <div className="flex items-center gap-1">
+          {(save.guesses.length > 0 || save.photo !== null) && (
+            <button
+              type="button"
+              onClick={reset}
+              aria-label="이 퍼즐 초기화"
+              className={`flex items-center gap-1.5 rounded-full px-2.5 py-1 text-[13px] font-semibold transition-colors ${
+                confirmReset ? "bg-red-500/15 text-red-400" : "hover:text-text"
+              }`}
+            >
+              <ArrowCounterClockwise className="size-5" weight="bold" />
+              {confirmReset ? "한 번 더 누르면 초기화" : "초기화"}
+            </button>
+          )}
+          <button type="button" onClick={() => setShowStats(true)} aria-label="통계" className="rounded-[6px] p-1 hover:text-text">
+            <ChartBar className="size-6" />
+          </button>
+        </div>
       </div>
 
       {/* The card: white, as the original's, with the photograph in the middle

@@ -5,6 +5,7 @@ import { animate } from "animejs";
 import { makeBoard, type BoardCell } from "@/lib/games/board";
 import { heatMove, heatLevel } from "@/lib/games/rules";
 import { dayNumber } from "@/lib/games/seed";
+import { sweep } from "@/lib/games/expiry";
 import { reducedMotion, rollNumber } from "@/lib/motion";
 import { ACCENT, FLIP_MS, FLIP_STAGGER, HEAT, HexBoard, type HexLook } from "./HexBoard";
 import { MobileSheet } from "./MobileSheet";
@@ -90,6 +91,10 @@ const untilMidnight = () => {
 const NESTED_FROM = 368;
 
 export function HeatmapGame() {
+  // Before anything reads the saved game: a return after the site was closed
+  // for five minutes starts clean (lib/games/expiry). A child renders before
+  // the layout's Heartbeat effect runs, so this cannot wait for it.
+  useState(() => typeof window !== "undefined" && sweep());
   const { grid, items, error } = useGrid();
   const day = dayNumber();
   const [save, setSave] = useDaily<Save>("heatmap", day, EMPTY);

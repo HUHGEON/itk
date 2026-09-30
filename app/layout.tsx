@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { Seen } from "@/components/Seen";
+import { Heartbeat } from "@/components/Heartbeat";
 
 /*
  * Pretendard, as 요즘IT and most Korean product sites set it: drawn for Hangul
@@ -40,6 +41,7 @@ export default function RootLayout({
       </head>
       <body className="antialiased">
         <Seen />
+        <Heartbeat />
         {children}
       </body>
     </html>
