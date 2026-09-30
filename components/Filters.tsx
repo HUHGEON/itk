@@ -353,11 +353,14 @@ export function Filters({
                       borderColor: st.border,
                       color: st.ink,
                     }
-                  : {
-                      backgroundColor: "transparent",
-                      borderColor: `color-mix(in srgb, ${st.color} 30%, transparent)`,
+                  : // Full-strength ink on a faint wash of the tier's own hue.
+                    // It was dimmed to 78% on a transparent chip, which put
+                    // 3티어 at 3.55:1 (measured) - under the 4.5:1 small text
+                    // needs - and read as disabled.
+                    {
+                      backgroundColor: `color-mix(in srgb, ${st.color} 12%, transparent)`,
+                      borderColor: `color-mix(in srgb, ${st.color} 40%, transparent)`,
                       color: st.color,
-                      opacity: 0.78,
                     }
               }
             >
@@ -495,7 +498,12 @@ function LeagueTab({
       // solid white, which is the one state on a dark page nobody misses. The
       // earlier 13px grey text with a 2px underline was read past.
       className={`flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[14px] font-semibold transition-colors sm:h-10 sm:px-4 sm:text-[15px] ${
-        active ? "bg-text text-bg" : "bg-surface-2 text-muted hover:bg-surface-3 hover:text-text"
+        // Unchosen pills in near-white on a pill that stands off the card:
+        // grey text on a grey pill on a grey card measured 6.5:1 but was
+        // reported as hard to see - the pill itself barely showed.
+        active
+          ? "bg-text text-bg"
+          : "bg-surface-3 text-text/85 shadow-[inset_0_0_0_1px_rgba(255,255,255,0.06)] hover:bg-[#323238] hover:text-text"
       }`}
     >
       <LeagueMark league={league} on={active} />
