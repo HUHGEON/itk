@@ -135,12 +135,23 @@ async function espnFetch(
   init?: RequestInit,
 ): Promise<Response | null> {
   if (typeof window === "undefined") {
-    try {
-      const res = await fetch(url, init);
-      return res.ok ? res : null;
-    } catch {
-      return null;
+    /*
+     * One retry on a refusal or a dropped connection. A failed month here does
+     * not fail the page, it silently removes that month's matches - measured
+     * on Chelsea's page after a burst of requests: "최근 4경기 4승" with the
+     * three September games (two defeats and a draw) simply missing.
+     */
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const res = await fetch(url, init);
+        if (res.ok) return res;
+        if (res.status !== 429 && res.status < 500) return null;
+      } catch {
+        // retry below
+      }
+      await new Promise((r) => setTimeout(r, 600));
     }
+    return null;
   }
 
   gate ??= directWorks(url, init);
