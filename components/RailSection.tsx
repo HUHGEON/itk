@@ -68,7 +68,7 @@ export function RailSection({
   }, [open, mounted]);
 
   return (
-    <section className="border-b border-border px-[var(--gutter)] py-3">
+    <section className="px-5 py-4">
       <div className="flex items-center gap-2">
         <button
           type="button"
@@ -78,10 +78,10 @@ export function RailSection({
         >
           <span
             aria-hidden
-            className="h-[13px] w-[3px] shrink-0 rounded-full"
+            className="h-[15px] w-[3px] shrink-0 rounded-full"
             style={{ background: "var(--ribbon)" }}
           />
-          <h2 className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold">
+          <h2 className="flex min-w-0 items-center gap-1.5 text-[15px] font-bold">
             {title}
           </h2>
           <Chevron

@@ -158,7 +158,9 @@ export function ArticleList({
   }, [loadMore, done, error]);
 
   return (
-    <div ref={list}>
+    // One card per story, 10px apart: the rows of a sports dashboard's match
+    // list rather than a single panel ruled into lines.
+    <div ref={list} className="flex flex-col gap-2.5">
       {rows.map((row) => (
         <ArticleCard key={row.id} row={row} teams={teams} now={now} />
       ))}
@@ -213,22 +215,22 @@ const SKELETON = [
 
 function LoadingRows() {
   return (
-    <div aria-hidden className="animate-pulse">
+    <div aria-hidden className="flex animate-pulse flex-col gap-2.5">
       {SKELETON.map((r, i) => (
         <div
           key={i}
-          className="border-b border-border py-3.5 pr-[var(--gutter)] pl-[var(--gutter)]"
+          className="rounded-[20px] bg-surface p-5"
         >
           <div
-            className="h-[18px] rounded-[6px] bg-surface-2"
+            className="h-[18px] rounded-[6px] bg-surface-3"
             style={{ width: r.chip }}
           />
           <div
-            className="mt-2.5 h-[15px] rounded-[6px] bg-surface-2"
+            className="mt-2.5 h-[15px] rounded-[6px] bg-surface-3"
             style={{ width: r.head }}
           />
           <div
-            className="mt-2 h-[10px] rounded-[6px] bg-surface-2/60"
+            className="mt-2 h-[10px] rounded-[6px] bg-surface-3/60"
             style={{ width: r.sub }}
           />
         </div>

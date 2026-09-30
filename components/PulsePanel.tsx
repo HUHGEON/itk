@@ -171,14 +171,14 @@ export function PulsePanel({ pulse, now }: { pulse: Pulse; now: number }) {
   return (
     <section
       ref={root}
-      className="border-b border-border px-[var(--gutter)] py-3"
+      className="p-5"
       onMouseLeave={() => setLit(null)}
     >
       <div className="flex items-baseline justify-between">
-        <h2 className="flex items-center gap-2 text-[13px] font-semibold">
+        <h2 className="flex items-center gap-2 text-[15px] font-bold">
           <span
             aria-hidden
-            className="h-[13px] w-[3px] rounded-full"
+            className="h-[15px] w-[3px] rounded-full"
             style={{ background: "var(--ribbon)" }}
           />
           최근 24시간

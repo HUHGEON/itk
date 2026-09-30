@@ -56,9 +56,10 @@ export default async function JournalistsPage({ searchParams }: { searchParams: 
         </>
       }
     >
-      <div className="px-[var(--gutter)] pt-6 pb-16 lg:px-0">
-        <h1 className="text-[26px] font-bold tracking-tight text-text">기자</h1>
-        <p className="mt-1.5 text-[15px] text-muted">
+      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0">
+        {/* The toolbar already says 기자; the heading stays for screen readers. */}
+        <h1 className="sr-only">기자</h1>
+        <p className="text-[15px] text-muted">
           티어로 나눈 {all.length}명. 최근 30일 동안 많이 쓴 순서입니다.
         </p>
 

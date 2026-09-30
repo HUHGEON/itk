@@ -12,19 +12,18 @@
  */
 :root {
   /*
-   * FotMob's islands: a true-black page, and everything that is read sitting
-   * in a lifted #1d1d1d panel with 16px corners. Measured on fotmob.com/news:
-   * body #000, header bar #1a1a1a, cards #1d1d1d, dividers #333. The earlier
-   * warm near-black (#0a0908 page, #131211 panels) put 3% of lightness between
-   * the page and a panel, so panels did not read as panels; black under
-   * #1d1d1d is the step that makes a section a thing you can see.
+   * A dark sports dashboard: a near-black page, and everything that is read
+   * on a lifted card with generous corners. The FotMob pass used true black
+   * under #1d1d1d; beside a left column and a widget column that read as
+   * three hard slabs. A faintly cool near-black (#09090b) under #151518 cards
+   * keeps the cards plainly cards while letting the page recede.
    */
-  --bg: #000000;
-  --header: #1a1a1a;
-  --surface: #1d1d1d;
-  --surface-2: #262626;
-  --surface-3: #303030;
-  --border: #333333;
+  --bg: #09090b;
+  --header: #0f0f11;
+  --surface: #151518;
+  --surface-2: #1e1e22;
+  --surface-3: #28282d;
+  --border: #26262b;
 
   /*
    * One radius scale, three steps and a pill.
@@ -42,18 +41,18 @@
    * (Raised from 4/6/10 in the 요즘IT pass: its cards sit at 12-16px and the
    * softer corners read calmer at the larger type sizes.)
    */
-  --border-strong: #474747;
+  --border-strong: #3a3a40;
 
   /* Warm off-white rather than pure white: 15 hours of headlines is a lot of
      contrast to stare at. */
-  --text: #f5f5f5;
+  --text: #f4f4f5;
   /*
-   * Three steps, all of them readable on a panel, which is where nearly all
-   * text now sits: muted is FotMob's own secondary grey (#9f9f9f, 6.6:1 on
-   * #1d1d1d) and faint #8c8c8c clears small-text 4.5:1 there at 5.0:1.
+   * Three steps, all of them readable on a card, which is where nearly all
+   * text sits: muted #a1a1aa is 7.1:1 on #151518 and faint #8a8a93 5.2:1,
+   * both over the 4.5:1 small text needs.
    */
-  --muted: #9f9f9f;
-  --faint: #8c8c8c;
+  --muted: #a1a1aa;
+  --faint: #8a8a93;
 
   /* The ribbon itself, for the places the brand should actually show up:
      the rule under the header, the primary button, the panel markers. A flat
@@ -386,7 +385,7 @@ html {
   to { transform: translateY(0); opacity: 1; }
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
   :root {
     --headerh: 4rem;
   }

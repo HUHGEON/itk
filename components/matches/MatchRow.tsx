@@ -93,8 +93,10 @@ export function MatchRow({
       href={`/matches/game/${match.code}/${match.id}`}
       data-match-row
       title={`${match.home.name} 대 ${match.away.name} 기록 보기`}
-      className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-[10px] px-2 py-3 transition-colors sm:gap-4 ${
-        live ? "bg-accent/[0.06] hover:bg-accent/[0.11]" : "hover:bg-surface-2/40"
+      className={`group grid grid-cols-[1fr_auto_1fr] items-center gap-3 rounded-2xl px-3 py-3.5 transition-colors sm:gap-4 sm:px-4 ${
+        live
+          ? "bg-accent/[0.08] shadow-[inset_3px_0_0_var(--accent)] hover:bg-accent/[0.13]"
+          : "bg-surface-2/60 hover:bg-surface-2"
       }`}
     >
       <Side side={match.home} align="home" />

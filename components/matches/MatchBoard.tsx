@@ -96,8 +96,9 @@ export function MatchBoard({
         </p>
       )}
 
-      <div className="px-[var(--gutter)] pb-2">
-        <div className="divide-y divide-border/60">
+      {/* A card per match, as a sports dashboard lists its fixtures. */}
+      <div className="px-[var(--gutter)] py-3">
+        <div className="flex flex-col gap-2">
           {rows.map((m) => (
             <MatchRow key={m.id} match={m} showCompetition={!bare} />
           ))}

@@ -19,6 +19,7 @@ import { SearchBox } from "@/components/SearchBox";
 import { PulsePanel } from "@/components/PulsePanel";
 import { DiscordPanel } from "@/components/DiscordPanel";
 import { FeedHero } from "@/components/FeedHero";
+import { TopReporters } from "@/components/TopReporters";
 import type { FeedRow } from "@/lib/feed";
 
 export const dynamic = "force-dynamic";
@@ -77,7 +78,7 @@ export default async function Home({
   // Matches ArticleList's page size so the first "load more" lines up.
   const PAGE_SIZE = 40;
 
-  const [rows, activity, leagueActivity, journalistActivity, pulse] =
+  const [rows, activity, leagueActivity, journalistActivity, pulse, week] =
     await Promise.all([
       getFeed({ ...base, tieredOnly, limit: PAGE_SIZE }),
       // Counts describe the combination on screen, so each excludes its own
@@ -93,6 +94,7 @@ export default async function Home({
       }),
       getJournalistActivity({ teams: teamSlugs, league, q }),
       getPulse(),
+      getJournalistActivity({}, 168).catch(() => ({}) as Record<string, number>),
     ]);
 
   const teams = loadTeams();
@@ -124,6 +126,7 @@ export default async function Home({
         rail={
           <>
             <PulsePanel pulse={pulse} now={now} />
+            <TopReporters journalists={journalists} counts={week} />
             <DiscordPanel teams={teams} />
             <AlertPanel teams={teams} />
           </>
@@ -140,12 +143,22 @@ export default async function Home({
             for the page it just landed on. */}
         <h1 className="sr-only">이적 소식</h1>
 
-        {/* FotMob's islands: each part of the page on its own panel over the
-            black, 16px apart. */}
-        <div className="flex flex-col gap-2 py-2 sm:gap-4 sm:px-[var(--gutter)] sm:py-4 lg:px-0">
-          {/* The filters first, on their own panel: under the hero they sat
-              600px down the page and were reported as hard to find. */}
-          <div className="overflow-clip bg-surface sm:rounded-2xl">
+        {/* The featured stories, then the list under its own heading and
+            filters, every part on its own card over the page. */}
+        <div className="flex flex-col gap-3 px-3 py-3 sm:px-[var(--gutter)] lg:px-0 lg:pt-1 lg:pb-10">
+          {/* On a phone there is no left column, so the league filter would
+              sit under the whole hero; there it comes first instead. */}
+          {picks.length >= 4 && (
+            <div className="order-2 lg:order-none">
+              <FeedHero lead={picks[0]} rest={picks.slice(1)} now={now} />
+            </div>
+          )}
+
+          <h2 className="order-3 mt-4 px-1 text-[18px] font-bold tracking-tight text-text lg:order-none">
+            {unfiltered ? "최신 소식" : "검색 결과"}
+          </h2>
+
+          <div className="order-1 overflow-clip rounded-[20px] bg-surface lg:order-none">
             <Filters
               teams={teams}
               activity={activity}
@@ -156,16 +169,17 @@ export default async function Home({
             />
           </div>
 
-          {picks.length >= 4 && <FeedHero lead={picks[0]} rest={picks.slice(1)} now={now} />}
-
-          <div className="overflow-clip bg-surface sm:rounded-2xl">
+          {/* The "new stories" pill sticks while the list scrolls, so it
+              shares the list's box. */}
+          <div className="order-4 lg:order-none">
             <NewArticles query={feedQuery} since={now} />
-
             {rows.length === 0 ? (
-              <EmptyState
-                tieredOnly={tieredOnly}
-                hasJournalists={journalists.length > 0}
-              />
+              <div className="rounded-[20px] bg-surface">
+                <EmptyState
+                  tieredOnly={tieredOnly}
+                  hasJournalists={journalists.length > 0}
+                />
+              </div>
             ) : (
               <ArticleList
                 initialRows={rows}

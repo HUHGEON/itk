@@ -15,7 +15,8 @@ import { tierColor, tierLabel, tierStyle } from "@/lib/format";
 import { TeamCrest } from "./TeamCrest";
 import { ScrollRail } from "./ScrollRail";
 import { Close } from "./icons";
-import { FunnelSimple, GlobeHemisphereWest, SquaresFour } from "@phosphor-icons/react/dist/ssr";
+import { FunnelSimple } from "@phosphor-icons/react/dist/ssr";
+import { LeagueMark } from "./LeagueMark";
 import { pressPop, rollNumber, useBeforePaint } from "@/lib/motion";
 
 /**
@@ -38,42 +39,6 @@ const LEAGUES: League[] = [
   "Eredivisie",
   "General",
 ];
-
-/*
- * Each league by its own mark, from FotMob's image host (free, no key; ids
- * checked by eye: 47 Premier League, 87 LaLiga, 54 Bundesliga, 55 Serie A,
- * 53 Ligue 1, 57 Eredivisie). The dark variants are drawn for a dark page -
- * Ligue 1's is white-on-nothing. A tab someone has to read to find is a tab
- * they miss; a logo is found at a glance.
- */
-const LEAGUE_LOGO: Partial<Record<League, number>> = {
-  EPL: 47,
-  LaLiga: 87,
-  Bundesliga: 54,
-  SerieA: 55,
-  Ligue1: 53,
-  Eredivisie: 57,
-};
-
-function LeagueMark({ league, on }: { league: League | null; on: boolean }) {
-  const id = league ? LEAGUE_LOGO[league] : undefined;
-  if (id)
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img
-        // The chosen tab is filled white, where the dark variant (a white
-        // lion, a white Ligue 1) vanishes - measured on screen - so it takes
-        // the light-page mark instead.
-        src={`https://images.fotmob.com/image_resources/logo/leaguelogo/${on ? "" : "dark/"}${id}.png`}
-        alt=""
-        width={18}
-        height={18}
-        className="size-[18px] shrink-0 object-contain"
-      />
-    );
-  const Icon = league ? GlobeHemisphereWest : SquaresFour;
-  return <Icon className="size-[18px] shrink-0" weight="fill" />;
-}
 
 type Activity = Record<string, { count: number; bestTier: number | null }>;
 
@@ -339,7 +304,7 @@ export function Filters({
           onClick={() => setPanel((v) => !v)}
           aria-expanded={panel}
           aria-controls="feed-filters"
-          className={`my-3 mr-[var(--gutter)] flex h-10 shrink-0 items-center gap-1.5 rounded-full border px-3 text-[14px] sm:px-4 font-semibold transition-colors ${
+          className={`my-3 mr-[var(--gutter)] flex h-9 shrink-0 sm:h-10 items-center gap-1.5 rounded-full border px-3 text-[14px] sm:px-4 font-semibold transition-colors ${
             panel || activeCount > 0
               ? "border-accent/50 bg-accent/10 text-accent"
               : "border-border text-muted hover:border-border-strong hover:text-text"
@@ -524,7 +489,7 @@ function LeagueTab({
       // SofaScore's category pills: icon and name, and the chosen one filled
       // solid white, which is the one state on a dark page nobody misses. The
       // earlier 13px grey text with a 2px underline was read past.
-      className={`flex h-10 shrink-0 items-center gap-2 rounded-full px-4 text-[15px] font-semibold transition-colors ${
+      className={`flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[14px] font-semibold transition-colors sm:h-10 sm:px-4 sm:text-[15px] ${
         active ? "bg-text text-bg" : "bg-surface-2 text-muted hover:bg-surface-3 hover:text-text"
       }`}
     >

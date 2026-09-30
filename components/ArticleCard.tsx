@@ -106,8 +106,8 @@ export function ArticleCard({
       // opened" — it read as a hover state.
       className={`group relative transition-colors ${
         open
-          ? "z-10 my-1 rounded-[16px] border border-accent/45 bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.12),0_8px_24px_-12px_rgba(0,0,0,0.9)]"
-          : "border-b border-border last:border-b-0"
+          ? "z-10 overflow-hidden rounded-[20px] bg-surface-2 shadow-[0_0_0_1px_rgba(241,128,11,0.45),0_12px_32px_-16px_rgba(0,0,0,0.9)]"
+          : "overflow-hidden rounded-[20px] bg-surface transition-colors hover:bg-[#1a1a1d]"
       }`}
     >
       {/*
@@ -137,8 +137,8 @@ export function ArticleCard({
         // A real focus ring rather than the tinted background alone: on a
         // column of rows that all change colour on hover, a background shift is
         // not a strong enough answer to "where is the keyboard".
-        className={`flex w-full gap-4 rounded-[10px] py-4 pr-[var(--gutter)] pl-[var(--gutter)] text-left transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none focus-visible:ring-inset sm:gap-5 ${
-          expandable ? "cursor-pointer hover:bg-surface-2/50" : "cursor-default"
+        className={`flex w-full gap-4 rounded-[20px] p-4 text-left sm:p-5 transition-colors focus-visible:ring-2 focus-visible:ring-accent/60 focus-visible:outline-none focus-visible:ring-inset sm:gap-5 ${
+          expandable ? "cursor-pointer" : "cursor-default"
         }`}
       >
         {/*

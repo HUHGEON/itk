@@ -36,11 +36,12 @@ export function GamePage({
         </>
       }
     >
-      <div className="px-[var(--gutter)] pt-5 pb-16">
+      <div className="px-[var(--gutter)] pt-2 pb-16 lg:px-0">
         <div>
           <header className={wide ? "mb-6" : "mx-auto mb-5"} style={wide ? undefined : { maxWidth: width }}>
-            <h1 className={`font-bold tracking-tight text-text ${wide ? "text-[28px]" : "text-[22px]"}`}>{title}</h1>
-            <p className={wide ? "mt-1 text-[14px] text-muted" : "text-[12px] text-faint"}>{en}</p>
+            {/* The hub's name is already in the toolbar; a game's is not. */}
+            <h1 className={wide ? "sr-only" : "text-[22px] font-bold tracking-tight text-text"}>{title}</h1>
+            <p className={wide ? "text-[15px] text-muted" : "text-[12px] text-faint"}>{en}</p>
           </header>
           {children}
         </div>
