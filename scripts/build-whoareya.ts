@@ -15,6 +15,7 @@ import { fotmob } from "./games/fotmob";
 import { clubScore, norm, sameClub, samePlayer } from "../lib/names";
 import { CLUBS } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
+import { commonNames } from "./games/kowiki";
 
 const OUT = join(process.cwd(), "public", "games");
 
@@ -183,10 +184,14 @@ async function main() {
   // The name fans use, as on the grid (see games/namuwiki); the Wikipedia
   // spelling stays searchable.
   const familiar = await familiarNames(hits.filter(Boolean).map((h) => h!.ko));
+  // Known by one name, titled by the full one: Raphinha (see games/kowiki).
+  const common = await commonNames(
+    hits.flatMap((h) => (h && /\s/.test(h.ko) && /^[\p{L}'-]+$/u.test(h.en) ? [{ ko: h.ko, en: h.en }] : [])),
+  );
   const players = squads.map(({ team, m }, i) => {
     const hit = hits[i];
     if (hit) named++;
-    const ko = hit ? (familiar.get(hit.ko) ?? hit.ko) : null;
+    const ko = hit ? (familiar.get(hit.ko) ?? common.get(hit.ko) ?? hit.ko) : null;
     return [
       m.id,
       ko,

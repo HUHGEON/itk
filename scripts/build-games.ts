@@ -18,6 +18,7 @@ import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
 import { CLUBS, LEAGUES, TROPHIES, YOUTH } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
+import { commonNames } from "./games/kowiki";
 
 const OUT = join(process.cwd(), "public", "games");
 /*
@@ -579,11 +580,17 @@ async function main() {
   // The best-known 3,000, plus everyone famous enough to be a Career Path answer.
   const famous = list.filter((x, i) => x.p.ko && (i < 3000 || x.p.links >= 45)).map(({ p }) => p.ko);
   const familiar = await familiarNames(famous);
+  // A one-word English name against a several-word Korean one is a player
+  // known by a single name - Raphinha, Fred, Willian - whose Korean title is
+  // his legal name; Korean Wikipedia's lead says what he is called (see
+  // games/kowiki). Namuwiki's answer, where it has one, still comes first.
+  const mononym = (p: Player) => /\s/.test(p.ko) && /^[\p{L}'-]+$/u.test(p.en);
+  const common = await commonNames(list.filter(({ p }) => p.ko && mononym(p)).map(({ p }) => ({ ko: p.ko, en: p.en })));
   // No Korean name anywhere: shown and searched in English.
-  const display = (p: Player) => (p.ko ? (familiar.get(p.ko) ?? p.ko) : p.en);
+  const display = (p: Player) => (p.ko ? (familiar.get(p.ko) ?? common.get(p.ko) ?? p.ko) : p.en);
   const alts = (p: Player) =>
     [...new Set([p.ko, ...p.aliases])].filter((a) => a !== display(p) && /[가-힣]/.test(a));
-  console.log(`familiar names: ${familiar.size} of ${famous.length} differ from Wikipedia's`);
+  console.log(`familiar names: ${familiar.size} of ${famous.length} differ from Wikipedia's; single names: ${common.size}`);
 
   const grid = {
     built: new Date().toISOString().slice(0, 10),
