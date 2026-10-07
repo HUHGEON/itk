@@ -62,6 +62,73 @@ function teamsIn(table: unknown): { id: number; name: string }[] {
   return [...out].map(([id, name]) => ({ id, name }));
 }
 
+function parseCareer(p: RawPlayer): FmCareer {
+  const entries = p.careerHistory?.careerItems?.senior?.teamEntries ?? [];
+  const won = new Map<number, string[]>();
+  const runnerUp = new Map<number, string[]>();
+  for (const team of p.trophies?.playerTrophies ?? [])
+    for (const t of team.tournaments ?? []) {
+      if (t.seasonsWon?.length) won.set(t.leagueId, [...(won.get(t.leagueId) ?? []), ...t.seasonsWon]);
+      if (t.seasonsRunnerUp?.length) runnerUp.set(t.leagueId, [...(runnerUp.get(t.leagueId) ?? []), ...t.seasonsRunnerUp]);
+    }
+  return {
+    id: p.id,
+    name: p.name,
+    born: year(p.birthDate?.utcTime),
+    spells: entries.map((e) => ({
+      team: e.teamId,
+      name: e.team,
+      start: year(e.startDate),
+      end: year(e.endDate),
+      loan: /loan/i.test(e.transferType?.text ?? "") && !/back from/i.test(e.transferType?.text ?? ""),
+    })),
+    won,
+    runnerUp,
+  };
+}
+
+export const foldName = (s: string) =>
+  s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ø/g, "o").replace(/ı/g, "i").replace(/ł/g, "l").replace(/đ/g, "d").toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+
+/**
+ * A known player looked up by name, for the ones no current squad of the
+ * fetched leagues holds - someone now in Qatar, in a second division, or
+ * retired since. The search's player suggestions are checked against the
+ * birth year on the profile, so a namesake is never taken for him.
+ */
+export async function searchCareers(
+  wanted: { key: string; name: string; born: number }[],
+): Promise<Map<string, FmCareer>> {
+  const out = new Map<string, FmCareer>();
+  const todo = [...wanted];
+  let done = 0;
+  const worker = async () => {
+    while (todo.length) {
+      const w = todo.pop()!;
+      done++;
+      if (done % 500 === 0) process.stdout.write(`\r  fotmob search ${done}/${wanted.length}`);
+      const res = await fotmob<{ suggestions?: { type: string; id: string; name: string; isCoach?: boolean }[] }[]>(
+        `search/suggest?term=${encodeURIComponent(w.name)}&lang=en`,
+      ).catch(() => null);
+      const want = foldName(w.name).split(" ");
+      const last = want[want.length - 1];
+      const cands = [...new Set((res ?? []).flatMap((g) => g.suggestions ?? []).filter((x) => x.type === "player").map((x) => x))]
+        .filter((x) => foldName(x.name).split(" ").includes(last))
+        .slice(0, 3);
+      for (const c of cands) {
+        const p = await fotmob<RawPlayer>(`playerData?id=${c.id}`).catch(() => null);
+        if (p && year(p.birthDate?.utcTime) === w.born) {
+          out.set(w.key, parseCareer(p));
+          break;
+        }
+      }
+    }
+  };
+  await Promise.all([worker(), worker(), worker(), worker()]);
+  process.stdout.write("\n");
+  return out;
+}
+
 export async function fotmobCareers(leagues: number[]): Promise<{ careers: FmCareer[]; teamLeague: Map<number, number> }> {
   const teamLeague = new Map<number, number>();
   for (const l of leagues) {
@@ -84,29 +151,7 @@ export async function fotmobCareers(leagues: number[]): Promise<{ careers: FmCar
       const p = await fotmob<RawPlayer>(`playerData?id=${id}`).catch(() => null);
       done++;
       if (done % 500 === 0) process.stdout.write(`\r  fotmob players ${done}/${playerIds.size}`);
-      if (!p) continue;
-      const entries = p.careerHistory?.careerItems?.senior?.teamEntries ?? [];
-      const won = new Map<number, string[]>();
-      const runnerUp = new Map<number, string[]>();
-      for (const team of p.trophies?.playerTrophies ?? [])
-        for (const t of team.tournaments ?? []) {
-          if (t.seasonsWon?.length) won.set(t.leagueId, [...(won.get(t.leagueId) ?? []), ...t.seasonsWon]);
-          if (t.seasonsRunnerUp?.length) runnerUp.set(t.leagueId, [...(runnerUp.get(t.leagueId) ?? []), ...t.seasonsRunnerUp]);
-        }
-      careers.push({
-        id: p.id,
-        name: p.name,
-        born: year(p.birthDate?.utcTime),
-        spells: entries.map((e) => ({
-          team: e.teamId,
-          name: e.team,
-          start: year(e.startDate),
-          end: year(e.endDate),
-          loan: /loan/i.test(e.transferType?.text ?? "") && !/back from/i.test(e.transferType?.text ?? ""),
-        })),
-        won,
-        runnerUp,
-      });
+      if (p) careers.push(parseCareer(p));
     }
   };
   await Promise.all([worker(), worker(), worker(), worker()]);

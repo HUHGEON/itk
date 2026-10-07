@@ -76,7 +76,9 @@ export const LEAGUES: {
   { id: "lg-por", short: "포르투갈 리그", logo: 61, country: "Q45" },
   { id: "lg-tur", short: "튀르키예 리그", logo: 71, country: "Q43" },
   { id: "lg-ksa", short: "사우디 리그", logo: 536, country: "Q851" },
-  { id: "lg-usa", short: "미국 리그", logo: 130, country: "Q30" },
+  // MLS, including its Canadian clubs: Nesta, Bojan and Di Vaio (Montreal),
+  // Defoe (Toronto) were missing when this was "clubs in the US".
+  { id: "lg-usa", short: "미국 리그", logo: 130, country: "Q30", leagues: ["Q18543"] },
   // The original's other four: Scotland (filed under the UK like England, so
   // by league), Belgium, Brazil and Argentina.
   { id: "lg-sco", short: "스코틀랜드 리그", logo: 64, leagues: ["Q14377162", "Q187304", "Q177138"] },

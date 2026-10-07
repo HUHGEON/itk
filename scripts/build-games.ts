@@ -16,7 +16,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
-import { fotmobCareers } from "./games/fotmob-careers";
+import { fotmobCareers, searchCareers, type FmCareer } from "./games/fotmob-careers";
 import { CLUBS, LEAGUES, TROPHIES, YOUTH } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
 import { commonNames, redirectNames } from "./games/kowiki";
@@ -498,23 +498,69 @@ async function main() {
     const k = `${fold(p.en)}|${p.born}`;
     byNameYear.set(k, [...(byNameYear.get(k) ?? []), p]);
   }
-  const fmExtra = new Map<string, Set<string>>();
+  // Every career found, squad first then search, keyed by the player.
+  const fmCareer = new Map<string, FmCareer>();
   let fmMatched = 0;
   for (const c of careers) {
     const hit = byNameYear.get(`${fold(c.name)}|${c.born}`);
     if (!hit || hit.length !== 1) continue;
     fmMatched++;
+    fmCareer.set(hit[0].q, c);
+  }
+  /*
+   * Everyone else with a career since the 2000s and some fame, looked up by
+   * name (see searchCareers): the squads above only hold who is in those
+   * fourteen leagues today, and "recent transfers missing" was reported for
+   * players well beyond them.
+   */
+  const wanted = [...players.values()]
+    .filter((p) => !fmCareer.has(p.q) && p.born && p.born >= 1983 && p.links >= 20 && p.en)
+    .map((p) => ({ key: p.q, name: p.en, born: p.born! }));
+  const found = await searchCareers(wanted);
+  for (const [q, c] of found) fmCareer.set(q, c);
+  console.log(`fotmob by search: ${found.size} of ${wanted.length}`);
+
+  /*
+   * A club outside today's fourteen tables - relegated since, or a spell in a
+   * second division - has no league from the squads; its country on FotMob
+   * gives it one. England and Scotland are leagues of their own.
+   */
+  const LEAGUE_BY_COUNTRY: Record<string, string> = {
+    ENG: "lg-eng", ESP: "lg-esp", ITA: "lg-ita", GER: "lg-ger", FRA: "lg-fra", NED: "lg-ned", POR: "lg-por",
+    TUR: "lg-tur", KSA: "lg-ksa", SAU: "lg-ksa", USA: "lg-usa", SCO: "lg-sco", BEL: "lg-bel", BRA: "lg-bra", ARG: "lg-arg",
+  };
+  const unknownTeams = new Set<number>();
+  for (const c of fmCareer.values()) for (const s of c.spells) if (!teamLeague.has(s.team)) unknownTeams.add(s.team);
+  const leagueOfTeam = new Map<number, string>();
+  {
+    const todo = [...unknownTeams];
+    let n = 0;
+    const worker = async () => {
+      while (todo.length) {
+        const t = todo.pop()!;
+        const d = await fotmob<{ details?: { country?: string; gender?: string } }>(`teams?id=${t}`).catch(() => null);
+        if (++n % 500 === 0) process.stdout.write(`\r  fotmob team countries ${n}/${unknownTeams.size}`);
+        const lg = d?.details?.gender === "female" ? undefined : LEAGUE_BY_COUNTRY[d?.details?.country ?? ""];
+        if (lg) leagueOfTeam.set(t, lg);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    process.stdout.write("\n");
+  }
+
+  const fmExtra = new Map<string, Set<string>>();
+  for (const [q, c] of fmCareer) {
     const extra = new Set<string>();
     for (const s of c.spells) {
       const club = clubByFm.get(s.team);
       if (club) extra.add(`cl-${club}`);
-      const league = leagueByFm.get(teamLeague.get(s.team) ?? -1);
+      const league = leagueByFm.get(teamLeague.get(s.team) ?? -1) ?? leagueOfTeam.get(s.team);
       if (league) extra.add(league);
     }
     for (const t of TROPHIES) if (c.won.get(t.logo)?.length) extra.add(t.id);
     // A final reached: won or lost it (the original's "UCL Final").
     if (c.won.get(42)?.length || c.runnerUp.get(42)?.length) extra.add("gr-uclf");
-    fmExtra.set(hit[0].q, extra);
+    fmExtra.set(q, extra);
   }
   console.log(`fotmob careers matched to the pool: ${fmMatched} of ${careers.length}`);
   console.log(`crests: ${crests.size}/${CLUBS.length}`);
@@ -609,7 +655,7 @@ async function main() {
     for (const l of LEAGUES) {
       const hit = seniorStints.some((s) => {
         const c = clubs.get(s.club)!;
-        return l.country ? c.countries.has(l.country) : l.leagues!.some((x) => c.leagues.has(x));
+        return (!!l.country && c.countries.has(l.country)) || !!l.leagues?.some((x) => c.leagues.has(x));
       });
       if (hit) add(l.id, p.q);
     }
