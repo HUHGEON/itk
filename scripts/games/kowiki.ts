@@ -73,3 +73,54 @@ export async function commonNames(players: { ko: string; en: string }[]): Promis
   for (const p of players) if (cache[p.ko]) out.set(p.ko, cache[p.ko]!);
   return out;
 }
+
+const REDIRECTS = join(process.cwd(), "data", "games", "kowiki-redirects.json");
+
+/**
+ * Every other spelling Korean Wikipedia sends to a player's article - its
+ * redirects - kept as search aliases. Jhon Durán's article is "혼 두란", and
+ * "존 듀란" is one of its redirects; fans type the second. Answers committed
+ * like the others (an empty list: asked, none).
+ */
+export async function redirectNames(titles: string[]): Promise<Map<string, string[]>> {
+  const cache: Record<string, string[]> = existsSync(REDIRECTS) ? JSON.parse(readFileSync(REDIRECTS, "utf8")) : {};
+  const todo = [...new Set(titles)].filter((t) => !(t in cache));
+  // Twenty a request: the 500-redirect cap is shared by the whole batch, and
+  // a famous player's article can have twenty of its own.
+  for (let i = 0; i < todo.length; i += 20) {
+    const batch = todo.slice(i, i + 20);
+    const url = new URL("https://ko.wikipedia.org/w/api.php");
+    for (const [k, v] of Object.entries({
+      action: "query", prop: "redirects", rdlimit: "max", rdnamespace: "0", redirects: "1",
+      format: "json", titles: batch.join("|"),
+    })) url.searchParams.set(k, v);
+    let json: { query?: { pages?: Record<string, { title: string; redirects?: { title: string }[] }>; redirects?: { from: string; to: string }[]; normalized?: { from: string; to: string }[] } } | null = null;
+    // Wikipedia rate-limits a long run (measured: refusals from the 21st
+    // request on); back off and ask again rather than skip the batch.
+    for (let attempt = 1; attempt <= 5 && !json; attempt++) {
+      try {
+        const res = await fetch(url, { headers: { "User-Agent": UA } });
+        if (res.ok) json = await res.json();
+        else await new Promise((r) => setTimeout(r, attempt * 3000));
+      } catch {
+        await new Promise((r) => setTimeout(r, attempt * 3000));
+      }
+    }
+    if (!json) continue;
+    const byTitle = new Map(Object.values(json.query?.pages ?? {}).map((p) => [p.title, (p.redirects ?? []).map((r) => r.title)]));
+    const hop = new Map([...(json.query?.normalized ?? []), ...(json.query?.redirects ?? [])].map((r) => [r.from, r.to]));
+    for (const t of batch) {
+      let at = t;
+      for (let k = 0; k < 3 && hop.has(at); k++) at = hop.get(at)!;
+      // Hangul spellings of a person only: no "(축구 선수)" pages, no English.
+      cache[t] = (byTitle.get(at) ?? [])
+        .map((r) => r.replace(/\s*\([^)]*\)\s*$/, "").trim())
+        .filter((r) => /[가-힣]/.test(r) && !/[A-Za-z]/.test(r) && r !== t);
+    }
+    await new Promise((r) => setTimeout(r, 600));
+    if (i % 400 === 0) process.stdout.write(`\r  kowiki redirects ${i}/${todo.length}`);
+  }
+  const sorted = Object.fromEntries(Object.entries(cache).sort(([a], [b]) => a.localeCompare(b)));
+  writeFileSync(REDIRECTS, JSON.stringify(sorted, null, 0).replace(/,"/g, ',\n"'));
+  return new Map(titles.map((t) => [t, cache[t] ?? []]));
+}

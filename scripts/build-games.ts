@@ -18,7 +18,8 @@ import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
 import { CLUBS, LEAGUES, TROPHIES, YOUTH } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
-import { commonNames } from "./games/kowiki";
+import { commonNames, redirectNames } from "./games/kowiki";
+import manualAliases from "../data/games/aliases.json";
 
 const OUT = join(process.cwd(), "public", "games");
 /*
@@ -363,10 +364,23 @@ async function winners(): Promise<{ seasons: Season[]; finals: Season[]; squads:
   // Only the final itself: a season's other matches (semi-finals, the
   // super cup) are "part of" it too, and counting them put 3,222 players in
   // "UCL 결승".
-  const fin = await sparql(`SELECT ?team ?d WHERE {
-    ?season wdt:P3450 wd:Q18756 . ?final wdt:P361 ?season ; wdt:P1923 ?team ; wdt:P585 ?d ;
-      rdfs:label ?fl FILTER(LANG(?fl) = "en" && REGEX(?fl, "^[0-9]{4} (European Cup|UEFA Champions League) Final$"))
+  /*
+   * The finals, found two ways and merged by item. By label alone 1999 and
+   * 2015 were missing - measured: 68 of 70 - because the 1999 final is
+   * labelled "1999 champions league final" in lower case and the 2015 one's
+   * English label had been vandalised to "Davo mercenario", so Barcelona's and
+   * Manchester United's squads were not "UCL 결승" (Vermaelen, reported). The
+   * class "UEFA Champions League final" (Q80716240) has both, but not 2025;
+   * the label, read case-insensitively, has 2025.
+   */
+  const byClass = await sparql(`SELECT ?final ?team ?d WHERE {
+    ?final wdt:P31 wd:Q80716240 ; wdt:P1923 ?team ; wdt:P585 ?d .
   }`);
+  const byLabel = await sparql(`SELECT ?final ?team ?d WHERE {
+    ?season wdt:P3450 wd:Q18756 . ?final wdt:P361 ?season ; wdt:P1923 ?team ; wdt:P585 ?d ;
+      rdfs:label ?fl FILTER(LANG(?fl) = "en" && REGEX(?fl, "^[0-9]{4} (European Cup|UEFA Champions League|Champions League) Final$", "i"))
+  }`);
+  const fin = [...new Map([...byClass, ...byLabel].map((r) => [`${val(r, "final")}|${val(r, "team")}`, r])).values()];
   // A final in May closes the season that began the summer before.
   const finals = fin.map((r) => {
     const y = year(val(r, "d"))!;
@@ -586,10 +600,22 @@ async function main() {
   // games/kowiki). Namuwiki's answer, where it has one, still comes first.
   const mononym = (p: Player) => /\s/.test(p.ko) && /^[\p{L}'-]+$/u.test(p.en);
   const common = await commonNames(list.filter(({ p }) => p.ko && mononym(p)).map(({ p }) => ({ ko: p.ko, en: p.en })));
+  // Hand-kept names, keyed "English label|birth year": the first is shown,
+  // every one is searchable. For the players no source spells as fans do.
+  const manual = manualAliases as Record<string, string[]>;
+  const hand = (p: Player) => manual[`${p.en}|${p.born}`];
   // No Korean name anywhere: shown and searched in English.
-  const display = (p: Player) => (p.ko ? (familiar.get(p.ko) ?? common.get(p.ko) ?? p.ko) : p.en);
+  const display = (p: Player) =>
+    hand(p)?.[0] ?? (p.ko ? (familiar.get(p.ko) ?? common.get(p.ko) ?? p.ko) : p.en);
+  // Search-only spellings: Korean Wikipedia's redirects for the well-known
+  // (see games/kowiki), and a hand-kept list for the ones no source spells
+  // the way fans do - "알렉시스 마크 아이스테르" is Mac Allister.
+  const known = list.filter((x, i) => x.p.ko && (i < 6000 || x.p.links >= 30)).map(({ p }) => p.ko);
+  const redirects = await redirectNames(known);
   const alts = (p: Player) =>
-    [...new Set([p.ko, ...p.aliases])].filter((a) => a !== display(p) && /[가-힣]/.test(a));
+    [...new Set([p.ko, ...p.aliases, ...(redirects.get(p.ko) ?? []), ...(hand(p) ?? [])])].filter(
+      (a) => a !== display(p) && /[가-힣]/.test(a),
+    );
   console.log(`familiar names: ${familiar.size} of ${famous.length} differ from Wikipedia's; single names: ${common.size}`);
 
   const grid = {

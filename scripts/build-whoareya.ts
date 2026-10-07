@@ -16,6 +16,7 @@ import { clubScore, norm, sameClub, samePlayer } from "../lib/names";
 import { CLUBS } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
 import { commonNames } from "./games/kowiki";
+import manualAliases from "../data/games/aliases.json";
 
 const OUT = join(process.cwd(), "public", "games");
 
@@ -191,7 +192,9 @@ async function main() {
   const players = squads.map(({ team, m }, i) => {
     const hit = hits[i];
     if (hit) named++;
-    const ko = hit ? (familiar.get(hit.ko) ?? common.get(hit.ko) ?? hit.ko) : null;
+    // The hand-kept name first (data/games/aliases.json, "name|birth year").
+    const hand = (manualAliases as Record<string, string[]>)[`${m.name}|${(m.dateOfBirth ?? "").slice(0, 4)}`]?.[0];
+    const ko = hand ?? (hit ? (familiar.get(hit.ko) ?? common.get(hit.ko) ?? hit.ko) : null);
     return [
       m.id,
       ko,
