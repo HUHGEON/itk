@@ -16,6 +16,7 @@ import { writeFileSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { sparql, qid, val, chunks } from "./games/wikidata";
 import { fotmob } from "./games/fotmob";
+import { fotmobCareers } from "./games/fotmob-careers";
 import { CLUBS, LEAGUES, TROPHIES, YOUTH } from "./games/clubs";
 import { familiarNames } from "./games/namuwiki";
 import { commonNames, redirectNames } from "./games/kowiki";
@@ -481,6 +482,41 @@ async function main() {
   };
 
   const crests = await crestIds();
+
+  /*
+   * Today's players, from FotMob: the spells and honours Wikidata has not
+   * caught up with (see games/fotmob-careers). Matched by name and birth
+   * year; only ever adds - a category Wikidata gives is never taken away.
+   */
+  const fold = (s: string) =>
+    s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/ø/g, "o").replace(/ı/g, "i").replace(/ł/g, "l").toLowerCase().replace(/[^a-z ]/g, "").replace(/\s+/g, " ").trim();
+  const { careers, teamLeague } = await fotmobCareers(LEAGUES.map((l) => l.logo));
+  const clubByFm = new Map([...crests].map(([q, id]) => [id, q]));
+  const leagueByFm = new Map(LEAGUES.map((l) => [l.logo, l.id]));
+  const byNameYear = new Map<string, Player[]>();
+  for (const p of players.values()) {
+    const k = `${fold(p.en)}|${p.born}`;
+    byNameYear.set(k, [...(byNameYear.get(k) ?? []), p]);
+  }
+  const fmExtra = new Map<string, Set<string>>();
+  let fmMatched = 0;
+  for (const c of careers) {
+    const hit = byNameYear.get(`${fold(c.name)}|${c.born}`);
+    if (!hit || hit.length !== 1) continue;
+    fmMatched++;
+    const extra = new Set<string>();
+    for (const s of c.spells) {
+      const club = clubByFm.get(s.team);
+      if (club) extra.add(`cl-${club}`);
+      const league = leagueByFm.get(teamLeague.get(s.team) ?? -1);
+      if (league) extra.add(league);
+    }
+    for (const t of TROPHIES) if (c.won.get(t.logo)?.length) extra.add(t.id);
+    // A final reached: won or lost it (the original's "UCL Final").
+    if (c.won.get(42)?.length || c.runnerUp.get(42)?.length) extra.add("gr-uclf");
+    fmExtra.set(hit[0].q, extra);
+  }
+  console.log(`fotmob careers matched to the pool: ${fmMatched} of ${careers.length}`);
   console.log(`crests: ${crests.size}/${CLUBS.length}`);
 
   // --- categories --------------------------------------------------------
@@ -567,6 +603,7 @@ async function main() {
   };
 
   for (const p of players.values()) {
+    for (const id of fmExtra.get(p.q) ?? []) add(id, p.q);
     const seniorStints = p.stints.filter(senior);
     for (const s of seniorStints) add(`cl-${s.club}`, p.q);
     for (const l of LEAGUES) {
