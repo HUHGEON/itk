@@ -453,8 +453,32 @@ async function main() {
   const teamIds = [...clubs].filter(([q]) => seniorNational(q)).map(([q]) => q);
   const teams = await nationalTeams(teamIds);
   // Uncapped players fall back to the country they declared for.
+  /*
+   * Each country's real side: the one with the most players. A country's
+   * FIFA code is all most teams carry, so regional selections share it -
+   * Padania read as Italy, Catalonia as Spain - and taking the first team
+   * per country had mapped every uncapped Italian to Padania (Ranieri,
+   * measured). The real side outnumbers them by hundreds. The four home
+   * nations share the United Kingdom and are kept apart by their codes.
+   */
+  const capped = new Map<string, number>();
+  for (const p of players.values()) for (const t of new Set(p.stints.map((s) => s.club))) if (teams.has(t)) capped.set(t, (capped.get(t) ?? 0) + 1);
   const teamByCountry = new Map<string, string>();
-  for (const [t, info] of teams) if (info.country && !teamByCountry.has(info.country)) teamByCountry.set(info.country, t);
+  for (const [t, info] of teams) {
+    if (!info.country) continue;
+    const cur = teamByCountry.get(info.country);
+    if (!cur || (capped.get(t) ?? 0) > (capped.get(cur) ?? 0)) teamByCountry.set(info.country, t);
+  }
+  const HOME = new Set(Object.keys(HOME_NATIONS));
+  // Citizenship is sometimes the realm rather than the country: Louis van
+  // Gaal's is the Kingdom of the Netherlands (Q29999), not the Netherlands
+  // (Q55) its team belongs to.
+  for (const [realm, country] of [["Q29999", "Q55"], ["Q756617", "Q35"]])
+    if (teamByCountry.has(country) && !teamByCountry.has(realm)) teamByCountry.set(realm, teamByCountry.get(country)!);
+  const realSide = (t: string) => {
+    const info = teams.get(t);
+    return !!info && (HOME.has(info.fifa) || teamByCountry.get(info.country) === t);
+  };
 
   const crests = await crestIds();
   console.log(`crests: ${crests.size}/${CLUBS.length}`);
@@ -486,14 +510,60 @@ async function main() {
   const byComp = new Map<string, Season[]>();
   for (const x of seasons) (byComp.get(x.comp) ?? byComp.set(x.comp, []).get(x.comp)!).push(x);
 
-  const nationOf = (p: Player): string | null => {
-    // The most recent senior side, for the few who switched allegiance.
-    const capped = p.stints
-      .filter((s) => seniorNational(s.club))
-      .sort((a, b) => (b.start ?? 0) - (a.start ?? 0))[0];
-    if (capped) return capped.club;
-    for (const c of [...p.sport, ...p.citizen]) if (teamByCountry.has(c)) return teamByCountry.get(c)!;
-    return null;
+  /*
+   * Every country a player has played senior football for, as the original
+   * counts them - measured on its own data: Zaha is ENG and CIV, Rice ENG and
+   * IRL, Brahim ESP and MAR, while Grealish (Ireland youth only) is ENG alone.
+   * Only FIFA sides: Puyol's Catalonia caps are not Spain's, and picking the
+   * one most recent side had put him there and lost him from 스페인.
+   * Uncapped, the latest youth side's country (Albrighton: England U21), then
+   * citizenship - and United Kingdom alone reads as England, as the original
+   * has Harvey Elliott.
+   */
+  const UK = "Q145";
+  const ENGLAND = [...teams].find(([, t]) => t.fifa === "ENG")?.[0];
+  // Sides with a code but no place in FIFA: regional selections that play
+  // friendlies (Catalonia "CAT", the Basque Country, Galicia, ...).
+  const NOT_FIFA = new Set(["CAT", "BAS", "EUS", "GAL", "GLC", "AND_", "KOS_"]);
+  /*
+   * Sides of states that no longer exist. A player capped only by one of them
+   * also counts for his country today, as the original has it: Mihajlović
+   * (Yugoslavia) is SRB, Panenka (Czechoslovakia) CZE, Sammer (East Germany)
+   * GER. Serbia and Montenegro carries no code at all and was being dropped.
+   */
+  const FORMER = new Set(["Q188363", "Q1131732", "Q182072", "Q189275", "Q152424"]);
+  const fifaTeam = (club: string) => {
+    if (FORMER.has(club)) return true;
+    const code = teams.get(club)?.fifa;
+    return seniorNational(club) && !!code && !NOT_FIFA.has(code) && realSide(club);
+  };
+  // A youth side's senior side by name - "England national under-21 ..." is
+  // England's - since its country (P17) is the United Kingdom for all four
+  // home nations, and reading it by country had put England U21 players in
+  // Scotland (Steve Bruce, Rob Holding, measured).
+  const seniorByName = new Map<string, string>();
+  for (const [q, t] of teams) if (t.fifa && !NOT_FIFA.has(t.fifa) && realSide(q)) seniorByName.set(t.en.replace(/ (men's )?national.*$/i, "").toLowerCase(), q);
+  const seniorOfYouth = (club: string) =>
+    seniorByName.get((clubs.get(club)?.en ?? "").replace(/ (men's )?(national|olympic).*$/i, "").toLowerCase());
+  const nationsOf = (p: Player): string[] => {
+    const senior = [...new Set(p.stints.filter((s) => fifaTeam(s.club)).map((s) => s.club))];
+    if (senior.length && senior.every((t) => FORMER.has(t))) {
+      const today = [...p.citizen].map((c) => teamByCountry.get(c)).filter((t): t is string => !!t && !FORMER.has(t) && realSide(t));
+      return [...new Set([...senior, ...today])];
+    }
+    if (senior.length) return senior;
+    const youth = p.stints
+      .filter((s) => clubs.get(s.club)?.national && !seniorNational(s.club))
+      .sort((a, b) => (b.start ?? 0) - (a.start ?? 0));
+    for (const y of youth) {
+      const t = seniorOfYouth(y.club);
+      if (t) return [t];
+    }
+    // The United Kingdom is four football nations; it is read as England
+    // only when nothing more specific is known, as the original does.
+    for (const c of [...p.sport, ...p.citizen]) if (c !== UK && teamByCountry.has(c)) return [teamByCountry.get(c)!];
+    if (ENGLAND && (p.citizen.has(UK) || p.sport.has(UK))) return [ENGLAND];
+    return [];
   };
 
   for (const p of players.values()) {
@@ -506,8 +576,7 @@ async function main() {
       });
       if (hit) add(l.id, p.q);
     }
-    const nation = nationOf(p);
-    if (nation) {
+    for (const nation of nationsOf(p)) {
       add(`nt-${nation}`, p.q);
       const cont = teams.get(nation)?.continent;
       const fifa = teams.get(nation)?.fifa;
@@ -551,8 +620,11 @@ async function main() {
       if (!t.ko || NOT_A_NATION.test(t.en) || named.has(t.ko)) return false;
       named.add(t.ko);
       return true;
-    })
-    .slice(0, 40);
+    });
+  // No cap on how many: a top-40 by headcount was filled by Japan, China and
+  // Hungary (the pool has thousands of their league players with Korean
+  // names) and left out Wales, Ghana, Ivory Coast, Greece and Ukraine, all
+  // hexes on the original's boards.
   for (const [id] of nations) {
     const t = teams.get(id.slice(3))!;
     cats.push({ id, short: t.ko, kind: "nation", img: t.fifa ? `t:${t.fifa.toLowerCase()}` : undefined });
