@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  ArrowCounterClockwise,
   CaretRight,
   Check,
   Copy,
@@ -460,6 +461,7 @@ function LocalMatch({ grid: all, settings, onMenu }: { grid: Grid; settings: Set
       names={LOCAL_NAME}
       onAnswer={(cell, p) => setState((s) => play(s, byId, cell, p))}
       actions={{ again: () => setState(newGame()), againLabel: "새 게임", leave: onMenu, leaveLabel: "나가기" }}
+      restart={() => setState(newGame())}
     />
   );
 }
@@ -694,7 +696,14 @@ function MatchView({
   banner,
   onAnswer,
   actions,
+  restart,
 }: {
+  /**
+   * A fresh board mid-game, for the modes played alone (one screen, or
+   * practice while waiting). Offered only there: in a match against someone
+   * else one side cannot throw the board away.
+   */
+  restart?: () => void;
   grid: Grid;
   board: BoardCell[];
   state: MatchState;
@@ -850,6 +859,11 @@ function MatchView({
     <div className="mx-auto max-w-[405px]">
       <Toast message={toast.message} />
       {banner && <p className="mb-2 text-center text-[12.5px] text-muted">{banner}</p>}
+      {restart && (
+        <div className="mb-2 flex justify-end">
+          <RestartButton onRestart={() => { setSelected(null); restart(); }} />
+        </div>
+      )}
 
       <Scoreboard
         names={names}
@@ -1269,5 +1283,34 @@ function Notice({ title, body, onMenu }: { title: string; body: string; onMenu: 
         처음으로
       </button>
     </div>
+  );
+}
+
+/**
+ * "새 판": a new board and a fresh clock. Two presses, as Who Are Ya's reset,
+ * since one stray tap would throw away a game in progress.
+ */
+function RestartButton({ onRestart }: { onRestart: () => void }) {
+  const [armed, setArmed] = useState(false);
+  useEffect(() => {
+    if (!armed) return;
+    const t = window.setTimeout(() => setArmed(false), 3000);
+    return () => window.clearTimeout(t);
+  }, [armed]);
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        if (!armed) return setArmed(true);
+        setArmed(false);
+        onRestart();
+      }}
+      className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[13px] font-semibold transition-colors ${
+        armed ? "bg-red-500/15 text-red-400" : "bg-surface-2 text-muted hover:text-text"
+      }`}
+    >
+      <ArrowCounterClockwise className="size-4" weight="bold" />
+      {armed ? "한 번 더 누르면 새 판" : "새 판"}
+    </button>
   );
 }
