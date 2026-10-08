@@ -700,6 +700,9 @@ async function main() {
     .sort((a, b) => b[1].size - a[1].size)
     .filter(([id]) => {
       const t = teams.get(id.slice(3))!;
+      // No hex for a state that no longer exists ("체코슬로바키아" was reported
+      // as a broken hex); its players count for their country today instead.
+      if (FORMER.has(id.slice(3))) return false;
       if (!t.ko || NOT_A_NATION.test(t.en) || named.has(t.ko)) return false;
       named.add(t.ko);
       return true;
