@@ -47,9 +47,15 @@ export function supabase(): SupabaseClient {
  * ignore by accident — a silent null here would look like "no articles" instead
  * of "the query failed".
  */
-/** Errors worth a second attempt: clock skew, transport blips, gateway hiccups. */
+/**
+ * Errors worth a second attempt: clock skew, transport blips, gateway hiccups,
+ * and the database's own statement timeout - a query that takes 0.1s normally
+ * passing 8s while a collection run is writing. Measured over a week of the
+ * scheduled workflow: six failed runs, every one of them that timeout, on
+ * queries that answered at once when rerun.
+ */
 function isTransient(message: string): boolean {
-  return /issued at future|JWT|fetch failed|ECONNRESET|ETIMEDOUT|502|503|504/i.test(
+  return /issued at future|JWT|fetch failed|ECONNRESET|ETIMEDOUT|502|503|504|statement timeout/i.test(
     message,
   );
 }
@@ -66,7 +72,9 @@ export async function rpc<T>(
 
     lastMessage = `${error.message}${error.hint ? ` (${error.hint})` : ""}`;
     if (!isTransient(error.message) || attempt === 3) break;
-    await new Promise((r) => setTimeout(r, 250 * attempt));
+    // A busy database needs longer than a dropped connection does.
+    const wait = /statement timeout/i.test(error.message) ? 2000 * attempt : 250 * attempt;
+    await new Promise((r) => setTimeout(r, wait));
   }
 
   throw new Error(`${fn} 실패: ${lastMessage}`);

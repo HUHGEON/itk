@@ -1009,11 +1009,29 @@ set search_path = itk, public
 as $$
 declare v_n integer;
 begin
+  /*
+   * Only the keys of the last two days' arrivals. A duplicate forms when a
+   * story comes in, so a new key is checked against every article holding it,
+   * however old; keys no new story touches were settled on earlier runs.
+   * Reading and sorting the whole table each run took 0.8-2.4s at 47k rows
+   * and passed the 8s statement timeout under collection load - six failed
+   * runs in a week, two of them here and four in the Discord step queued
+   * behind it. This takes 0.3s, through the two key indexes below.
+   */
   create temp table _dupes on commit drop as
-  with keyed as (
+  with fresh as (
+    select * from articles where created_at > now() - interval '2 days'
+  ), fresh_url as (
+    select distinct lower(coalesce(nullif(resolved_url, ''), url)) as k from fresh
+  ), fresh_title as (
+    select distinct 'title:' || lower(source) || '|' || lower(btrim(title)) as k
+    from fresh
+    where coalesce(source, '') <> '' and coalesce(title, '') <> ''
+  ), keyed as (
     select id, lower(coalesce(nullif(resolved_url, ''), url)) as k,
            journalist_id, cited_id, official, created_at
     from articles
+    where lower(coalesce(nullif(resolved_url, ''), url)) in (select k from fresh_url)
     union all
     -- One outlet does not publish two stories under the same headline, but it
     -- does publish one story at two paths — L'Équipe served the same piece
@@ -1022,23 +1040,24 @@ begin
            journalist_id, cited_id, official, created_at
     from articles
     where coalesce(source, '') <> '' and coalesce(title, '') <> ''
+      and ('title:' || lower(source) || '|' || lower(btrim(title))) in (select k from fresh_title)
   ), ranked as (
-    select k, id,
-           row_number() over (
-             partition by k
-             -- Attribution first: an unattributed copy is the one the feed
-             -- would have hidden anyway.
-             order by (journalist_id is not null) desc,
-                      (cited_id is not null) desc,
-                      official desc,
-                      created_at asc,
-                      id asc
-           ) as rn
+    select id,
+           row_number() over w as rn,
+           first_value(id) over w as winner
     from keyed
+    -- Attribution first: an unattributed copy is the one the feed would have
+    -- hidden anyway.
+    window w as (
+      partition by k
+      order by (journalist_id is not null) desc,
+               (cited_id is not null) desc,
+               official desc,
+               created_at asc,
+               id asc
+    )
   )
-  select r.id as loser, (select id from ranked s where s.k = r.k and s.rn = 1) as winner
-  from ranked r
-  where r.rn > 1;
+  select id as loser, winner from ranked where rn > 1;
 
   insert into article_teams (article_id, team_slug)
   select d.winner, t.team_slug from _dupes d
@@ -1065,6 +1084,13 @@ begin
   get diagnostics v_n = row_count;
   return v_n;
 end $$;
+
+create index if not exists articles_url_key_idx
+  on itk.articles (lower(coalesce(nullif(resolved_url, ''), url)));
+create index if not exists articles_title_key_idx
+  on itk.articles (('title:' || lower(source) || '|' || lower(btrim(title))))
+  where coalesce(source, '') <> '' and coalesce(title, '') <> '';
+create index if not exists articles_created_at_idx on itk.articles (created_at);
 
 
 -- What the last day looks like, for the sidebar. One round trip rather than
